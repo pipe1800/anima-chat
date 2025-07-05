@@ -11,7 +11,7 @@ const OnboardingChecklist = ({ currentStep, isVisible }: OnboardingChecklistProp
   const steps = [
     'Step 1: Choose Your Vibe',
     'Step 2: Personalize Your Profile', 
-    'Step 3: Start Your First Conversation'
+    'Step 3: Select Your First Companion'
   ];
 
   if (!isVisible) return null;

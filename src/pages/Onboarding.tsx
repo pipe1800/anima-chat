@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +6,7 @@ import OnboardingChecklist from '@/components/OnboardingChecklist';
 import VibeSelection from '@/components/onboarding/VibeSelection';
 import ProfileSetup from '@/components/onboarding/ProfileSetup';
 import WelcomeModal from '@/components/WelcomeModal';
+import CharacterSelection from '@/components/onboarding/CharacterSelection';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -67,18 +67,16 @@ const Onboarding = () => {
 
   const handleProfileComplete = () => {
     setCurrentStep(2);
-    // Navigate to main app after completing onboarding
-    setTimeout(() => {
-      navigate('/');
-    }, 1000);
   };
 
   const handleSkipProfile = () => {
     setCurrentStep(2);
-    // Navigate to main app after skipping profile
-    setTimeout(() => {
-      navigate('/');
-    }, 1000);
+  };
+
+  const handleCharacterSelect = (character: any) => {
+    console.log('Selected character:', character);
+    // Navigate to chat with selected character
+    navigate('/', { state: { selectedCharacter: character } });
   };
 
   if (loading) {
@@ -133,14 +131,10 @@ const Onboarding = () => {
         )}
 
         {!showWelcome && currentStep === 2 && (
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Welcome to Your Journey!
-            </h1>
-            <p className="text-gray-400 text-lg">
-              Redirecting you to start your first conversation...
-            </p>
-          </div>
+          <CharacterSelection
+            selectedVibes={selectedVibes}
+            onCharacterSelect={handleCharacterSelect}
+          />
         )}
       </div>
     </div>
