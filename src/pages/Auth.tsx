@@ -21,6 +21,7 @@ const Auth = () => {
   const [successUsername, setSuccessUsername] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const navigate = useNavigate();
 
   // Password validation state
@@ -71,21 +72,34 @@ const Auth = () => {
 
   // Check if email exists when user leaves the field
   const handleEmailBlur = async () => {
-    if (!isLogin && email && emailTouched) {
+    if (!isLogin && email && emailTouched && email.includes('@')) {
+      setCheckingEmail(true);
+      setEmailExists(false);
+      
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Use a different approach - try to sign in with a dummy password
+        // If we get "Invalid login credentials", the email exists
+        // If we get "User not found" or similar, the email doesn't exist
+        const { error } = await supabase.auth.signInWithPassword({
           email,
-          password: 'dummy-password-check'
+          password: 'dummy-check-password-that-wont-work'
         });
-        // If we get a specific auth error, it means the email exists
-        if (error && error.message.includes('Invalid login credentials')) {
-          setEmailExists(true);
-        } else {
-          setEmailExists(false);
+        
+        if (error) {
+          // Check the specific error message
+          if (error.message.toLowerCase().includes('invalid login credentials') || 
+              error.message.toLowerCase().includes('invalid email or password')) {
+            setEmailExists(true);
+          } else {
+            setEmailExists(false);
+          }
         }
       } catch (err) {
+        // If there's an unexpected error, assume email doesn't exist
         setEmailExists(false);
       }
+      
+      setCheckingEmail(false);
     }
   };
 
@@ -93,7 +107,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: `${window.location.origin}/onboarding`
       }
     });
     
@@ -136,7 +150,14 @@ const Auth = () => {
     });
 
     if (error) {
-      setError(error.message);
+      // Handle specific error types
+      if (error.message.includes('email rate limit exceeded')) {
+        setError('Too many signup attempts. Please wait a few minutes before trying again.');
+      } else if (error.message.includes('User already registered')) {
+        setError('This email is already registered. Try signing in instead.');
+      } else {
+        setError(error.message);
+      }
     } else {
       // For email confirmation flow, show success message instead of redirecting immediately
       setError('Success! Please check your email to confirm your account, then you\'ll be redirected to complete your profile.');
@@ -345,10 +366,15 @@ const Auth = () => {
                 className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
                 required
               />
-              {!isLogin && emailExists && emailTouched && (
+              {!isLogin && emailExists && emailTouched && !checkingEmail && (
                 <p className="text-red-400 text-sm mt-1 flex items-center">
                   <X className="w-4 h-4 mr-1" />
                   Email already claimed, try another!
+                </p>
+              )}
+              {checkingEmail && (
+                <p className="text-gray-400 text-sm mt-1">
+                  Checking email availability...
                 </p>
               )}
             </div>
@@ -420,7 +446,7 @@ const Auth = () => {
 
             {error && (
               <div className={`text-sm text-center p-3 rounded-lg ${
-                error.includes('Check your email') 
+                error.includes('Success!') || error.includes('Check your email')
                   ? 'text-green-400 bg-green-900/20' 
                   : 'text-red-400 bg-red-900/20'
               }`}>
@@ -430,8 +456,8 @@ const Auth = () => {
 
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 text-lg rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5"
+              disabled={loading || (!isLogin && emailExists)}
+              className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 text-lg rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create My Account')}
             </Button>
