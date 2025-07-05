@@ -6,12 +6,14 @@ import { User } from '@supabase/supabase-js';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
 import VibeSelection from '@/components/onboarding/VibeSelection';
 import ProfileSetup from '@/components/onboarding/ProfileSetup';
+import WelcomeModal from '@/components/WelcomeModal';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +22,11 @@ const Onboarding = () => {
       console.log('Onboarding session check:', session?.user?.email);
       if (session?.user) {
         setUser(session.user);
+        // Show welcome modal for any user who reaches onboarding
+        setShowWelcome(true);
+      } else {
+        // No user, redirect to auth
+        navigate('/auth');
       }
       setLoading(false);
     });
@@ -30,15 +37,26 @@ const Onboarding = () => {
         console.log('Onboarding auth change:', event, session?.user?.email);
         if (session?.user) {
           setUser(session.user);
+          if (!showWelcome) {
+            setShowWelcome(true);
+          }
         } else if (!loading && event !== 'INITIAL_SESSION') {
-          // Only redirect if we're not in the initial loading state and it's not the initial session check
           navigate('/auth');
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate, loading]);
+  }, [navigate, loading, showWelcome]);
+
+  const handleWelcomeClose = () => {
+    setShowWelcome(false);
+  };
+
+  const handleBeginQuest = () => {
+    setShowWelcome(false);
+    // Start the onboarding flow
+  };
 
   const handleVibeSelection = (vibes: string[]) => {
     setSelectedVibes(vibes);
@@ -77,17 +95,27 @@ const Onboarding = () => {
     );
   }
 
+  const username = user.user_metadata?.username || user.email?.split('@')[0] || 'User';
+
   return (
     <div className="min-h-screen bg-[#121212] relative">
+      {/* Welcome Modal */}
+      <WelcomeModal
+        isOpen={showWelcome}
+        onClose={handleWelcomeClose}
+        username={username}
+        onBeginQuest={handleBeginQuest}
+      />
+
       {/* Onboarding Checklist */}
       <OnboardingChecklist
         currentStep={currentStep}
-        isVisible={true}
+        isVisible={!showWelcome}
       />
 
       {/* Main Content */}
       <div className="flex items-center justify-center min-h-screen p-4">
-        {currentStep === 0 && (
+        {!showWelcome && currentStep === 0 && (
           <VibeSelection 
             onNext={handleVibeSelection}
             selectedVibes={selectedVibes}
@@ -95,14 +123,14 @@ const Onboarding = () => {
           />
         )}
         
-        {currentStep === 1 && (
+        {!showWelcome && currentStep === 1 && (
           <ProfileSetup
             onComplete={handleProfileComplete}
             onSkip={handleSkipProfile}
           />
         )}
 
-        {currentStep === 2 && (
+        {!showWelcome && currentStep === 2 && (
           <div className="text-center">
             <h1 className="text-4xl font-bold text-white mb-4">
               Welcome to Your Journey!

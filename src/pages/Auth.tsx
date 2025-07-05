@@ -8,7 +8,7 @@ import { User } from '@supabase/supabase-js';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true); // Default to login for testing
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -36,7 +36,7 @@ const Auth = () => {
         console.log('Auth state change:', event, session?.user?.email);
         setUser(session?.user ?? null);
         if (session?.user && !showSuccess) {
-          // Redirect authenticated users to onboarding
+          // Always redirect to onboarding for testing - let onboarding decide what to do
           if (event === 'SIGNED_IN') {
             navigate('/onboarding');
           }
@@ -100,39 +100,22 @@ const Auth = () => {
       return;
     }
 
-    // Completely disable email confirmation and rate limiting by using admin auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          username: username.trim()
+          username: username.trim(),
+          onboarding_completed: false // Mark as needing onboarding
         },
-        // Completely disable email confirmation
         emailRedirectTo: undefined
       }
     });
 
     if (error) {
-      // Handle rate limiting by suggesting to wait or switch to login
-      if (error.message.includes('email rate limit exceeded') || error.message.includes('Too many signup attempts')) {
-        setError('Rate limit hit. Try switching to "Sign In" if you already have an account, or wait 2-3 minutes and try again.');
-        // Auto-switch to login mode to help user
-        setTimeout(() => {
-          setIsLogin(true);
-          setError('Switched to login mode. Try signing in if you already have an account.');
-        }, 2000);
-      } else if (error.message.includes('User already registered')) {
-        setError('This email is already registered. Switching to sign in mode...');
-        setTimeout(() => {
-          setIsLogin(true);
-          setError('');
-        }, 1500);
-      } else {
-        setError(error.message);
-      }
+      console.log('Signup error:', error.message);
+      setError(`Signup failed: ${error.message}. Try using the login form instead if you added a user manually in Supabase.`);
     } else if (data.user) {
-      // Show success message and redirect immediately
       showSuccessMessage(username.trim());
     }
     setLoading(false);
@@ -149,11 +132,8 @@ const Auth = () => {
     });
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Double-check your credentials or try signing up if you don\'t have an account.');
-      } else {
-        setError(error.message);
-      }
+      console.log('Login error:', error.message);
+      setError(`Login failed: ${error.message}`);
     }
     setLoading(false);
   };
@@ -276,6 +256,12 @@ const Auth = () => {
             <p className="text-gray-400">
               {isLogin ? 'Sign in to continue your journey' : 'Join thousands creating their perfect AI companions'}
             </p>
+            {/* Testing note */}
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-300 text-sm">
+                For testing: Add users directly in Supabase, then login here to see onboarding
+              </p>
+            </div>
           </div>
 
           {/* Social Auth Buttons */}
@@ -328,11 +314,11 @@ const Auth = () => {
             
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                {isLogin ? 'Email or Handle' : 'Email'}
+                {isLogin ? 'Email' : 'Email'}
               </label>
               <Input
                 type="email"
-                placeholder={isLogin ? "Email or Handle" : "Email"}
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
