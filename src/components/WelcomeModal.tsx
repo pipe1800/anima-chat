@@ -14,8 +14,11 @@ interface WelcomeModalProps {
 const WelcomeModal = ({ isOpen, onClose, username, onBeginQuest }: WelcomeModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-full h-screen max-h-screen bg-[#121212] border-none p-0 overflow-hidden">
-        {/* Close button */}
+      <DialogContent 
+        className="max-w-4xl w-full h-screen max-h-screen bg-[#121212] border-none p-0 overflow-hidden"
+        hideCloseButton={true}
+      >
+        {/* Single close button */}
         <button
           onClick={onClose}
           className="absolute top-6 right-6 z-10 text-gray-400 hover:text-white transition-colors"

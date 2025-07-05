@@ -14,6 +14,7 @@ const Onboarding = () => {
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,8 +23,11 @@ const Onboarding = () => {
       console.log('Onboarding session check:', session?.user?.email);
       if (session?.user) {
         setUser(session.user);
-        // Show welcome modal for any user who reaches onboarding
-        setShowWelcome(true);
+        // Show welcome modal only once per session
+        if (!hasShownWelcome) {
+          setShowWelcome(true);
+          setHasShownWelcome(true);
+        }
       } else {
         // No user, redirect to auth
         navigate('/auth');
@@ -37,9 +41,6 @@ const Onboarding = () => {
         console.log('Onboarding auth change:', event, session?.user?.email);
         if (session?.user) {
           setUser(session.user);
-          if (!showWelcome) {
-            setShowWelcome(true);
-          }
         } else if (!loading && event !== 'INITIAL_SESSION') {
           navigate('/auth');
         }
@@ -47,15 +48,16 @@ const Onboarding = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate, loading, showWelcome]);
+  }, [navigate, loading, hasShownWelcome]);
 
   const handleWelcomeClose = () => {
     setShowWelcome(false);
   };
 
   const handleBeginQuest = () => {
+    console.log('Begin Quest clicked - closing modal and starting onboarding');
     setShowWelcome(false);
-    // Start the onboarding flow
+    // Start the onboarding flow immediately
   };
 
   const handleVibeSelection = (vibes: string[]) => {
