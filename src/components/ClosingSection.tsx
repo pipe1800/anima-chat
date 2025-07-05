@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 
 const ClosingSection = () => {
@@ -25,9 +26,15 @@ const ClosingSection = () => {
         >
           Start Chatting
         </Button>
+
+        {/* Trust-building text */}
+        <p className="text-sm text-gray-400 mt-4">
+          ✓ 14-Day Free Trial ✓ No Credit Card Required ✓ Cancel Anytime
+        </p>
       </div>
     </section>
   );
 };
 
 export default ClosingSection;
+
