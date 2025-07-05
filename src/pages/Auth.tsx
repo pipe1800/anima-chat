@@ -217,7 +217,7 @@ const Auth = () => {
       </div>
 
       {/* CSS Styles for Neural Network Animation */}
-      <style jsx>{`
+      <style>{`
         .neural-network {
           position: absolute;
           inset: 0;
