@@ -17,6 +17,7 @@ const Onboarding = () => {
   useEffect(() => {
     // Check for existing session first
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Onboarding session check:', session?.user?.email);
       if (session?.user) {
         setUser(session.user);
       }
@@ -26,10 +27,11 @@ const Onboarding = () => {
     // Then set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Onboarding auth change:', event, session?.user?.email);
         if (session?.user) {
           setUser(session.user);
-        } else if (!loading) {
-          // Only redirect if we're not in the initial loading state
+        } else if (!loading && event !== 'INITIAL_SESSION') {
+          // Only redirect if we're not in the initial loading state and it's not the initial session check
           navigate('/auth');
         }
       }

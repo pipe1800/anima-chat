@@ -35,9 +35,13 @@ const Auth = () => {
     // Check if user is already logged in
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setUser(session?.user ?? null);
         if (session?.user && !showSuccess) {
-          navigate('/');
+          // Only redirect authenticated users, not just signed up users
+          if (event === 'SIGNED_IN') {
+            navigate('/onboarding');
+          }
         }
       }
     );
@@ -46,7 +50,7 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user && !showSuccess) {
-        navigate('/');
+        navigate('/onboarding');
       }
     });
 
@@ -103,7 +107,7 @@ const Auth = () => {
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
-      navigate('/onboarding'); // Redirect to onboarding instead of showing modal
+      navigate('/onboarding');
     }, 3000);
   };
 
@@ -118,7 +122,7 @@ const Auth = () => {
       return;
     }
 
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/onboarding`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -134,7 +138,8 @@ const Auth = () => {
     if (error) {
       setError(error.message);
     } else {
-      showSuccessMessage(username);
+      // For email confirmation flow, show success message instead of redirecting immediately
+      setError('Success! Please check your email to confirm your account, then you\'ll be redirected to complete your profile.');
     }
     setLoading(false);
   };
