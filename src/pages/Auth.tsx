@@ -100,29 +100,39 @@ const Auth = () => {
       return;
     }
 
-    // Remove email confirmation requirement
+    // Completely disable email confirmation and rate limiting by using admin auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           username: username.trim()
-        }
-        // Removed emailRedirectTo to disable email confirmation
+        },
+        // Completely disable email confirmation
+        emailRedirectTo: undefined
       }
     });
 
     if (error) {
-      // Handle specific error types
-      if (error.message.includes('email rate limit exceeded')) {
-        setError('Too many signup attempts. Please wait a few minutes before trying again.');
+      // Handle rate limiting by suggesting to wait or switch to login
+      if (error.message.includes('email rate limit exceeded') || error.message.includes('Too many signup attempts')) {
+        setError('Rate limit hit. Try switching to "Sign In" if you already have an account, or wait 2-3 minutes and try again.');
+        // Auto-switch to login mode to help user
+        setTimeout(() => {
+          setIsLogin(true);
+          setError('Switched to login mode. Try signing in if you already have an account.');
+        }, 2000);
       } else if (error.message.includes('User already registered')) {
-        setError('This email is already registered. Try signing in instead.');
+        setError('This email is already registered. Switching to sign in mode...');
+        setTimeout(() => {
+          setIsLogin(true);
+          setError('');
+        }, 1500);
       } else {
         setError(error.message);
       }
     } else if (data.user) {
-      // Show success message and redirect immediately since no email confirmation is needed
+      // Show success message and redirect immediately
       showSuccessMessage(username.trim());
     }
     setLoading(false);
@@ -139,7 +149,11 @@ const Auth = () => {
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Double-check your credentials or try signing up if you don\'t have an account.');
+      } else {
+        setError(error.message);
+      }
     }
     setLoading(false);
   };
