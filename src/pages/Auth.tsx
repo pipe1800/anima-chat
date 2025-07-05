@@ -19,9 +19,6 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successUsername, setSuccessUsername] = useState('');
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [emailExists, setEmailExists] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
   const navigate = useNavigate();
 
   // Password validation state
@@ -69,39 +66,6 @@ const Auth = () => {
       });
     }
   }, [password, passwordValidation.touched]);
-
-  // Check if email exists when user leaves the field
-  const handleEmailBlur = async () => {
-    if (!isLogin && email && emailTouched && email.includes('@')) {
-      setCheckingEmail(true);
-      setEmailExists(false);
-      
-      try {
-        // Use a different approach - try to sign in with a dummy password
-        // If we get "Invalid login credentials", the email exists
-        // If we get "User not found" or similar, the email doesn't exist
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password: 'dummy-check-password-that-wont-work'
-        });
-        
-        if (error) {
-          // Check the specific error message
-          if (error.message.toLowerCase().includes('invalid login credentials') || 
-              error.message.toLowerCase().includes('invalid email or password')) {
-            setEmailExists(true);
-          } else {
-            setEmailExists(false);
-          }
-        }
-      } catch (err) {
-        // If there's an unexpected error, assume email doesn't exist
-        setEmailExists(false);
-      }
-      
-      setCheckingEmail(false);
-    }
-  };
 
   const handleSocialAuth = async (provider: 'google' | 'discord') => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -356,26 +320,10 @@ const Auth = () => {
                 type="email"
                 placeholder={isLogin ? "Email or Handle" : "Email"}
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setEmailTouched(true);
-                  setEmailExists(false);
-                }}
-                onBlur={handleEmailBlur}
+                onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
                 required
               />
-              {!isLogin && emailExists && emailTouched && !checkingEmail && (
-                <p className="text-red-400 text-sm mt-1 flex items-center">
-                  <X className="w-4 h-4 mr-1" />
-                  Email already claimed, try another!
-                </p>
-              )}
-              {checkingEmail && (
-                <p className="text-gray-400 text-sm mt-1">
-                  Checking email availability...
-                </p>
-              )}
             </div>
             
             <div>
@@ -451,7 +399,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              disabled={loading || (!isLogin && emailExists)}
+              disabled={loading}
               className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 text-lg rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create My Account')}
@@ -468,8 +416,6 @@ const Auth = () => {
                 setUsername('');
                 setEmail('');
                 setPassword('');
-                setEmailExists(false);
-                setEmailTouched(false);
                 setPasswordValidation({ length: false, number: false, special: false, touched: false });
               }}
               className="text-gray-400 hover:text-[#FF7A00] transition-colors underline-offset-4 hover:underline"
