@@ -15,12 +15,15 @@ const ClosingSection = () => {
           Join thousands of users who are already creating meaningful connections with AI. Start your journey today.
         </p>
 
-        {/* Call-to-Action Button */}
+        {/* Call-to-Action Button - Identical to Hero Section */}
         <Button 
           size="lg" 
-          className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-6 h-auto font-semibold"
+          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold px-10 py-5 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 min-w-[200px]"
+          style={{
+            boxShadow: '0 8px 25px rgba(249, 115, 22, 0.3), 0 4px 15px rgba(249, 115, 22, 0.2)'
+          }}
         >
-          Get Started Now
+          Start Chatting
         </Button>
       </div>
     </section>
