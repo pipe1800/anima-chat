@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -30,6 +30,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Character greeting messages
   const getGreeting = (characterId: string) => {
@@ -78,10 +79,22 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
 
-    // Trigger first message handler
+    // Trigger first message handler and show achievement toast
     if (isFirstMessage) {
       setIsFirstMessage(false);
       onFirstMessage();
+      
+      // Show celebratory toast
+      toast({
+        title: (
+          <div className="flex items-center space-x-2">
+            <Trophy className="w-5 h-5 text-[#FF7A00]" />
+            <span>Achievement Unlocked: First Contact!</span>
+          </div>
+        ),
+        description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
+        duration: 5000,
+      });
     }
 
     // Simulate AI response after a short delay
