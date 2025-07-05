@@ -23,33 +23,56 @@ const ValueProposition = () => {
   return (
     <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 bg-[#121212]">
       <div className="max-w-7xl mx-auto">
-        {/* Benefits Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 lg:gap-12">
+        {/* Section Header */}
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+            Why Choose Our Platform?
+          </h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Experience the freedom of truly uncensored AI conversations
+          </p>
+        </div>
+
+        {/* Alternating Layout */}
+        <div className="space-y-20 lg:space-y-32">
           {benefits.map((benefit, index) => (
-            <div key={index} className="text-center group">
-              {/* Glowing Orange Icon */}
-              <div className="mb-8 flex justify-center">
-                <div className="relative">
-                  <div className="w-20 h-20 flex items-center justify-center">
-                    <benefit.icon 
-                      className="w-12 h-12 text-[#FF7A00] filter drop-shadow-[0_0_8px_rgba(255,122,0,0.6)]" 
-                      strokeWidth={1.5}
-                    />
+            <div key={index} className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${index % 2 === 1 ? 'lg:grid-flow-dense' : ''}`}>
+              {/* Icon and Visual Side */}
+              <div className={`relative ${index % 2 === 1 ? 'lg:col-start-2' : ''}`}>
+                <div className="relative w-full max-w-md mx-auto">
+                  {/* Large Background Circle */}
+                  <div className="w-80 h-80 mx-auto bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 rounded-full flex items-center justify-center relative">
+                    {/* Inner Circle */}
+                    <div className="w-48 h-48 bg-[#1a1a2e] border-2 border-[#FF7A00]/30 rounded-full flex items-center justify-center relative">
+                      <benefit.icon 
+                        className="w-20 h-20 text-[#FF7A00] filter drop-shadow-[0_0_12px_rgba(255,122,0,0.8)]" 
+                        strokeWidth={1}
+                      />
+                      {/* Animated rings */}
+                      <div className="absolute inset-0 rounded-full border border-[#FF7A00]/20 animate-pulse"></div>
+                      <div className="absolute inset-[-8px] rounded-full border border-[#FF7A00]/10 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                    </div>
+                    {/* Floating particles */}
+                    <div className="absolute top-8 right-8 w-3 h-3 bg-[#FF7A00]/60 rounded-full animate-pulse"></div>
+                    <div className="absolute bottom-12 left-12 w-2 h-2 bg-[#FF7A00]/40 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+                    <div className="absolute top-16 left-8 w-1 h-1 bg-[#FF7A00]/50 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
                   </div>
-                  {/* Additional glow effect */}
-                  <div className="absolute inset-0 w-20 h-20 bg-[#FF7A00]/20 rounded-full blur-xl opacity-70 animate-pulse"></div>
                 </div>
               </div>
 
-              {/* Sub-headline in white */}
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 leading-tight">
-                {benefit.title}
-              </h3>
-
-              {/* Description in light gray */}
-              <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-sm mx-auto">
-                {benefit.description}
-              </p>
+              {/* Content Side */}
+              <div className={`text-center lg:text-left ${index % 2 === 1 ? 'lg:col-start-1' : ''}`}>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight">
+                  {benefit.title}
+                </h3>
+                <p className="text-lg sm:text-xl text-gray-300 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+                  {benefit.description}
+                </p>
+                {/* Feature highlight bar */}
+                <div className="flex items-center justify-center lg:justify-start">
+                  <div className="h-1 w-20 bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/50 rounded-full"></div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
