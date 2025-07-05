@@ -1,32 +1,52 @@
 
+import { MessageCircle, Users } from "lucide-react";
+
 const Footer = () => {
   return (
-    <footer className="bg-[#121212] border-t border-gray-700/50 py-4 sm:py-6 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-        {/* Left side - Copyright with logo placeholder */}
-        <div className="flex items-center mb-3 md:mb-0">
-          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#FF7A00] rounded mr-2 sm:mr-3 flex items-center justify-center shadow-md">
-            <span className="text-xs font-bold text-white">AC</span>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-400">
-            © 2024 AI Character Chat. All Rights Reserved.
-          </p>
+    <footer className="bg-[#1b1b1b] py-6 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Left side - Copyright */}
+        <div className="text-sm text-gray-400">
+          © 2025 AI Character Chat. All Rights Reserved.
         </div>
 
-        {/* Right side - Privacy and Terms links */}
-        <div className="flex space-x-4 sm:space-x-6">
-          <a 
-            href="#" 
-            className="text-xs sm:text-sm text-gray-400 hover:text-[#FF7A00] transition-colors underline-offset-4 hover:underline min-h-[44px] flex items-center px-2 py-2"
-          >
-            Privacy Policy
-          </a>
-          <a 
-            href="#" 
-            className="text-xs sm:text-sm text-gray-400 hover:text-[#FF7A00] transition-colors underline-offset-4 hover:underline min-h-[44px] flex items-center px-2 py-2"
-          >
-            Terms of Use
-          </a>
+        {/* Right side - Links and Social */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          {/* Legal Links */}
+          <div className="flex gap-4 sm:gap-6">
+            <a 
+              href="#" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a 
+              href="#" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Terms of Use
+            </a>
+          </div>
+
+          {/* Community Links */}
+          <div className="flex gap-4">
+            <a 
+              href="#" 
+              className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+              aria-label="Join our Discord community"
+            >
+              <MessageCircle size={20} />
+              <span className="text-sm">Discord</span>
+            </a>
+            <a 
+              href="#" 
+              className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+              aria-label="Join our Reddit community"
+            >
+              <Users size={20} />
+              <span className="text-sm">Subreddit</span>
+            </a>
+          </div>
         </div>
       </div>
     </footer>
