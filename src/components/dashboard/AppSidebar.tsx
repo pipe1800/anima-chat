@@ -5,19 +5,19 @@ import {
   MessageCircle, 
   User, 
   Settings, 
-  Trophy, 
   CreditCard, 
   Home,
+  Plus,
+  Compass,
+  Users,
   Zap,
-  Shield,
-  Star
+  LogOut
 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -27,17 +27,13 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Chat", url: "/chat", icon: MessageCircle },
-  { title: "Achievements", url: "/achievements", icon: Trophy },
-  { title: "Credits", url: "/credits", icon: CreditCard },
-];
-
-const accountItems = [
-  { title: "Profile", url: "/profile", icon: User },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Create Character", url: "/create-character", icon: Plus },
+  { title: "Explore", url: "/explore", icon: Compass },
+  { title: "Community", url: "/community", icon: Users },
 ];
 
 export function AppSidebar() {
@@ -56,19 +52,42 @@ export function AppSidebar() {
     }`;
 
   return (
-    <Sidebar className={`${isCollapsed ? 'w-14' : 'w-64'} border-r border-gray-700/50 bg-[#1a1a2e]`}>
+    <Sidebar className={`${isCollapsed ? 'w-14' : 'w-64'} border-r border-gray-700/50 bg-[#1b1b1b]`}>
       <SidebarHeader className="border-b border-gray-700/50 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-lg flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
+        {/* App Logo */}
+        <div className="flex items-center justify-center mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-lg flex items-center justify-center">
+            <Zap className="w-6 h-6 text-white" />
           </div>
           {!isCollapsed && (
-            <div>
+            <div className="ml-3">
               <h2 className="text-white font-bold text-lg">AI Command</h2>
               <p className="text-[#FF7A00] text-xs font-medium">Neural Interface</p>
             </div>
           )}
         </div>
+
+        {/* User Profile Section */}
+        <div className="flex flex-col items-center space-y-3">
+          <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+            <AvatarImage src="/placeholder.svg" alt="User" />
+            <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+              SG
+            </AvatarFallback>
+          </Avatar>
+          {!isCollapsed && (
+            <>
+              <div className="text-center">
+                <p className="text-white text-sm font-medium">@xX_ShadowGamer_Xx</p>
+              </div>
+              <div className="bg-[#FF7A00]/20 px-3 py-1 rounded-lg border border-[#FF7A00]/30 flex items-center space-x-2">
+                <Zap className="w-3 h-3 text-[#FF7A00]" />
+                <span className="text-[#FF7A00] text-xs font-bold">1,247</span>
+              </div>
+            </>
+          )}
+        </div>
+
         {!isCollapsed && (
           <SidebarTrigger className="absolute top-4 right-4 text-gray-400 hover:text-white" />
         )}
@@ -76,9 +95,6 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[#FF7A00] text-xs font-semibold tracking-wider uppercase mb-2">
-            {!isCollapsed && "Main Navigation"}
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -97,67 +113,33 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup className="mt-6">
-          <SidebarGroupLabel className="text-[#FF7A00] text-xs font-semibold tracking-wider uppercase mb-2">
-            {!isCollapsed && "Account"}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {accountItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={getNavClasses(isActive(item.url))}
-                    >
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {!isCollapsed && (
-          <div className="mt-6 px-3">
-            <div className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 rounded-lg p-4 border border-[#FF7A00]/30">
-              <div className="flex items-center space-x-2 mb-2">
-                <Shield className="w-4 h-4 text-[#FF7A00]" />
-                <span className="text-[#FF7A00] text-sm font-semibold">Neural Status</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-xs">Connection</span>
-                  <span className="text-green-400 text-xs font-medium">STABLE</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-xs">Credits</span>
-                  <span className="text-[#FF7A00] text-xs font-bold">1,247</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-700/50 p-4">
-        <div className="flex items-center space-x-3">
-          <Avatar className="w-8 h-8 ring-2 ring-[#FF7A00]/50">
-            <AvatarImage src="/placeholder.svg" alt="User" />
-            <AvatarFallback className="bg-[#FF7A00] text-white font-bold text-sm">
-              U
-            </AvatarFallback>
-          </Avatar>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">Neural Pilot</p>
-              <p className="text-gray-400 text-xs truncate">Level 7 Explorer</p>
-            </div>
-          )}
-        </div>
+      <SidebarFooter className="border-t border-gray-700/50 p-4 space-y-2">
+        {/* Settings Link */}
+        <SidebarMenuButton asChild>
+          <NavLink 
+            to="/settings" 
+            className={getNavClasses(isActive('/settings'))}
+          >
+            <Settings className="w-5 h-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Settings</span>}
+          </NavLink>
+        </SidebarMenuButton>
+
+        {/* Logout Button */}
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+          onClick={() => {
+            // Add logout logic here
+            console.log('Logout clicked');
+          }}
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-3 font-medium">Logout</span>}
+        </Button>
+
         {isCollapsed && (
           <SidebarTrigger className="mt-2 text-gray-400 hover:text-white" />
         )}
