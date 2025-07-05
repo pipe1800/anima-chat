@@ -36,7 +36,7 @@ const HeroSection = () => {
             <div className="space-y-4 mb-8 sm:mb-12">
               <Button 
                 size="lg" 
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl lg:text-2xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px] glow-effect"
+                className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl lg:text-2xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px] relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-[#FF7A00] before:to-[#FF7A00]/50 before:rounded-lg before:blur-lg before:opacity-70 before:-z-10 hover:before:opacity-100 before:transition-opacity before:duration-300"
                 style={{
                   boxShadow: '0 8px 32px rgba(255, 122, 0, 0.4), 0 4px 16px rgba(255, 122, 0, 0.3)'
                 }}
@@ -121,34 +121,6 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .glow-effect {
-          position: relative;
-        }
-        .glow-effect::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, #FF7A00, #FF7A00/0.5, #FF7A00);
-          border-radius: inherit;
-          z-index: -1;
-          filter: blur(8px);
-          opacity: 0.7;
-          animation: glow 2s ease-in-out infinite alternate;
-        }
-        @keyframes glow {
-          from {
-            opacity: 0.7;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </section>
   );
 };
