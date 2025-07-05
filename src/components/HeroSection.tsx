@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 px-6 py-20">
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 px-4 sm:px-6 py-12 sm:py-20">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-100/40 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-100/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 sm:w-64 sm:h-64 bg-blue-100/40 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-40 h-40 sm:w-80 sm:h-80 bg-orange-100/30 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="relative max-w-7xl mx-auto w-full">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Content */}
-          <div className="text-center lg:text-left">
+          <div className="text-center lg:text-left order-2 lg:order-1">
             {/* Main headline */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 leading-tight">
               Create and Chat with
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
                 AI Characters
@@ -23,16 +23,16 @@ const HeroSection = () => {
             </h1>
 
             {/* Supporting headline */}
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 sm:mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
               Discover amazing AI personalities, create your own unique characters, and engage in 
               conversations that bring your imagination to life.
             </p>
 
             {/* Primary CTA */}
-            <div className="space-y-4 mb-12">
+            <div className="space-y-4 mb-8 sm:mb-12">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold px-10 py-5 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 min-w-[200px]"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px]"
                 style={{
                   boxShadow: '0 8px 25px rgba(249, 115, 22, 0.3), 0 4px 15px rgba(249, 115, 22, 0.2)'
                 }}
@@ -40,27 +40,27 @@ const HeroSection = () => {
                 Start Chatting
               </Button>
               
-              <p className="text-sm text-gray-500">
+              <p className="text-sm sm:text-base text-gray-500">
                 No credit card required • Join thousands of creators
               </p>
             </div>
 
             {/* Trust indicators */}
-            <div className="pt-8 border-t border-gray-200/50">
-              <p className="text-sm text-gray-400 mb-6">Trusted by creators worldwide</p>
-              <div className="flex items-center justify-center lg:justify-start gap-8 opacity-60">
+            <div className="pt-6 sm:pt-8 border-t border-gray-200/50">
+              <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">Trusted by creators worldwide</p>
+              <div className="flex items-center justify-center lg:justify-start gap-4 sm:gap-8 opacity-60">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-400">10K+</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-400">10K+</div>
                   <div className="text-xs text-gray-400">Characters</div>
                 </div>
-                <div className="w-px h-8 bg-gray-300"></div>
+                <div className="w-px h-6 sm:h-8 bg-gray-300"></div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-400">50K+</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-400">50K+</div>
                   <div className="text-xs text-gray-400">Users</div>
                 </div>
-                <div className="w-px h-8 bg-gray-300"></div>
+                <div className="w-px h-6 sm:h-8 bg-gray-300"></div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-400">1M+</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-400">1M+</div>
                   <div className="text-xs text-gray-400">Conversations</div>
                 </div>
               </div>
@@ -68,10 +68,10 @@ const HeroSection = () => {
           </div>
 
           {/* Right Hero Visual */}
-          <div className="relative lg:order-last">
+          <div className="relative order-1 lg:order-2">
             <div className="relative">
               {/* Main hero image container */}
-              <div className="relative w-full max-w-lg mx-auto">
+              <div className="relative w-full max-w-sm sm:max-w-lg mx-auto">
                 <img 
                   src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=1000&fit=crop&crop=face"
                   alt="Person engaging with AI chat interface"
@@ -79,9 +79,9 @@ const HeroSection = () => {
                 />
                 
                 {/* Floating chat interface overlay */}
-                <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-xl border border-gray-200/50 p-4 max-w-xs">
+                <div className="absolute -bottom-2 sm:-bottom-4 -left-2 sm:-left-4 bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200/50 p-3 sm:p-4 max-w-[280px] sm:max-w-xs">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold text-xs">AI</span>
                     </div>
                     <div className="text-left">
@@ -92,23 +92,23 @@ const HeroSection = () => {
                   
                   <div className="space-y-2">
                     <div className="bg-gray-50 rounded-lg px-3 py-2">
-                      <p className="text-gray-700 text-xs">Ready to explore new worlds together? ✨</p>
+                      <p className="text-gray-700 text-xs sm:text-sm">Ready to explore new worlds together? ✨</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Floating stats card */}
-                <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg border border-gray-200/50 p-3">
+                <div className="absolute -top-2 sm:-top-4 -right-2 sm:-right-4 bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200/50 p-2 sm:p-3">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-blue-600">2.5k</p>
+                    <p className="text-base sm:text-lg font-bold text-blue-600">2.5k</p>
                     <p className="text-xs text-gray-500">Active Chats</p>
                   </div>
                 </div>
               </div>
 
               {/* Background accent elements */}
-              <div className="absolute -z-10 top-8 right-8 w-32 h-32 bg-orange-100/40 rounded-full blur-2xl"></div>
-              <div className="absolute -z-10 bottom-8 left-8 w-24 h-24 bg-blue-100/40 rounded-full blur-2xl"></div>
+              <div className="absolute -z-10 top-4 sm:top-8 right-4 sm:right-8 w-16 h-16 sm:w-32 sm:h-32 bg-orange-100/40 rounded-full blur-2xl"></div>
+              <div className="absolute -z-10 bottom-4 sm:bottom-8 left-4 sm:left-8 w-12 h-12 sm:w-24 sm:h-24 bg-blue-100/40 rounded-full blur-2xl"></div>
             </div>
           </div>
         </div>

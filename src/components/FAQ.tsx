@@ -36,14 +36,14 @@ const FAQ = () => {
   ];
 
   return (
-    <section className="py-20 px-6 bg-white">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-white">
       <div className="max-w-4xl mx-auto">
         {/* Headline */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
             Have Questions? We Have Answers.
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
             Find answers to the most common questions about our AI character platform.
           </p>
         </div>
@@ -56,12 +56,12 @@ const FAQ = () => {
               value={item.id}
               className="border-b border-gray-200 last:border-b-0"
             >
-              <AccordionTrigger className="text-left py-6 hover:no-underline">
-                <span className="text-lg font-bold text-gray-900 pr-4">
+              <AccordionTrigger className="text-left py-4 sm:py-6 hover:no-underline min-h-[44px]">
+                <span className="text-base sm:text-lg font-bold text-gray-900 pr-4">
                   {item.question}
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="pb-6 text-gray-700 leading-relaxed">
+              <AccordionContent className="pb-4 sm:pb-6 text-sm sm:text-base text-gray-700 leading-relaxed">
                 {item.answer}
               </AccordionContent>
             </AccordionItem>
