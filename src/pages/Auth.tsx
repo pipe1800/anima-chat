@@ -41,7 +41,7 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) {
+        if (session?.user && !showSuccess && !showWelcomeModal && !showOnboarding) {
           navigate('/');
         }
       }
@@ -50,13 +50,13 @@ const Auth = () => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session?.user && !showSuccess && !showWelcomeModal && !showOnboarding) {
         navigate('/');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, showSuccess, showWelcomeModal, showOnboarding]);
 
   // Real-time password validation
   useEffect(() => {
@@ -115,8 +115,7 @@ const Auth = () => {
   const handleBeginQuest = () => {
     setShowWelcomeModal(false);
     setShowOnboarding(true);
-    // Navigate to main page and start onboarding
-    navigate('/');
+    // Don't navigate away - stay on current page to show onboarding
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
