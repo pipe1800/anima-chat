@@ -11,31 +11,32 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Check for existing session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+      }
+      setLoading(false);
+    });
+
+    // Then set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!session?.user) {
-          navigate('/auth');
-        } else {
+        if (session?.user) {
           setUser(session.user);
+        } else if (!loading) {
+          // Only redirect if we're not in the initial loading state
+          navigate('/auth');
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        navigate('/auth');
-      } else {
-        setUser(session.user);
-      }
-    });
-
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, loading]);
 
   const handleVibeSelection = (vibes: string[]) => {
     setSelectedVibes(vibes);
@@ -58,10 +59,18 @@ const Onboarding = () => {
     }, 1000);
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-white">Redirecting to authentication...</div>
       </div>
     );
   }
