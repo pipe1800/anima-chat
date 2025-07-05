@@ -39,7 +39,7 @@ const Auth = () => {
         console.log('Auth state change:', event, session?.user?.email);
         setUser(session?.user ?? null);
         if (session?.user && !showSuccess) {
-          // Only redirect authenticated users, not just signed up users
+          // Redirect authenticated users to onboarding
           if (event === 'SIGNED_IN') {
             navigate('/onboarding');
           }
@@ -136,16 +136,15 @@ const Auth = () => {
       return;
     }
 
-    const redirectUrl = `${window.location.origin}/onboarding`;
-    
-    const { error } = await supabase.auth.signUp({
+    // Remove email confirmation requirement
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           username: username.trim()
         }
+        // Removed emailRedirectTo to disable email confirmation
       }
     });
 
@@ -158,9 +157,9 @@ const Auth = () => {
       } else {
         setError(error.message);
       }
-    } else {
-      // For email confirmation flow, show success message instead of redirecting immediately
-      setError('Success! Please check your email to confirm your account, then you\'ll be redirected to complete your profile.');
+    } else if (data.user) {
+      // Show success message and redirect immediately since no email confirmation is needed
+      showSuccessMessage(username.trim());
     }
     setLoading(false);
   };
@@ -445,11 +444,7 @@ const Auth = () => {
             )}
 
             {error && (
-              <div className={`text-sm text-center p-3 rounded-lg ${
-                error.includes('Success!') || error.includes('Check your email')
-                  ? 'text-green-400 bg-green-900/20' 
-                  : 'text-red-400 bg-red-900/20'
-              }`}>
+              <div className="text-red-400 bg-red-900/20 text-sm text-center p-3 rounded-lg">
                 {error}
               </div>
             )}
