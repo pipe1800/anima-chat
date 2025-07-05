@@ -16,7 +16,6 @@ const WelcomeModal = ({ isOpen, onClose, username, onBeginQuest }: WelcomeModalP
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="max-w-4xl w-full h-screen max-h-screen bg-[#121212] border-none p-0 overflow-hidden"
-        hideCloseButton={true}
       >
         {/* Single close button */}
         <button
