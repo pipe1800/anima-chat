@@ -32,9 +32,12 @@ const HeroSection = () => {
             <div className="space-y-4 mb-12">
               <Button 
                 size="lg" 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold px-10 py-5 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 min-w-[200px]"
+                style={{
+                  boxShadow: '0 8px 25px rgba(249, 115, 22, 0.3), 0 4px 15px rgba(249, 115, 22, 0.2)'
+                }}
               >
-                Get Started Free
+                Start Chatting
               </Button>
               
               <p className="text-sm text-gray-500">
