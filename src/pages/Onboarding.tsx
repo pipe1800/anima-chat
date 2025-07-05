@@ -75,8 +75,7 @@ const Onboarding = () => {
 
   const handleCharacterSelect = (character: any) => {
     console.log('Selected character:', character);
-    // Navigate to chat with selected character
-    navigate('/', { state: { selectedCharacter: character } });
+    // This will be handled by the CharacterSelection component itself
   };
 
   if (loading) {

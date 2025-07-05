@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -18,6 +18,8 @@ interface CharacterSelectionProps {
 }
 
 const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelectionProps) => {
+  const navigate = useNavigate();
+
   // Character database with vibe associations
   const allCharacters: Character[] = [
     {
@@ -80,6 +82,13 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelec
 
   const recommendedCharacters = getRecommendedCharacters();
 
+  const handleCharacterSelect = (character: Character) => {
+    console.log('Selected character:', character);
+    onCharacterSelect(character);
+    // Navigate to chat with selected character
+    navigate('/chat', { state: { selectedCharacter: character } });
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto text-center px-4">
       {/* Header */}
@@ -102,7 +111,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelec
           <Card
             key={character.id}
             className="relative cursor-pointer transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-[#1a1a2e]/90 via-[#1a1a2e]/80 to-[#16213e]/90 border border-gray-700/50 hover:border-[#FF7A00]/50 backdrop-blur-sm group overflow-hidden"
-            onClick={() => onCharacterSelect(character)}
+            onClick={() => handleCharacterSelect(character)}
             style={{
               animationDelay: `${index * 0.1}s`
             }}
