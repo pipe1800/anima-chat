@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
+import { Eye, EyeOff, Check, X } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(false);
@@ -14,7 +16,21 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successUsername, setSuccessUsername] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
   const navigate = useNavigate();
+
+  // Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    number: false,
+    special: false,
+    touched: false
+  });
 
   useEffect(() => {
     // Check if user is already logged in
@@ -37,6 +53,60 @@ const Auth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Real-time password validation
+  useEffect(() => {
+    if (password || passwordValidation.touched) {
+      setPasswordValidation({
+        length: password.length >= 8,
+        number: /\d/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+        touched: true
+      });
+    }
+  }, [password, passwordValidation.touched]);
+
+  // Check if email exists when user leaves the field
+  const handleEmailBlur = async () => {
+    if (!isLogin && email && emailTouched) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: 'dummy-password-check'
+        });
+        // If we get a specific auth error, it means the email exists
+        if (error && error.message.includes('Invalid login credentials')) {
+          setEmailExists(true);
+        } else {
+          setEmailExists(false);
+        }
+      } catch (err) {
+        setEmailExists(false);
+      }
+    }
+  };
+
+  const handleSocialAuth = async (provider: 'google' | 'discord') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    });
+    
+    if (error) {
+      setError(error.message);
+    }
+  };
+
+  const showSuccessMessage = (username: string) => {
+    setSuccessUsername(username);
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+      navigate('/');
+    }, 3000);
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +135,7 @@ const Auth = () => {
     if (error) {
       setError(error.message);
     } else {
-      setError('Check your email for the confirmation link!');
+      showSuccessMessage(username);
     }
     setLoading(false);
   };
@@ -85,6 +155,72 @@ const Auth = () => {
     }
     setLoading(false);
   };
+
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center relative overflow-hidden">
+        <div className="text-center z-10">
+          <div className="mb-8">
+            <div className="w-32 h-32 mx-auto mb-6 relative">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 animate-spin"></div>
+              <div className="absolute inset-2 rounded-full bg-[#121212] flex items-center justify-center">
+                <Check className="w-12 h-12 text-[#FF7A00]" />
+              </div>
+            </div>
+          </div>
+          
+          <h1 className="text-4xl font-bold text-white mb-2 animate-pulse">
+            Welcome, {successUsername}!
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Account created successfully
+          </p>
+          
+          <div className="mt-8 w-64 mx-auto">
+            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 rounded-full animate-pulse loading-bar"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Glitch effect background */}
+        <div className="absolute inset-0 opacity-20">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-[#FF7A00] opacity-30"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${Math.random() * 200 + 50}px`,
+                height: '2px',
+                animation: `glitch ${0.5 + Math.random() * 1}s infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+        
+        <style>{`
+          @keyframes glitch {
+            0%, 100% { transform: translateX(0) scaleX(1); opacity: 0.3; }
+            25% { transform: translateX(-10px) scaleX(1.2); opacity: 0.8; }
+            50% { transform: translateX(10px) scaleX(0.8); opacity: 0.4; }
+            75% { transform: translateX(-5px) scaleX(1.1); opacity: 0.9; }
+          }
+          
+          .loading-bar {
+            animation: loading 3s ease-out forwards;
+          }
+          
+          @keyframes loading {
+            0% { width: 0%; }
+            100% { width: 100%; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#121212] relative overflow-hidden flex items-center justify-center">
@@ -140,8 +276,36 @@ const Auth = () => {
             </p>
           </div>
 
+          {/* Social Auth Buttons */}
+          <div className="space-y-3 mb-6">
+            <Button
+              type="button"
+              onClick={() => handleSocialAuth('discord')}
+              className="w-full bg-[#5865F2] hover:bg-[#5865F2]/90 text-white font-medium py-3 rounded-lg transition-all duration-300"
+            >
+              Continue with Discord
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSocialAuth('google')}
+              className="w-full bg-white hover:bg-gray-100 text-gray-900 font-medium py-3 rounded-lg transition-all duration-300"
+            >
+              Continue with Google
+            </Button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600/50"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-[#1a1a2e] text-gray-400">or</span>
+            </div>
+          </div>
+
           {/* Form */}
-          <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-6">
+          <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
             {!isLogin && (
               <div>
                 <Input
@@ -158,25 +322,86 @@ const Auth = () => {
             <div>
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder={isLogin ? "Email or Handle" : "Email"}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailTouched(true);
+                  setEmailExists(false);
+                }}
+                onBlur={handleEmailBlur}
                 className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
                 required
               />
+              {!isLogin && emailExists && emailTouched && (
+                <p className="text-red-400 text-sm mt-1 flex items-center">
+                  <X className="w-4 h-4 mr-1" />
+                  Email already claimed, try another!
+                </p>
+              )}
             </div>
             
             <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
-                required
-                minLength={6}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => !isLogin && setPasswordValidation(prev => ({ ...prev, touched: true }))}
+                  className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20 pr-10"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              
+              {/* Password Requirements (Sign-up only) */}
+              {!isLogin && passwordValidation.touched && (
+                <div className="mt-2 space-y-1">
+                  <div className={`text-sm flex items-center ${passwordValidation.length ? 'text-green-400' : 'text-gray-400'}`}>
+                    {passwordValidation.length ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                    8+ characters
+                  </div>
+                  <div className={`text-sm flex items-center ${passwordValidation.number ? 'text-green-400' : 'text-gray-400'}`}>
+                    {passwordValidation.number ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                    1 number
+                  </div>
+                  <div className={`text-sm flex items-center ${passwordValidation.special ? 'text-green-400' : 'text-gray-400'}`}>
+                    {passwordValidation.special ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                    1 special character
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Login-specific elements */}
+            {isLogin && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <label htmlFor="remember" className="text-sm text-gray-300">
+                    Remember Me
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  className="text-sm text-[#FF7A00] hover:text-[#FF7A00]/80 transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className={`text-sm text-center p-3 rounded-lg ${
@@ -207,6 +432,9 @@ const Auth = () => {
                 setUsername('');
                 setEmail('');
                 setPassword('');
+                setEmailExists(false);
+                setEmailTouched(false);
+                setPasswordValidation({ length: false, number: false, special: false, touched: false });
               }}
               className="text-gray-400 hover:text-[#FF7A00] transition-colors underline-offset-4 hover:underline"
             >
