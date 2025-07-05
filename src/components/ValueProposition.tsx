@@ -1,10 +1,10 @@
 
-import { ChainBreak, Palette, Brain } from "lucide-react";
+import { Unlock, Palette, Brain } from "lucide-react";
 
 const ValueProposition = () => {
   const benefits = [
     {
-      icon: ChainBreak,
+      icon: Unlock,
       title: "Truly Uncensored Chat",
       description: "Tired of filters? So are we. Our AI companions say what they mean. Explore any topic, any fantasy, without limits. The only boundary is your imagination."
     },
