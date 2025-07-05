@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -300,7 +299,9 @@ const Auth = () => {
               <div className="w-full border-t border-gray-600/50"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#1a1a2e] text-gray-400">or</span>
+              <span className="px-2 bg-[#1a1a2e] text-gray-400">
+                {isLogin ? 'or' : 'Or sign up with email'}
+              </span>
             </div>
           </div>
 
@@ -308,9 +309,12 @@ const Auth = () => {
           <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
             {!isLogin && (
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Choose Your Handle
+                </label>
                 <Input
                   type="text"
-                  placeholder="Username"
+                  placeholder="e.g., xX_CyberWaifu_Xx"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
@@ -320,6 +324,9 @@ const Auth = () => {
             )}
             
             <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {isLogin ? 'Email or Handle' : 'Email'}
+              </label>
               <Input
                 type="email"
                 placeholder={isLogin ? "Email or Handle" : "Email"}
@@ -342,6 +349,9 @@ const Auth = () => {
             </div>
             
             <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -418,7 +428,7 @@ const Auth = () => {
               disabled={loading}
               className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 text-lg rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5"
             >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create My Account')}
             </Button>
           </form>
 
