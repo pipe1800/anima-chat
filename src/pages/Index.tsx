@@ -2,6 +2,7 @@
 import HeroSection from "@/components/HeroSection";
 import ValueProposition from "@/components/ValueProposition";
 import HowItWorks from "@/components/HowItWorks";
+import CustomerTestimonial from "@/components/CustomerTestimonial";
 
 const Index = () => {
   return (
@@ -9,6 +10,7 @@ const Index = () => {
       <HeroSection />
       <ValueProposition />
       <HowItWorks />
+      <CustomerTestimonial />
     </div>
   );
 };
