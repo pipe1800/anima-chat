@@ -1,0 +1,185 @@
+
+import React from 'react';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  MessageCircle, 
+  Trophy, 
+  Zap, 
+  Star, 
+  TrendingUp,
+  Clock,
+  Users,
+  Sparkles
+} from 'lucide-react';
+
+export function DashboardContent() {
+  return (
+    <div className="min-h-screen bg-[#121212]">
+      {/* Header */}
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <SidebarTrigger className="text-gray-400 hover:text-white" />
+            <div>
+              <h1 className="text-white text-2xl font-bold">Mission Control</h1>
+              <p className="text-gray-400 text-sm">Welcome back, Neural Pilot</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="bg-[#FF7A00]/20 px-4 py-2 rounded-lg border border-[#FF7A00]/30">
+              <div className="flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-[#FF7A00]" />
+                <span className="text-[#FF7A00] font-bold">1,247 Credits</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="p-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Active Chats</p>
+                  <p className="text-white text-2xl font-bold">12</p>
+                </div>
+                <MessageCircle className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Achievements</p>
+                  <p className="text-white text-2xl font-bold">47</p>
+                </div>
+                <Trophy className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Level Progress</p>
+                  <p className="text-white text-2xl font-bold">87%</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Time Online</p>
+                  <p className="text-white text-2xl font-bold">24h</p>
+                </div>
+                <Clock className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Activity */}
+          <Card className="lg:col-span-2 bg-[#1a1a2e] border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-[#FF7A00]" />
+                <span>Recent Neural Activity</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                { character: "Luna", action: "Completed mystical quest", time: "2 min ago", avatar: "L" },
+                { character: "Zyx", action: "Unlocked time travel achievement", time: "15 min ago", avatar: "Z" },
+                { character: "Sakura", action: "Started adventure sequence", time: "1 hour ago", avatar: "S" },
+                { character: "Raven", action: "Discovered hidden knowledge", time: "3 hours ago", avatar: "R" },
+              ].map((activity, index) => (
+                <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-[#121212] border border-gray-700/30">
+                  <Avatar className="w-10 h-10 ring-2 ring-[#FF7A00]/50">
+                    <AvatarImage src="/placeholder.svg" alt={activity.character} />
+                    <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                      {activity.avatar}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{activity.character}</p>
+                    <p className="text-gray-400 text-xs">{activity.action}</p>
+                  </div>
+                  <span className="text-gray-500 text-xs">{activity.time}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="bg-[#1a1a2e] border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <Zap className="w-5 h-5 text-[#FF7A00]" />
+                <span>Quick Launch</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Start New Chat
+              </Button>
+              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+                <Users className="w-4 h-4 mr-2" />
+                Browse Characters
+              </Button>
+              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+                <Trophy className="w-4 h-4 mr-2" />
+                View Achievements
+              </Button>
+              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+                <Star className="w-4 h-4 mr-2" />
+                Upgrade Plan
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Achievement Showcase */}
+        <Card className="bg-[#1a1a2e] border-gray-700/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center space-x-2">
+              <Trophy className="w-5 h-5 text-[#FF7A00]" />
+              <span>Recent Achievements</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { title: "First Contact", description: "Started your first conversation", icon: MessageCircle },
+                { title: "Explorer", description: "Chatted with 5 different characters", icon: Users },
+                { title: "Time Master", description: "Spent 10 hours in conversations", icon: Clock },
+              ].map((achievement, index) => (
+                <div key={index} className="p-4 rounded-lg bg-gradient-to-br from-[#FF7A00]/20 to-[#FF7A00]/5 border border-[#FF7A00]/30">
+                  <achievement.icon className="w-8 h-8 text-[#FF7A00] mb-2" />
+                  <h3 className="text-white font-semibold text-sm">{achievement.title}</h3>
+                  <p className="text-gray-400 text-xs">{achievement.description}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
