@@ -41,7 +41,7 @@ const HeroSection = () => {
                   boxShadow: '0 8px 32px rgba(255, 122, 0, 0.4), 0 4px 16px rgba(255, 122, 0, 0.3)'
                 }}
               >
-                Start Your Adventure
+                Unleash My AI
               </Button>
               
               <p className="text-sm sm:text-base text-gray-400">
