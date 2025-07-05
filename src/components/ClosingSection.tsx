@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const ClosingSection = () => {
   return (
@@ -20,15 +21,17 @@ const ClosingSection = () => {
           </p>
 
           {/* Call-to-Action Button */}
-          <Button 
-            size="lg" 
-            className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px]"
-            style={{
-              boxShadow: '0 8px 25px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(255, 122, 0, 0.2)'
-            }}
-          >
-            Unleash My AI
-          </Button>
+          <Link to="/auth">
+            <Button 
+              size="lg" 
+              className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px]"
+              style={{
+                boxShadow: '0 8px 25px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(255, 122, 0, 0.2)'
+              }}
+            >
+              Unleash My AI
+            </Button>
+          </Link>
 
           {/* Trust-building text */}
           <p className="text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
