@@ -86,12 +86,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
       
       // Show celebratory toast
       toast({
-        title: (
-          <div className="flex items-center space-x-2">
-            <Trophy className="w-5 h-5 text-[#FF7A00]" />
-            <span>Achievement Unlocked: First Contact!</span>
-          </div>
-        ),
+        title: "🏆 Achievement Unlocked: First Contact!",
         description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
         duration: 5000,
       });
