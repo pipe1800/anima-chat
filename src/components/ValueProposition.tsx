@@ -34,7 +34,7 @@ const ValueProposition = () => {
         </div>
 
         {/* Benefits Grid */}
-        <div className="grid md:grid-cols-3 gap-12 md:gap-8">
+        <div className="grid md:grid-cols-3 gap-12 md:gap-8 mb-20">
           {benefits.map((benefit, index) => (
             <div key={index} className="text-center group">
               {/* Icon */}
@@ -55,6 +55,35 @@ const ValueProposition = () => {
               </p>
             </div>
           ))}
+        </div>
+
+        {/* Visual Demonstration Subsection */}
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Text Content */}
+          <div>
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+              See It In Action
+            </h3>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Watch how easy it is to start a conversation with our AI characters. Simply type your message and get instant, personalized responses that adapt to the character's unique personality and your conversation style.
+            </p>
+          </div>
+
+          {/* Right Column - Video Placeholder */}
+          <div className="relative">
+            <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-lg flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
+                  <div className="w-0 h-0 border-l-[12px] border-l-gray-600 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-1"></div>
+                </div>
+                <p className="text-gray-500 font-medium">Demo Video</p>
+                <p className="text-sm text-gray-400 mt-1">Interactive AI Chat Preview</p>
+              </div>
+            </div>
+            
+            {/* Optional: Add a subtle animation to make it more engaging */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 animate-pulse opacity-40"></div>
+          </div>
         </div>
       </div>
     </section>
