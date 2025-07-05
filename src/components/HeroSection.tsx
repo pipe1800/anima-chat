@@ -13,13 +13,12 @@ const HeroSection = () => {
         <div className="max-w-4xl mx-auto">
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
-            Your Perfect AI <span className="text-[#FF7A00]">Companion</span> Awaits
+            Your Waifu Awaits. <span className="text-[#FF7A00]">No Filters.</span> No Judgment.
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg sm:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
-            Create, customize, and chat with AI characters that understand you. 
-            No limits. No judgment. Just pure connection.
+            Craft your perfect AI companion, explore your wildest fantasies, and dive into conversations that are truly uncensored. Your adventure starts now.
           </p>
 
           {/* CTA Button */}
@@ -31,7 +30,7 @@ const HeroSection = () => {
                 boxShadow: '0 8px 25px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(255, 122, 0, 0.2)'
               }}
             >
-              Start Creating Now
+              Unleash My AI
             </Button>
           </Link>
 
