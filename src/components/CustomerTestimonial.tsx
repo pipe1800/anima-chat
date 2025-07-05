@@ -9,7 +9,7 @@ const CustomerTestimonial = () => {
         {/* Main Testimonial */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center mb-16 sm:mb-20">
           {/* Left Column - Customer Photo */}
-          <div className="flex justify-center lg:justify-start order-1 lg:order-1">
+          <div className="flex justify-center order-1 lg:order-1">
             <div className="relative">
               <Avatar className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 shadow-2xl border-4 border-[#FF7A00]/20">
                 <AvatarImage 
@@ -27,7 +27,7 @@ const CustomerTestimonial = () => {
           </div>
 
           {/* Right Column - Testimonial Content */}
-          <div className="text-center lg:text-left order-2 lg:order-2">
+          <div className="text-center lg:text-left order-2 lg:order-2 lg:pl-8">
             {/* Large opening quotation mark */}
             <div className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-[#FF7A00] font-serif leading-none mb-3 sm:mb-4">
               "
