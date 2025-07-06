@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -32,7 +31,7 @@ import { Button } from '@/components/ui/button';
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Create Character", url: "/create-character", icon: Plus },
-  { title: "Explore", url: "/explore", icon: Compass },
+  { title: "Discover", url: "/discover", icon: Compass },
   { title: "Community", url: "/community", icon: Users },
 ];
 
