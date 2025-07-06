@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   MessageCircle, 
   Trophy, 
@@ -16,7 +18,8 @@ import {
   Plus,
   Edit,
   Share,
-  CreditCard
+  CreditCard,
+  CheckCircle
 } from 'lucide-react';
 
 const recentChats = [
@@ -28,7 +31,7 @@ const recentChats = [
       image: "/placeholder.svg"
     },
     lastMessage: "The moonlight reveals ancient secrets hidden in the shadows...",
-    timestamp: "2 hours ago"
+    timestamp: "2m ago"
   },
   {
     id: 2,
@@ -38,7 +41,7 @@ const recentChats = [
       image: "/placeholder.svg"
     },
     lastMessage: "Time bends around us as we navigate the quantum realm together.",
-    timestamp: "5 hours ago"
+    timestamp: "5m ago"
   },
   {
     id: 3,
@@ -48,7 +51,27 @@ const recentChats = [
       image: "/placeholder.svg"
     },
     lastMessage: "Cherry blossoms fall like memories in the wind...",
-    timestamp: "1 day ago"
+    timestamp: "1h ago"
+  },
+  {
+    id: 4,
+    character: {
+      name: "Aria",
+      avatar: "A",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "The ancient spell requires three rare ingredients from the forgotten realm.",
+    timestamp: "3h ago"
+  },
+  {
+    id: 5,
+    character: {
+      name: "Neo",
+      avatar: "N",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "The matrix simulation is glitching again. We need to find the source code.",
+    timestamp: "1d ago"
   }
 ];
 
@@ -58,28 +81,42 @@ const myCharacters = [
     name: "Vex",
     avatar: "V",
     image: "/placeholder.svg",
-    description: "A mysterious shadow warrior"
+    totalChats: 23
   },
   {
     id: 2,
     name: "Phoenix",
     avatar: "P",
     image: "/placeholder.svg",
-    description: "Rising from digital ashes"
+    totalChats: 15
   },
   {
     id: 3,
     name: "Mystic",
     avatar: "M",
     image: "/placeholder.svg",
-    description: "Guardian of ancient wisdom"
+    totalChats: 31
   },
   {
     id: 4,
     name: "Cipher",
     avatar: "C",
     image: "/placeholder.svg",
-    description: "Master of encrypted secrets"
+    totalChats: 8
+  },
+  {
+    id: 5,
+    name: "Echo",
+    avatar: "E",
+    image: "/placeholder.svg",
+    totalChats: 42
+  },
+  {
+    id: 6,
+    name: "Raven",
+    avatar: "R",
+    image: "/placeholder.svg",
+    totalChats: 19
   }
 ];
 
@@ -120,7 +157,7 @@ export function DashboardContent() {
   return (
     <div className="min-h-screen bg-[#121212]">
       {/* Header Section */}
-      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6">
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           {/* Left side - Welcome Message */}
           <div className="flex items-center space-x-4">
@@ -152,6 +189,31 @@ export function DashboardContent() {
 
       {/* Main Content */}
       <div className="p-6 space-y-6">
+        {/* Daily Quest Widget */}
+        <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white flex items-center space-x-2">
+              <Trophy className="w-5 h-5 text-[#FF7A00]" />
+              <span>Daily Quest</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-white text-lg mb-2">Start a conversation with a character tagged #Sci-Fi</p>
+                <p className="text-[#FF7A00] font-semibold">Reward: 25 Credits</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-32">
+                  <Progress value={0} className="h-2" />
+                  <p className="text-xs text-gray-400 mt-1">0/1 completed</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-gray-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Tabbed Widget */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
           <CardHeader className="pb-4">
@@ -182,39 +244,36 @@ export function DashboardContent() {
 
               {/* Recent Chats Tab */}
               <TabsContent value="recent-chats" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-3">
                   {recentChats.map((chat) => (
                     <Card
                       key={chat.id}
-                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer"
+                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="w-10 h-10 ring-2 ring-[#FF7A00]/50">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
                             <AvatarImage src={chat.character.image} alt={chat.character.name} />
                             <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
                               {chat.character.avatar}
                             </AvatarFallback>
                           </Avatar>
+                          
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-semibold text-sm mb-1">
+                            <h3 className="text-white font-bold text-lg mb-1">
                               {chat.character.name}
                             </h3>
-                            <p className="text-gray-400 text-xs line-clamp-2 mb-2">
+                            <p className="text-gray-400 text-sm line-clamp-1">
                               {chat.lastMessage}
                             </p>
-                            <p className="text-gray-500 text-xs">
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="text-gray-500 text-sm">
                               {chat.timestamp}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          className="w-full mt-3 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          size="sm"
-                        >
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Continue
-                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -223,57 +282,36 @@ export function DashboardContent() {
 
               {/* My Characters Tab */}
               <TabsContent value="my-characters" className="mt-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* Create New Character Card */}
-                  <Card className="aspect-square bg-gradient-to-br from-[#FF7A00]/20 to-[#FF7A00]/5 border-2 border-[#FF7A00] border-dashed hover:border-solid hover:shadow-lg hover:shadow-[#FF7A00]/30 transition-all duration-300 group cursor-pointer">
-                    <CardContent className="p-4 h-full flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 bg-[#FF7A00]/20 rounded-full flex items-center justify-center mb-3 group-hover:bg-[#FF7A00]/30 transition-colors">
-                        <Plus className="w-6 h-6 text-[#FF7A00]" />
-                      </div>
-                      <h3 className="text-white font-semibold text-sm mb-1">Create New</h3>
-                      <h3 className="text-[#FF7A00] font-bold text-sm">Character</h3>
-                    </CardContent>
-                  </Card>
-
-                  {/* Existing Characters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {myCharacters.map((character) => (
                     <Card
                       key={character.id}
-                      className="aspect-square bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer"
+                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
                     >
-                      <CardContent className="p-4 h-full flex flex-col items-center justify-center relative">
-                        <Avatar className="w-16 h-16 mb-3 ring-2 ring-gray-600 group-hover:ring-[#FF7A00]/50 transition-all">
+                      <CardContent className="p-4 text-center">
+                        <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
                           <AvatarImage src={character.image} alt={character.name} />
                           <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
                             {character.avatar}
                           </AvatarFallback>
                         </Avatar>
-                        <h3 className="text-white font-semibold text-sm text-center mb-1">
+                        
+                        <h3 className="text-white font-bold text-lg mb-2">
                           {character.name}
                         </h3>
-                        <p className="text-gray-400 text-xs text-center">
-                          {character.description}
+                        
+                        <p className="text-gray-400 text-sm mb-3">
+                          {character.totalChats} total chats
                         </p>
                         
-                        {/* Hover Actions */}
-                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-gray-500 text-gray-300 hover:border-[#FF7A00] hover:text-[#FF7A00] hover:bg-transparent"
-                          >
-                            <Edit className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-gray-500 text-gray-300 hover:border-[#FF7A00] hover:text-[#FF7A00] hover:bg-transparent"
-                          >
-                            <Share className="w-3 h-3 mr-1" />
-                            Share
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
