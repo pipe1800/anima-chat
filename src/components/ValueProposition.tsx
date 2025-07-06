@@ -41,21 +41,21 @@ const ValueProposition = () => {
               <div className={`relative ${index % 2 === 1 ? 'lg:col-start-2' : ''}`}>
                 <div className="relative w-full max-w-md mx-auto">
                   {/* Large Background Circle */}
-                  <div className="w-80 h-80 mx-auto bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 rounded-full flex items-center justify-center relative">
+                  <div className="w-40 h-40 mx-auto bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 rounded-full flex items-center justify-center relative">
                     {/* Inner Circle */}
-                    <div className="w-48 h-48 bg-[#1a1a2e] border-2 border-[#FF7A00]/30 rounded-full flex items-center justify-center relative">
+                    <div className="w-24 h-24 bg-[#1a1a2e] border-2 border-[#FF7A00]/30 rounded-full flex items-center justify-center relative">
                       <benefit.icon 
-                        className="w-20 h-20 text-[#FF7A00] filter drop-shadow-[0_0_12px_rgba(255,122,0,0.8)]" 
+                        className="w-10 h-10 text-[#FF7A00] filter drop-shadow-[0_0_12px_rgba(255,122,0,0.8)]" 
                         strokeWidth={1}
                       />
                       {/* Animated rings */}
                       <div className="absolute inset-0 rounded-full border border-[#FF7A00]/20 animate-pulse"></div>
-                      <div className="absolute inset-[-8px] rounded-full border border-[#FF7A00]/10 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute inset-[-4px] rounded-full border border-[#FF7A00]/10 animate-pulse" style={{ animationDelay: '1s' }}></div>
                     </div>
                     {/* Floating particles */}
-                    <div className="absolute top-8 right-8 w-3 h-3 bg-[#FF7A00]/60 rounded-full animate-pulse"></div>
-                    <div className="absolute bottom-12 left-12 w-2 h-2 bg-[#FF7A00]/40 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-                    <div className="absolute top-16 left-8 w-1 h-1 bg-[#FF7A00]/50 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
+                    <div className="absolute top-4 right-4 w-3 h-3 bg-[#FF7A00]/60 rounded-full animate-pulse"></div>
+                    <div className="absolute bottom-6 left-6 w-2 h-2 bg-[#FF7A00]/40 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+                    <div className="absolute top-8 left-4 w-1 h-1 bg-[#FF7A00]/50 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
                   </div>
                 </div>
               </div>
