@@ -4,6 +4,7 @@ import { SubscriptionHero } from '@/components/subscription/SubscriptionHero';
 import { SubscriptionPricing } from '@/components/subscription/SubscriptionPricing';
 import { FeatureComparisonTable } from '@/components/subscription/FeatureComparisonTable';
 import { SubscriptionTestimonials } from '@/components/subscription/SubscriptionTestimonials';
+import { TrustBadges } from '@/components/subscription/TrustBadges';
 import { SubscriptionFAQ } from '@/components/subscription/SubscriptionFAQ';
 
 const Subscription = () => {
@@ -21,6 +22,9 @@ const Subscription = () => {
         
         {/* Testimonials Section */}
         <SubscriptionTestimonials />
+        
+        {/* Trust Badges */}
+        <TrustBadges />
         
         {/* FAQ Section */}
         <SubscriptionFAQ />
