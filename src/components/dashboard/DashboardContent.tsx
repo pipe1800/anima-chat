@@ -13,7 +13,10 @@ import {
   TrendingUp,
   Clock,
   Users,
-  Sparkles
+  Sparkles,
+  Plus,
+  Edit,
+  Share
 } from 'lucide-react';
 
 const recentConversations = [
@@ -56,6 +59,39 @@ const recentConversations = [
     },
     lastMessage: "The darkness holds answers that light cannot provide.",
     timestamp: "2 days ago"
+  }
+];
+
+const userCreatedCharacters = [
+  {
+    id: 1,
+    name: "Vex",
+    avatar: "V",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 2,
+    name: "Phoenix",
+    avatar: "P",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 3,
+    name: "Mystic",
+    avatar: "M",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 4,
+    name: "Cipher",
+    avatar: "C",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 5,
+    name: "Nova",
+    avatar: "N",
+    image: "/placeholder.svg"
   }
 ];
 
@@ -128,6 +164,63 @@ export function DashboardContent() {
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
+        </div>
+
+        {/* Your Creations Section */}
+        <div className="space-y-4">
+          <h2 className="text-white text-3xl font-bold">Your Creations</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {/* Create New Legend CTA Card */}
+            <Card className="aspect-square bg-gradient-to-br from-[#FF7A00]/20 to-[#FF7A00]/5 border-2 border-[#FF7A00] border-dashed hover:border-solid hover:shadow-lg hover:shadow-[#FF7A00]/30 transition-all duration-300 group cursor-pointer">
+              <CardContent className="p-4 h-full flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-[#FF7A00]/20 rounded-full flex items-center justify-center mb-3 group-hover:bg-[#FF7A00]/30 transition-colors">
+                  <Plus className="w-6 h-6 text-[#FF7A00]" />
+                </div>
+                <h3 className="text-white font-semibold text-sm mb-1">Create a</h3>
+                <h3 className="text-[#FF7A00] font-bold text-sm">New Legend</h3>
+              </CardContent>
+            </Card>
+
+            {/* User Created Characters */}
+            {userCreatedCharacters.map((character) => (
+              <Card
+                key={character.id}
+                className="aspect-square bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer"
+              >
+                <CardContent className="p-4 h-full flex flex-col items-center justify-center relative">
+                  <Avatar className="w-16 h-16 mb-3 ring-2 ring-gray-600 group-hover:ring-[#FF7A00]/50 transition-all">
+                    <AvatarImage src={character.image} alt={character.name} />
+                    <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
+                      {character.avatar}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="text-white font-semibold text-sm text-center">
+                    {character.name}
+                  </h3>
+                  
+                  {/* Hover Actions */}
+                  <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-500 text-gray-300 hover:border-[#FF7A00] hover:text-[#FF7A00] hover:bg-transparent"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-500 text-gray-300 hover:border-[#FF7A00] hover:text-[#FF7A00] hover:bg-transparent"
+                    >
+                      <Share className="w-3 h-3 mr-1" />
+                      Share
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* Stats Grid */}
