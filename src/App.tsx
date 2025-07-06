@@ -13,6 +13,7 @@ import Chat from "./pages/Chat";
 import CharacterCreator from "./pages/CharacterCreator";
 import UserProfile from "./pages/UserProfile";
 import Subscription from "./pages/Subscription";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/character-creator" element={<CharacterCreator />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
