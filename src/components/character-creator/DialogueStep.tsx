@@ -132,7 +132,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-blue-400" />
                         <Label className="text-blue-400 font-medium">
-                          {{user}} message
+                          {'{{user}}'} message
                         </Label>
                       </div>
                       <Textarea
@@ -149,7 +149,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       <div className="flex items-center gap-2">
                         <Bot className="w-4 h-4 text-[#FF7A00]" />
                         <Label className="text-[#FF7A00] font-medium">
-                          {{char}} response
+                          {'{{char}}'} response
                         </Label>
                       </div>
                       <Textarea
