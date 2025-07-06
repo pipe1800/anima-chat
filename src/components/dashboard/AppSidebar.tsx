@@ -23,7 +23,6 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -52,7 +51,10 @@ export function AppSidebar() {
     }`;
 
   return (
-    <Sidebar className={`${isCollapsed ? 'w-14' : 'w-64'} border-r border-gray-700/50 bg-[#1b1b1b]`}>
+    <Sidebar 
+      className="border-r border-gray-700/50 bg-[#1b1b1b]"
+      collapsible="icon"
+    >
       <SidebarHeader className="border-b border-gray-700/50 p-4">
         {/* App Logo */}
         <div className="flex items-center justify-center mb-4">
@@ -95,11 +97,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink 
                       to={item.url} 
                       className={getNavClasses(isActive(item.url))}
-                      title={isCollapsed ? item.title : undefined}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && <span className="font-medium">{item.title}</span>}
@@ -114,11 +115,10 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-gray-700/50 p-4 space-y-2">
         {/* Settings Link */}
-        <SidebarMenuButton asChild>
+        <SidebarMenuButton asChild tooltip={isCollapsed ? "Settings" : undefined}>
           <NavLink 
             to="/settings" 
             className={getNavClasses(isActive('/settings'))}
-            title={isCollapsed ? "Settings" : undefined}
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span className="font-medium">Settings</span>}
