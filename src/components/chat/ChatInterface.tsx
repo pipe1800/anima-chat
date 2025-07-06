@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Plus, Pencil, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -76,6 +77,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setIsTyping(true);
 
     if (isFirstMessage) {
       setIsFirstMessage(false);
@@ -89,6 +91,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
     }
 
     setTimeout(() => {
+      setIsTyping(false);
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: getAIResponse(inputValue, character.id),
@@ -96,7 +99,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    }, 2000);
   };
 
   const getAIResponse = (userInput: string, characterId: string) => {
@@ -112,31 +115,83 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+              <AvatarImage src={character.avatar} alt={character.name} />
+              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                {character.fallback}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div>
+              <h1 className="text-white font-bold text-lg">{character.name}</h1>
+              {isTyping && (
+                <div className="flex items-center space-x-1 text-gray-400 text-sm">
+                  <div className="flex space-x-1">
+                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="ml-2">typing...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Pencil className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif]">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}
           >
-            <div className={`flex space-x-3 max-w-[80%] ${message.isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+            <div className={`flex space-x-3 max-w-[75%] ${message.isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
               {!message.isUser && (
-                <Avatar className="w-8 h-8 flex-shrink-0">
+                <Avatar className="w-10 h-10 flex-shrink-0 mt-1">
                   <AvatarImage src={character.avatar} alt={character.name} />
-                  <AvatarFallback className="bg-[#FF7A00] text-white text-xs font-bold">
+                  <AvatarFallback className="bg-[#FF7A00] text-white text-sm font-bold">
                     {character.fallback}
                   </AvatarFallback>
                 </Avatar>
               )}
               
               <div
-                className={`px-4 py-3 rounded-2xl ${
+                className={`px-5 py-3 rounded-2xl ${
                   message.isUser
-                    ? 'bg-[#FF7A00] text-white rounded-br-md'
-                    : 'bg-[#1a1a2e] text-white border border-gray-700/50 rounded-bl-md'
+                    ? 'bg-[#2A2A2A] text-white rounded-br-md'
+                    : 'bg-[#1E1E1E] text-white rounded-bl-md'
                 }`}
               >
-                <p className="text-sm leading-relaxed">{message.content}</p>
+                <p className="text-[15px] leading-relaxed">{message.content}</p>
               </div>
             </div>
           </div>
@@ -153,7 +208,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`Message ${character.name}...`}
-            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all"
+            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif]"
           />
           <Button 
             type="submit" 
