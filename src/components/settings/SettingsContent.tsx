@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ProfileSettings } from './categories/ProfileSettings';
 import { AccountSettings } from './categories/AccountSettings';
 import { NotificationSettings } from './categories/NotificationSettings';
 import { BillingSettings } from './categories/BillingSettings';
@@ -12,7 +13,7 @@ export const SettingsContent = ({ activeCategory }: SettingsContentProps) => {
   const renderContent = () => {
     switch (activeCategory) {
       case 'profile':
-        return <AccountSettings />;
+        return <ProfileSettings />;
       case 'account':
         return <AccountSettings />;
       case 'billing':
@@ -20,7 +21,7 @@ export const SettingsContent = ({ activeCategory }: SettingsContentProps) => {
       case 'notifications':
         return <NotificationSettings />;
       default:
-        return <AccountSettings />;
+        return <ProfileSettings />;
     }
   };
 
