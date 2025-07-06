@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { User, MessageCircle, Heart, Sparkles } from 'lucide-react';
 
 interface FinalizeStepProps {
