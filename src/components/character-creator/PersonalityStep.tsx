@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { X, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface PersonalityStepProps {
   data: any;
@@ -17,7 +18,10 @@ interface PersonalityStepProps {
 const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStepProps) => {
   const [corePersonality, setCorePersonality] = useState(data.personality?.core_personality || '');
   const [personalityTags, setPersonalityTags] = useState<string[]>(data.personality?.tags || []);
+  const [knowledgeBase, setKnowledgeBase] = useState(data.personality?.knowledge_base || '');
+  const [scenarioDefinition, setScenarioDefinition] = useState(data.personality?.scenario_definition || '');
   const [newTag, setNewTag] = useState('');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   const addTag = () => {
     if (newTag.trim() && !personalityTags.includes(newTag.trim())) {
@@ -41,7 +45,9 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
     onUpdate({
       personality: {
         core_personality: corePersonality,
-        tags: personalityTags
+        tags: personalityTags,
+        knowledge_base: knowledgeBase,
+        scenario_definition: scenarioDefinition
       }
     });
     onNext();
@@ -133,6 +139,58 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
               </div>
             )}
           </div>
+
+          {/* Advanced Personality Collapsible Section */}
+          <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+            <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
+              <div className="flex items-center gap-2 text-white text-xl font-medium hover:text-[#FF7A00] transition-colors">
+                {isAdvancedOpen ? (
+                  <ChevronDown className="w-5 h-5" />
+                ) : (
+                  <ChevronRight className="w-5 h-5" />
+                )}
+                Advanced Personality
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-6 mt-4">
+              {/* Knowledge Base */}
+              <div className="space-y-4">
+                <Label htmlFor="knowledge-base" className="text-white text-lg font-medium block">
+                  Knowledge Base
+                </Label>
+                <Textarea
+                  id="knowledge-base"
+                  placeholder="Input specific facts, lore, or world-building information the character should know. This helps create more authentic and consistent responses based on their background."
+                  value={knowledgeBase}
+                  onChange={(e) => setKnowledgeBase(e.target.value)}
+                  rows={5}
+                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
+                />
+                <p className="text-sm text-gray-500">
+                  Optional: Add any specific knowledge, background, or world details your character should be aware of.
+                </p>
+              </div>
+
+              {/* Scenario Definition */}
+              <div className="space-y-4">
+                <Label htmlFor="scenario-definition" className="text-white text-lg font-medium block">
+                  Scenario Definition
+                </Label>
+                <Textarea
+                  id="scenario-definition"
+                  placeholder="e.g., When the user is sad, the character becomes more gentle and supportive. When challenged, the character becomes competitive."
+                  value={scenarioDefinition}
+                  onChange={(e) => setScenarioDefinition(e.target.value)}
+                  rows={5}
+                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
+                />
+                <p className="text-sm text-gray-500">
+                  Optional: Define how your character should behave in specific situations or contexts.
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Helpful Examples */}
           <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
