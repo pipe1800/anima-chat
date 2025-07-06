@@ -4,6 +4,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
   MessageCircle, 
   Trophy, 
@@ -14,6 +15,49 @@ import {
   Users,
   Sparkles
 } from 'lucide-react';
+
+const recentConversations = [
+  {
+    id: 1,
+    character: {
+      name: "Luna",
+      avatar: "L",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "The moonlight reveals ancient secrets hidden in the shadows...",
+    timestamp: "2 hours ago"
+  },
+  {
+    id: 2,
+    character: {
+      name: "Zyx",
+      avatar: "Z",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "Time bends around us as we navigate the quantum realm together.",
+    timestamp: "5 hours ago"
+  },
+  {
+    id: 3,
+    character: {
+      name: "Sakura",
+      avatar: "S",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "Cherry blossoms fall like memories in the wind...",
+    timestamp: "1 day ago"
+  },
+  {
+    id: 4,
+    character: {
+      name: "Raven",
+      avatar: "R",
+      image: "/placeholder.svg"
+    },
+    lastMessage: "The darkness holds answers that light cannot provide.",
+    timestamp: "2 days ago"
+  }
+];
 
 export function DashboardContent() {
   return (
@@ -41,6 +85,51 @@ export function DashboardContent() {
 
       {/* Main Content */}
       <div className="p-6 space-y-6">
+        {/* Continue Your Adventure Section */}
+        <div className="space-y-4">
+          <h2 className="text-white text-3xl font-bold">Jump Back In</h2>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex space-x-4 pb-4">
+              {recentConversations.map((conversation) => (
+                <Card
+                  key={conversation.id}
+                  className="w-80 flex-shrink-0 bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+                        <AvatarImage src={conversation.character.image} alt={conversation.character.name} />
+                        <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                          {conversation.character.avatar}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-semibold text-lg mb-2">
+                          {conversation.character.name}
+                        </h3>
+                        <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                          {conversation.lastMessage}
+                        </p>
+                        <p className="text-gray-500 text-xs mb-4">
+                          {conversation.timestamp}
+                        </p>
+                        <Button
+                          className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          size="sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Continue Chat
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
