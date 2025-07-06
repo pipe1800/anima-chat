@@ -4,12 +4,17 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 
-const PricingTiers = () => {
+interface PricingTiersProps {
+  isYearly?: boolean;
+}
+
+const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
   const pricingTiers = [
     {
       name: "The Guest Pass",
-      price: "$0",
-      period: "month",
+      monthlyPrice: "$0",
+      yearlyPrice: "$0",
+      period: isYearly ? "year" : "month",
       features: [
         "Limited Daily Messages",
         "Standard AI Models",
@@ -19,12 +24,14 @@ const PricingTiers = () => {
       ],
       ctaText: "Start for Free",
       ctaVariant: "outline" as const,
-      popular: false
+      popular: false,
+      savings: null
     },
     {
       name: "True Fan",
-      price: "$14.95",
-      period: "month",
+      monthlyPrice: "$14.95",
+      yearlyPrice: "$143.52",
+      period: isYearly ? "year" : "month",
       features: [
         "Unlimited Messages",
         "Access to Premium AI Models",
@@ -35,12 +42,14 @@ const PricingTiers = () => {
       ],
       ctaText: "Become a True Fan",
       ctaVariant: "default" as const,
-      popular: true
+      popular: true,
+      savings: "Save 20%"
     },
     {
       name: "The Whale",
-      price: "$24.95",
-      period: "month",
+      monthlyPrice: "$24.95",
+      yearlyPrice: "$239.52",
+      period: isYearly ? "year" : "month",
       features: [
         "All 'True Fan' benefits",
         "Priority Access to Experimental Models",
@@ -50,7 +59,8 @@ const PricingTiers = () => {
       ],
       ctaText: "Go All In",
       ctaVariant: "default" as const,
-      popular: false
+      popular: false,
+      savings: "Save 20%"
     }
   ];
 
@@ -84,6 +94,15 @@ const PricingTiers = () => {
                 </div>
               )}
 
+              {/* Savings Badge */}
+              {isYearly && tier.savings && (
+                <div className="absolute -top-3 right-4 z-10">
+                  <Badge className="bg-green-600 text-white px-3 py-1 text-xs font-bold">
+                    {tier.savings}
+                  </Badge>
+                </div>
+              )}
+
               {/* Pricing Card */}
               <Card 
                 className={`h-full bg-[#1a1a2e] border-2 transition-all duration-300 hover:shadow-xl ${
@@ -101,7 +120,7 @@ const PricingTiers = () => {
                   {/* Price */}
                   <div className="mb-4">
                     <span className="text-4xl sm:text-5xl font-bold text-[#FF7A00]">
-                      {tier.price}
+                      {isYearly ? tier.yearlyPrice : tier.monthlyPrice}
                     </span>
                     <span className="text-lg text-gray-400 ml-2">
                       / {tier.period}
