@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Discover from "./pages/Discover";
 import Chat from "./pages/Chat";
 import CharacterCreator from "./pages/CharacterCreator";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/discover" element={<Discover />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/character-creator" element={<CharacterCreator />} />
+          <Route path="/profile" element={<UserProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
