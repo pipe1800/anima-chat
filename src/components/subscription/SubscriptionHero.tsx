@@ -7,18 +7,16 @@ export const SubscriptionHero = () => {
       <div className="max-w-4xl mx-auto">
         {/* Main Headline */}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-          Unlock Your
-          <span className="text-[#FF7A00] block">AI Character Universe</span>
+          Choose Your Power Level
         </h1>
         
-        {/* Subheadline */}
-        <p className="text-xl sm:text-2xl text-gray-300 mb-8 leading-relaxed max-w-3xl mx-auto">
-          Choose the perfect plan to bring your wildest AI fantasies to life. 
-          No limits, no censorship, just pure creative freedom.
+        {/* Supporting Headline */}
+        <p className="text-xl sm:text-2xl text-gray-400 mb-8 leading-relaxed max-w-3xl mx-auto">
+          The free experience is just the beginning. Unleash the true potential of your AI companions and support the simulation.
         </p>
         
         {/* Trust Indicators */}
-        <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-400">
+        <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-400 mt-12">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-[#FF7A00] rounded-full"></div>
             <span>14-day money-back guarantee</span>
