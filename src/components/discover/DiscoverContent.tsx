@@ -34,6 +34,12 @@ export function DiscoverContent() {
         setFilterBy={setFilterBy}
       />
 
+      {/* Main Headline Section */}
+      <div className="px-6 py-8 text-center">
+        <h1 className="text-white text-4xl font-bold mb-3">Explore the Multiverse</h1>
+        <p className="text-gray-400 text-lg">Find your next obsession. Thousands of AI companions are waiting.</p>
+      </div>
+
       {/* Character Grid */}
       <CharacterGrid
         searchQuery={searchQuery}

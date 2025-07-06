@@ -40,14 +40,14 @@ export function DiscoverControlBar({
       <div className="p-6">
         {/* Main Control Row */}
         <div className="flex items-center justify-between space-x-6 mb-4">
-          {/* Search Bar */}
+          {/* Enhanced Search Bar */}
           <div className="flex-1 max-w-2xl relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
             <Input
-              placeholder="Search characters, traits, or creators..."
+              placeholder="Search by name, tag, or creator..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 bg-[#1a1a2e] border-gray-700/50 text-white placeholder-gray-400 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20 h-12"
+              className="pl-12 pr-4 h-14 bg-[#2a2a2a] border-gray-600/50 text-white placeholder-gray-400 text-lg focus:border-[#FF7A00] focus:ring-2 focus:ring-[#FF7A00]/30 focus:bg-[#2a2a2a] transition-all duration-200"
             />
           </div>
 
