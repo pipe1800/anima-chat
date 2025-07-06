@@ -16,13 +16,13 @@ interface CreationStepsHeaderProps {
 
 const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationStepsHeaderProps) => {
   return (
-    <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
+    <div className="bg-[#1a1a2e]/90 backdrop-blur-sm p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Character Creator
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm sm:text-base">
             Create your AI character in {steps.length} simple steps
           </p>
         </div>
@@ -30,7 +30,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
         {/* Steps Progress Bar */}
         <div className="flex items-center justify-between relative">
           {/* Progress Line */}
-          <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-600 -z-10">
+          <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-600 -z-10 hidden sm:block">
             <div 
               className="h-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 transition-all duration-500"
               style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
@@ -47,11 +47,11 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                 key={step.id}
                 className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${
                   isCurrent ? 'transform scale-105' : ''
-                }`}
+                } flex-1 sm:flex-none`}
                 onClick={() => onStepChange(step.id)}
               >
                 {/* Step Circle */}
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 mb-3 ${
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 mb-2 sm:mb-3 ${
                   isCompleted
                     ? 'bg-green-500 text-white shadow-lg'
                     : isCurrent
@@ -59,15 +59,15 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                       : 'bg-gray-600 text-gray-300'
                 }`}>
                   {isCompleted ? (
-                    <Check className="w-6 h-6" />
+                    <Check className="w-5 h-5 sm:w-6 sm:h-6" />
                   ) : (
-                    <Circle className={`w-6 h-6 ${isCurrent ? 'animate-spin-slow' : ''}`} />
+                    <Circle className={`w-5 h-5 sm:w-6 sm:h-6 ${isCurrent ? 'animate-spin-slow' : ''}`} />
                   )}
                 </div>
 
                 {/* Step Info */}
                 <div className="text-center">
-                  <h3 className={`font-semibold text-sm transition-colors duration-300 ${
+                  <h3 className={`font-semibold text-xs sm:text-sm transition-colors duration-300 ${
                     isCurrent 
                       ? 'text-[#FF7A00]' 
                       : isCompleted 
@@ -76,7 +76,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                   }`}>
                     {step.title}
                   </h3>
-                  <p className={`text-xs mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs mt-1 transition-colors duration-300 hidden sm:block ${
                     isCurrent 
                       ? 'text-[#FF7A00]/70' 
                       : 'text-gray-400'

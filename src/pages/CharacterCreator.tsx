@@ -119,13 +119,16 @@ const CharacterCreator = () => {
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
-          {/* Creation Steps Header */}
-          <CreationStepsHeader
-            steps={steps}
-            currentStep={currentStep}
-            onStepChange={handleStepChange}
-          />
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Creation Steps Header - contained within main content */}
+          <div className="border-b border-gray-700/50">
+            <CreationStepsHeader
+              steps={steps}
+              currentStep={currentStep}
+              onStepChange={handleStepChange}
+            />
+          </div>
 
           {/* Dynamic Content */}
           <div className="flex-1 overflow-auto">
