@@ -44,12 +44,12 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   };
 
   return (
-    <div className="h-screen flex bg-[#121212] overflow-hidden relative">
+    <div className="h-screen flex bg-[#121212] overflow-hidden">
       {/* Left Panel - Main Navigation */}
       <AppSidebar />
 
-      {/* Center Panel - Main Chat */}
-      <div className="flex-1 flex flex-col min-w-0 ml-64">
+      {/* Center Panel - Main Chat - Now takes full remaining width */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Chat Header */}
         <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -78,13 +78,13 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
           </div>
         </header>
 
-        {/* Main Chat Content */}
-        <div className="flex-1 overflow-hidden">
+        {/* Main Chat Content - Takes full available space */}
+        <div className="flex-1 overflow-hidden w-full">
           {children}
         </div>
       </div>
 
-      {/* Right Panel - Overlay */}
+      {/* Right Panel - Overlay only when open */}
       {rightPanelOpen && (
         <>
           {/* Backdrop */}
