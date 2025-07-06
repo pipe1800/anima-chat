@@ -1,0 +1,96 @@
+
+import React from 'react';
+import { Check, Circle } from 'lucide-react';
+
+interface Step {
+  id: number;
+  title: string;
+  description: string;
+}
+
+interface CreationStepsHeaderProps {
+  steps: Step[];
+  currentStep: number;
+  onStepChange: (stepId: number) => void;
+}
+
+const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationStepsHeaderProps) => {
+  return (
+    <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Character Creator
+          </h1>
+          <p className="text-gray-400">
+            Create your AI character in {steps.length} simple steps
+          </p>
+        </div>
+
+        {/* Steps Progress Bar */}
+        <div className="flex items-center justify-between relative">
+          {/* Progress Line */}
+          <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-600 -z-10">
+            <div 
+              className="h-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 transition-all duration-500"
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            />
+          </div>
+
+          {steps.map((step, index) => {
+            const isCompleted = step.id < currentStep;
+            const isCurrent = step.id === currentStep;
+            const isUpcoming = step.id > currentStep;
+
+            return (
+              <div
+                key={step.id}
+                className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${
+                  isCurrent ? 'transform scale-105' : ''
+                }`}
+                onClick={() => onStepChange(step.id)}
+              >
+                {/* Step Circle */}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 mb-3 ${
+                  isCompleted
+                    ? 'bg-green-500 text-white shadow-lg'
+                    : isCurrent
+                      ? 'bg-[#FF7A00] text-white shadow-lg animate-pulse'
+                      : 'bg-gray-600 text-gray-300'
+                }`}>
+                  {isCompleted ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    <Circle className={`w-6 h-6 ${isCurrent ? 'animate-spin-slow' : ''}`} />
+                  )}
+                </div>
+
+                {/* Step Info */}
+                <div className="text-center">
+                  <h3 className={`font-semibold text-sm transition-colors duration-300 ${
+                    isCurrent 
+                      ? 'text-[#FF7A00]' 
+                      : isCompleted 
+                        ? 'text-green-400' 
+                        : 'text-gray-300'
+                  }`}>
+                    {step.title}
+                  </h3>
+                  <p className={`text-xs mt-1 transition-colors duration-300 ${
+                    isCurrent 
+                      ? 'text-[#FF7A00]/70' 
+                      : 'text-gray-400'
+                  }`}>
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CreationStepsHeader;

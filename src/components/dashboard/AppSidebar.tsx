@@ -30,9 +30,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 const mainItems = [
+  { title: "Create Character", url: "/character-creator", icon: Plus },
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Discover", url: "/discover", icon: Compass },
-  { title: "Create Character", url: "/create-character", icon: Plus },
   { title: "Profile", url: "/profile", icon: User },
   { title: "Subscription", url: "/subscription", icon: Crown },
 ];

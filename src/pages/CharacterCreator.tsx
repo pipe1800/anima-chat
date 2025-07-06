@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import CreationStepsSidebar from '@/components/character-creator/CreationStepsSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
 import FinalizeStep from '@/components/character-creator/FinalizeStep';
+import CreationStepsHeader from '@/components/character-creator/CreationStepsHeader';
 
 const CharacterCreator = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -113,34 +115,25 @@ const CharacterCreator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex">
-      {/* Creation Steps Sidebar */}
-      <CreationStepsSidebar
-        steps={steps}
-        currentStep={currentStep}
-        onStepChange={handleStepChange}
-      />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-[#121212]">
+        <AppSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          {/* Creation Steps Header */}
+          <CreationStepsHeader
+            steps={steps}
+            currentStep={currentStep}
+            onStepChange={handleStepChange}
+          />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="border-b border-gray-700/50 bg-[#1a1a2e]/50 backdrop-blur-sm">
-          <div className="px-8 py-6">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Character Creator
-            </h1>
-            <p className="text-gray-400">
-              Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.title}
-            </p>
+          {/* Dynamic Content */}
+          <div className="flex-1 overflow-auto">
+            {renderCurrentStep()}
           </div>
         </div>
-
-        {/* Dynamic Content */}
-        <div className="flex-1 overflow-auto">
-          {renderCurrentStep()}
-        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
