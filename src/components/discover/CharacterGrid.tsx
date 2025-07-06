@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -103,6 +104,12 @@ interface CharacterGridProps {
 }
 
 export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridProps) {
+  const navigate = useNavigate();
+
+  const handleStartChat = (character: typeof characters[0]) => {
+    navigate('/chat', { state: { selectedCharacter: character } });
+  };
+
   // Filter and sort characters based on props
   const filteredCharacters = characters.filter(character => {
     const matchesSearch = character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -206,6 +213,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
                 {/* Hover Action Button */}
                 <Button
+                  onClick={() => handleStartChat(character)}
                   className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 font-medium"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
