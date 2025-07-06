@@ -120,9 +120,9 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
   });
 
   return (
-    <div className="p-6">
+    <div className="p-8">
       {/* Results Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <h2 className="text-white text-xl font-semibold">
             {sortedCharacters.length} Characters Found
@@ -134,25 +134,33 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         </div>
       </div>
 
-      {/* Character Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-        {sortedCharacters.map((character) => (
+      {/* Character Grid with smooth animations */}
+      <div 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8 transition-all duration-500 ease-in-out"
+        style={{
+          animation: 'fade-in 0.6s ease-out'
+        }}
+      >
+        {sortedCharacters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden"
+            className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 transform"
+            style={{
+              animation: `fade-in 0.6s ease-out ${index * 0.1}s both`
+            }}
           >
             <CardContent className="p-0">
               {/* Character Image/Avatar Section */}
-              <div className="relative h-48 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
-                <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all">
+              <div className="relative h-56 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
+                <Avatar className="w-24 h-24 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
                   <AvatarImage src={character.image} alt={character.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
+                  <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-3xl">
                     {character.avatar}
                   </AvatarFallback>
                 </Avatar>
                 
                 {/* Category Badge */}
-                <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full">
+                <div className="absolute top-4 left-4 px-3 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full">
                   {character.category}
                 </div>
 
@@ -160,19 +168,19 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute top-3 right-3 w-8 h-8 p-0 text-gray-400 hover:text-[#FF7A00] opacity-0 group-hover:opacity-100 transition-all"
+                  className="absolute top-4 right-4 w-10 h-10 p-0 text-gray-400 hover:text-[#FF7A00] opacity-0 group-hover:opacity-100 transition-all duration-300"
                 >
-                  <Heart className="w-4 h-4" />
+                  <Heart className="w-5 h-5" />
                 </Button>
               </div>
 
               {/* Character Info */}
-              <div className="p-4 space-y-3">
+              <div className="p-6 space-y-4">
                 <div>
-                  <h3 className="text-white font-semibold text-lg mb-1 group-hover:text-[#FF7A00] transition-colors">
+                  <h3 className="text-white font-semibold text-xl mb-2 group-hover:text-[#FF7A00] transition-colors">
                     {character.name}
                   </h3>
-                  <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                  <p className="text-gray-400 text-sm line-clamp-2 mb-3 leading-relaxed">
                     {character.description}
                   </p>
                   <p className="text-gray-500 text-xs">by {character.creator}</p>
@@ -182,7 +190,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-1 text-yellow-400">
                     <Star className="w-4 h-4 fill-current" />
-                    <span>{character.rating}</span>
+                    <span className="font-medium">{character.rating}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-gray-400">
                     <MessageCircle className="w-4 h-4" />
@@ -191,11 +199,11 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 </div>
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1">
-                  {character.tags.slice(0, 2).map((tag, index) => (
+                <div className="flex flex-wrap gap-2">
+                  {character.tags.slice(0, 2).map((tag, tagIndex) => (
                     <span
-                      key={index}
-                      className="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-full"
+                      key={tagIndex}
+                      className="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-full hover:bg-gray-600/50 transition-colors"
                     >
                       {tag}
                     </span>
@@ -204,7 +212,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
                 {/* Action Button */}
                 <Button
-                  className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+                  className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 font-medium"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Start Conversation
@@ -215,16 +223,26 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         ))}
       </div>
 
+      {/* Empty State */}
+      {sortedCharacters.length === 0 && (
+        <div className="text-center py-16">
+          <div className="text-gray-400 text-lg mb-2">No characters found</div>
+          <div className="text-gray-500 text-sm">Try adjusting your search or filters</div>
+        </div>
+      )}
+
       {/* Load More */}
-      <div className="flex justify-center mt-12">
-        <Button
-          variant="outline"
-          className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent px-8 py-3"
-        >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Load More Characters
-        </Button>
-      </div>
+      {sortedCharacters.length > 0 && (
+        <div className="flex justify-center mt-16">
+          <Button
+            variant="outline"
+            className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent px-10 py-4 text-lg font-medium"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Load More Characters
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

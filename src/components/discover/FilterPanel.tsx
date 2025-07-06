@@ -9,6 +9,9 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { 
   Select,
   SelectContent,
@@ -17,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { X, RotateCcw, Search } from 'lucide-react';
+import { X, RotateCcw, Search, User } from 'lucide-react';
 
 interface FilterPanelProps {
   isOpen: boolean;
@@ -37,11 +40,17 @@ const popularTags = [
 export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy }: FilterPanelProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState('');
+  const [showNSFW, setShowNSFW] = useState(false);
+  const [characterGender, setCharacterGender] = useState('any');
+  const [creatorSearch, setCreatorSearch] = useState('');
 
   const handleReset = () => {
     setFilterBy('all');
     setSelectedTags([]);
     setTagSearchQuery('');
+    setShowNSFW(false);
+    setCharacterGender('any');
+    setCreatorSearch('');
   };
 
   const handleTagToggle = (tag: string) => {
@@ -129,6 +138,63 @@ export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy }: FilterPa
                 </div>
               </div>
             )}
+          </div>
+
+          <Separator className="bg-gray-700/50" />
+
+          {/* NSFW Content */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-white">Content Settings</h3>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="nsfw" className="text-sm text-gray-300">Show NSFW</Label>
+              <Switch
+                id="nsfw"
+                checked={showNSFW}
+                onCheckedChange={setShowNSFW}
+                className="data-[state=checked]:bg-[#FF7A00]"
+              />
+            </div>
+          </div>
+
+          <Separator className="bg-gray-700/50" />
+
+          {/* Character Gender */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-white">Character Gender</h3>
+            <RadioGroup value={characterGender} onValueChange={setCharacterGender}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="any" id="any" className="border-gray-600 text-[#FF7A00]" />
+                <Label htmlFor="any" className="text-sm text-gray-300">Any</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="male" id="male" className="border-gray-600 text-[#FF7A00]" />
+                <Label htmlFor="male" className="text-sm text-gray-300">Male</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="female" id="female" className="border-gray-600 text-[#FF7A00]" />
+                <Label htmlFor="female" className="text-sm text-gray-300">Female</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="non-binary" id="non-binary" className="border-gray-600 text-[#FF7A00]" />
+                <Label htmlFor="non-binary" className="text-sm text-gray-300">Non-binary</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <Separator className="bg-gray-700/50" />
+
+          {/* Creator Filter */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-white">Creator</h3>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search by creator handle..."
+                value={creatorSearch}
+                onChange={(e) => setCreatorSearch(e.target.value)}
+                className="pl-10 bg-[#1a1a2e] border-gray-700/50 text-white placeholder-gray-400 focus:border-[#FF7A00] focus:ring-2 focus:ring-[#FF7A00]/30"
+              />
+            </div>
           </div>
 
           <Separator className="bg-gray-700/50" />
