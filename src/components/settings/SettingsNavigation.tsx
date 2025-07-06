@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { User, Bell, Shield, CreditCard, Palette, HelpCircle } from 'lucide-react';
 
 interface SettingsNavigationProps {
   activeCategory: string;
@@ -9,19 +8,16 @@ interface SettingsNavigationProps {
 
 export const SettingsNavigation = ({ activeCategory, onCategoryChange }: SettingsNavigationProps) => {
   const categories = [
-    { id: 'account', label: 'Account', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy & Security', icon: Shield },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'support', label: 'Support', icon: HelpCircle },
+    { id: 'profile', label: 'Profile' },
+    { id: 'account', label: 'Account & Security' },
+    { id: 'billing', label: 'Subscription & Billing' },
+    { id: 'notifications', label: 'Notifications' },
   ];
 
   return (
     <nav className="p-6">
-      <div className="space-y-2">
+      <div className="space-y-1">
         {categories.map((category) => {
-          const IconComponent = category.icon;
           const isActive = activeCategory === category.id;
           
           return (
@@ -29,15 +25,17 @@ export const SettingsNavigation = ({ activeCategory, onCategoryChange }: Setting
               key={category.id}
               onClick={() => onCategoryChange(category.id)}
               className={`
-                w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors
+                w-full text-left px-4 py-3 rounded-lg transition-colors relative
                 ${isActive 
-                  ? 'bg-[#FF7A00] text-white font-medium' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+                  ? 'text-[#FF7A00] font-medium bg-[#FF7A00]/10' 
+                  : 'text-gray-300 hover:text-white hover:bg-gray-800/30'
                 }
               `}
             >
-              <IconComponent className="w-5 h-5 mr-3" />
-              <span>{category.label}</span>
+              {isActive && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF7A00] rounded-r"></div>
+              )}
+              <span className={isActive ? 'ml-3' : ''}>{category.label}</span>
             </button>
           );
         })}

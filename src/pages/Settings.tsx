@@ -4,7 +4,7 @@ import { SettingsNavigation } from '@/components/settings/SettingsNavigation';
 import { SettingsContent } from '@/components/settings/SettingsContent';
 
 const Settings = () => {
-  const [activeCategory, setActiveCategory] = useState('account');
+  const [activeCategory, setActiveCategory] = useState('profile');
 
   return (
     <div className="min-h-screen bg-[#121212]">
