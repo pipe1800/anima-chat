@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 
 export const ProfileHeader = () => {
   const [isEditing, setIsEditing] = useState(false);
+  // For demo purposes, simulating whether this is the current user's profile
+  const [isOwnProfile] = useState(true); // This would come from auth context in real app
 
   return (
     <div className="relative">
@@ -78,6 +80,19 @@ export const ProfileHeader = () => {
               Character Creator & Storyteller passionate about bringing unique personalities to life. 
               Specializing in fantasy and sci-fi characters with deep backstories and engaging dialogue.
             </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-4 flex-shrink-0">
+            {isOwnProfile ? (
+              <Button variant="secondary" className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
+                Edit Profile
+              </Button>
+            ) : (
+              <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium px-8">
+                Follow
+              </Button>
+            )}
           </div>
         </div>
       </div>
