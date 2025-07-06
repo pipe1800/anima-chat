@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,28 +90,8 @@ const Onboarding = () => {
   const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
     
-    // Mark onboarding as completed in user metadata
-    if (user) {
-      try {
-        const { error } = await supabase.auth.updateUser({
-          data: { 
-            onboarding_completed: true,
-            first_character: character.id 
-          }
-        });
-        
-        if (error) {
-          console.error('Error updating user metadata:', error);
-        } else {
-          console.log('Onboarding marked as completed');
-          setOnboardingCompleted(true);
-        }
-      } catch (error) {
-        console.error('Error completing onboarding:', error);
-      }
-    }
-    
-    // Navigate to chat with selected character
+    // Navigate to chat with selected character - DON'T mark onboarding as completed here
+    // Let the chat component handle completion when first message is sent
     navigate('/chat', { state: { selectedCharacter: character } });
   };
 

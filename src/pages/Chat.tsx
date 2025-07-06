@@ -12,7 +12,8 @@ const Chat = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFirstMessage, setIsFirstMessage] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -22,6 +23,17 @@ const Chat = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
+        
+        // Check if onboarding is completed
+        const isCompleted = session.user.user_metadata?.onboarding_completed;
+        console.log('Chat: Onboarding completed status:', isCompleted);
+        
+        setOnboardingCompleted(!!isCompleted);
+        
+        // Only show onboarding if it's NOT completed
+        if (!isCompleted) {
+          setShowOnboarding(true);
+        }
       } else {
         navigate('/auth');
       }
@@ -32,6 +44,15 @@ const Chat = () => {
       (event, session) => {
         if (session?.user) {
           setUser(session.user);
+          
+          // Update onboarding status from the latest session
+          const isCompleted = session.user.user_metadata?.onboarding_completed;
+          setOnboardingCompleted(!!isCompleted);
+          
+          // Hide onboarding if completed
+          if (isCompleted) {
+            setShowOnboarding(false);
+          }
         } else if (!loading) {
           navigate('/auth');
         }
@@ -41,12 +62,34 @@ const Chat = () => {
     return () => subscription.unsubscribe();
   }, [navigate, loading]);
 
-  const handleFirstMessage = () => {
-    if (isFirstMessage) {
+  const handleFirstMessage = async () => {
+    if (isFirstMessage && !onboardingCompleted) {
       setIsFirstMessage(false);
-      setTimeout(() => {
-        setShowOnboarding(false);
-      }, 2000);
+      
+      // Mark onboarding as completed in user metadata
+      if (user) {
+        try {
+          const { error } = await supabase.auth.updateUser({
+            data: { 
+              onboarding_completed: true
+            }
+          });
+          
+          if (error) {
+            console.error('Error updating user metadata:', error);
+          } else {
+            console.log('Onboarding marked as completed in handleFirstMessage');
+            setOnboardingCompleted(true);
+            
+            // Hide onboarding after completion animation
+            setTimeout(() => {
+              setShowOnboarding(false);
+            }, 3000);
+          }
+        } catch (error) {
+          console.error('Error completing onboarding:', error);
+        }
+      }
     }
   };
 
@@ -66,7 +109,7 @@ const Chat = () => {
   return (
     <SidebarProvider>
       {/* Onboarding Checklist - shows completion animation */}
-      {showOnboarding && (
+      {showOnboarding && !onboardingCompleted && (
         <OnboardingChecklist
           currentStep={isFirstMessage ? 2 : 3}
           isVisible={true}

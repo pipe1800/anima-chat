@@ -12,7 +12,7 @@ const OnboardingChecklist = ({ currentStep, isVisible, isCompleting = false }: O
   const steps = [
     'Step 1: Choose Your Vibe',
     'Step 2: Personalize Your Profile', 
-    'Step 3: Select Your First Companion'
+    'Step 3: Send Your First Message'
   ];
 
   if (!isVisible) return null;
