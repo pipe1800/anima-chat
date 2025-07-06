@@ -3,6 +3,7 @@ import React from 'react';
 import { SubscriptionHero } from '@/components/subscription/SubscriptionHero';
 import { SubscriptionPricing } from '@/components/subscription/SubscriptionPricing';
 import { FeatureComparisonTable } from '@/components/subscription/FeatureComparisonTable';
+import { SubscriptionTestimonials } from '@/components/subscription/SubscriptionTestimonials';
 import { SubscriptionFAQ } from '@/components/subscription/SubscriptionFAQ';
 
 const Subscription = () => {
@@ -17,6 +18,9 @@ const Subscription = () => {
         
         {/* Feature Comparison Table */}
         <FeatureComparisonTable />
+        
+        {/* Testimonials Section */}
+        <SubscriptionTestimonials />
         
         {/* FAQ Section */}
         <SubscriptionFAQ />
