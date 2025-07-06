@@ -7,7 +7,7 @@ import { DashboardContent } from '@/components/dashboard/DashboardContent';
 const Dashboard = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#121212] overflow-hidden">
+      <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
         <main className="flex-1 overflow-auto">
           <DashboardContent />

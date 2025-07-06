@@ -155,7 +155,7 @@ const favorites = [
 
 export function DashboardContent() {
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-[#121212] ml-64">
       {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
