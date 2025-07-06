@@ -11,7 +11,7 @@ export const ProfileTabs = () => {
           value="created" 
           className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white"
         >
-          My Characters
+          Creations
         </TabsTrigger>
         <TabsTrigger 
           value="favorites"
