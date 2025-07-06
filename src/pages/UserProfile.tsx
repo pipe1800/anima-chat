@@ -10,7 +10,8 @@ const UserProfile = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Add left margin to account for fixed sidebar width (w-64 = 16rem = 256px) */}
+        <div className="flex-1 flex flex-col min-w-0 ml-64">
           <main className="flex-1 overflow-auto">
             <div className="min-h-screen">
               <ProfileHeader />
