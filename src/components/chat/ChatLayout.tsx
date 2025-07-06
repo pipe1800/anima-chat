@@ -25,10 +25,11 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
 
   // Mock chat history data
   const chatHistory = [
-    { id: '1', name: 'Luna Mystic', lastMessage: 'The stars whisper...', timestamp: '2m ago', avatar: '/placeholder.svg', isActive: character.id === 'luna' },
-    { id: '2', name: 'Zyx Future', lastMessage: 'In the year 3024...', timestamp: '1h ago', avatar: '/placeholder.svg', isActive: character.id === 'zyx' },
-    { id: '3', name: 'Sakura Dreams', lastMessage: 'Let\'s go on an adventure!', timestamp: '2h ago', avatar: '/placeholder.svg', isActive: character.id === 'sakura' },
-    { id: '4', name: 'Raven Shadow', lastMessage: 'The ancient texts...', timestamp: '1d ago', avatar: '/placeholder.svg', isActive: character.id === 'raven' },
+    { id: '1', name: 'Luna Mystic', lastMessage: 'The stars whisper of ancient secrets...', timestamp: '2m ago', avatar: '/placeholder.svg', isActive: character.id === 'luna' },
+    { id: '2', name: 'Zyx Future', lastMessage: 'In the year 3024, technology will...', timestamp: '1h ago', avatar: '/placeholder.svg', isActive: character.id === 'zyx' },
+    { id: '3', name: 'Sakura Dreams', lastMessage: 'Let\'s go on a magical adventure!', timestamp: '2h ago', avatar: '/placeholder.svg', isActive: character.id === 'sakura' },
+    { id: '4', name: 'Raven Shadow', lastMessage: 'The ancient texts reveal...', timestamp: '1d ago', avatar: '/placeholder.svg', isActive: character.id === 'raven' },
+    { id: '5', name: 'Alex Mentor', lastMessage: 'Great progress on your goals!', timestamp: '2d ago', avatar: '/placeholder.svg', isActive: character.id === 'alex' },
   ];
 
   return (
@@ -55,16 +56,14 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
               </div>
             </div>
 
-            {!rightPanelOpen && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setRightPanelOpen(true)}
-                className="text-gray-400 hover:text-white hover:bg-gray-800"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
           </div>
         </header>
 
@@ -75,64 +74,66 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
       </div>
 
       {/* Right Panel - Chat History */}
-      <div className={`${rightPanelOpen ? 'w-80' : 'w-0'} transition-all duration-300 ease-in-out bg-[#0f0f0f] border-l border-gray-700/50 overflow-hidden flex-shrink-0`}>
-        <div className="h-full flex flex-col">
-          {/* Right Panel Header */}
-          <div className="p-4 border-b border-gray-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-semibold">My Chats</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setRightPanelOpen(false)}
-                className="text-gray-400 hover:text-white hover:bg-gray-800"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+      <div className={`${rightPanelOpen ? 'w-72' : 'w-0'} transition-all duration-300 ease-in-out bg-[#0f0f0f] border-l border-gray-700/50 overflow-hidden flex-shrink-0`}>
+        {rightPanelOpen && (
+          <div className="h-full flex flex-col w-72">
+            {/* Right Panel Header */}
+            <div className="p-4 border-b border-gray-700/50 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-white font-semibold">My Chats</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setRightPanelOpen(false)}
+                  className="text-gray-400 hover:text-white hover:bg-gray-800"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search chats..."
+                  className="bg-[#1a1a2e] border-gray-700/50 text-white placeholder-gray-400 pl-10 focus:ring-[#FF7A00] focus:border-[#FF7A00]"
+                />
+              </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search chats..."
-                className="bg-[#1a1a2e] border-gray-700/50 text-white placeholder-gray-400 pl-10 focus:ring-[#FF7A00] focus:border-[#FF7A00]"
-              />
-            </div>
-          </div>
-
-          {/* Chat History List */}
-          <div className="flex-1 overflow-y-auto p-2">
-            {chatHistory.map((chat) => (
-              <div
-                key={chat.id}
-                className={`p-3 rounded-lg cursor-pointer transition-colors mb-2 ${
-                  chat.isActive 
-                    ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
-                    : 'hover:bg-[#1a1a2e]'
-                }`}
-              >
-                <div className="flex items-start space-x-3">
-                  <Avatar className="w-10 h-10 flex-shrink-0">
-                    <AvatarImage src={chat.avatar} alt={chat.name} />
-                    <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
-                      {chat.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className={`font-medium text-sm truncate ${
-                        chat.isActive ? 'text-[#FF7A00]' : 'text-white'
-                      }`}>{chat.name}</h3>
-                      <span className="text-gray-400 text-xs flex-shrink-0 ml-2">{chat.timestamp}</span>
+            {/* Chat History List */}
+            <div className="flex-1 overflow-y-auto p-2">
+              {chatHistory.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors mb-2 ${
+                    chat.isActive 
+                      ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
+                      : 'hover:bg-[#1a1a2e]'
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="w-10 h-10 flex-shrink-0">
+                      <AvatarImage src={chat.avatar} alt={chat.name} />
+                      <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
+                        {chat.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`font-medium text-sm truncate ${
+                          chat.isActive ? 'text-[#FF7A00]' : 'text-white'
+                        }`}>{chat.name}</h3>
+                        <span className="text-gray-400 text-xs flex-shrink-0 ml-2">{chat.timestamp}</span>
+                      </div>
+                      <p className="text-gray-400 text-sm truncate">{chat.lastMessage}</p>
                     </div>
-                    <p className="text-gray-400 text-sm truncate">{chat.lastMessage}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
