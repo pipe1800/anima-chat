@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Upload, User } from 'lucide-react';
+import { Upload, User, Sparkles } from 'lucide-react';
 
 interface FoundationStepProps {
   data: any;
@@ -16,6 +17,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
   const [formData, setFormData] = useState({
     name: data.name || '',
     avatar: data.avatar || '',
+    title: data.title || '',
     description: data.description || ''
   });
 
@@ -34,119 +36,155 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
   const isValid = formData.name.trim() && formData.description.trim();
 
   return (
-    <div className="max-w-4xl mx-auto p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-4">
-          Foundation
-        </h2>
-        <p className="text-gray-400 text-lg">
-          Let's start with the basics. Give your character a name, appearance, and core identity.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Avatar Section */}
-        <div className="space-y-6">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Character Avatar
-            </h3>
-            
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <Avatar className="w-32 h-32 border-4 border-[#FF7A00]/30">
-                  <AvatarImage src={formData.avatar} />
-                  <AvatarFallback className="bg-gray-800 text-gray-400">
-                    <User className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
-                
-                <button className="absolute bottom-0 right-0 w-10 h-10 bg-[#FF7A00] rounded-full flex items-center justify-center hover:bg-[#FF7A00]/80 transition-colors">
-                  <Upload className="w-5 h-5 text-white" />
-                </button>
-              </div>
+    <div className="flex-1 overflow-auto bg-[#121212]">
+      <div className="max-w-6xl mx-auto p-6 lg:p-8">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[calc(100vh-200px)]">
+          
+          {/* Left Column - Avatar Upload */}
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white mb-2">Avatar</h2>
+              <p className="text-gray-400">Give your character a face</p>
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="avatar-url" className="text-white">
-                Avatar URL (Optional)
+            {/* Large Avatar Display */}
+            <div className="relative group">
+              <div className="w-48 h-48 lg:w-56 lg:h-56 rounded-full border-4 border-[#FF7A00]/30 bg-gradient-to-br from-[#FF7A00]/20 to-transparent backdrop-blur-sm flex items-center justify-center overflow-hidden">
+                {formData.avatar ? (
+                  <img 
+                    src={formData.avatar} 
+                    alt="Character Avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-[#FF7A00]/60">
+                    <User className="w-16 h-16 mb-2 animate-pulse" />
+                    <div className="w-12 h-12 rounded-full bg-[#FF7A00]/20 animate-ping absolute" />
+                    <div className="w-8 h-8 rounded-full bg-[#FF7A00]/40 animate-ping absolute" style={{ animationDelay: '0.5s' }} />
+                  </div>
+                )}
+              </div>
+              
+              {/* Glowing border effect */}
+              <div className="absolute inset-0 rounded-full border-2 border-[#FF7A00]/50 animate-pulse" />
+            </div>
+
+            {/* Upload Buttons */}
+            <div className="flex flex-col space-y-3 w-full max-w-xs">
+              <Button 
+                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
+                onClick={() => {
+                  // TODO: Implement file upload
+                  console.log('Upload image clicked');
+                }}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload Image
+              </Button>
+              
+              <Button 
+                variant="outline"
+                className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 font-semibold py-3 px-6 rounded-xl"
+                onClick={() => {
+                  // TODO: Implement AI generation
+                  console.log('Generate with AI clicked');
+                }}
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Generate with AI
+              </Button>
+            </div>
+
+            {/* Avatar URL Input */}
+            <div className="w-full max-w-xs">
+              <Label htmlFor="avatar-url" className="text-gray-300 text-sm mb-2 block">
+                Or paste image URL
               </Label>
               <Input
                 id="avatar-url"
                 placeholder="https://example.com/avatar.jpg"
                 value={formData.avatar}
                 onChange={(e) => handleInputChange('avatar', e.target.value)}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg"
               />
             </div>
           </div>
-        </div>
 
-        {/* Basic Info Section */}
-        <div className="space-y-6">
-          <div>
-            <Label htmlFor="character-name" className="text-white text-lg mb-3 block">
-              Character Name *
-            </Label>
-            <Input
-              id="character-name"
-              placeholder="Enter your character's name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 text-lg h-12"
-            />
-          </div>
+          {/* Right Column - Core Details */}
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Core Details</h2>
+              <p className="text-gray-400">Define your character's identity</p>
+            </div>
 
-          <div>
-            <Label htmlFor="character-description" className="text-white text-lg mb-3 block">
-              Character Description *
-            </Label>
-            <textarea
-              id="character-description"
-              placeholder="Describe your character's background, role, and core identity..."
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              rows={6}
-              className="w-full bg-gray-800/50 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent"
-            />
-          </div>
-        </div>
-      </div>
+            {/* Character Name */}
+            <div className="space-y-2">
+              <Label htmlFor="character-name" className="text-white font-medium">
+                Name *
+              </Label>
+              <Input
+                id="character-name"
+                placeholder="Character's Handle"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-12 text-lg font-medium"
+              />
+            </div>
 
-      {/* Character Preview */}
-      {formData.name && (
-        <div className="mt-12 p-6 bg-gradient-to-r from-[#FF7A00]/10 to-transparent rounded-xl border border-[#FF7A00]/20">
-          <h3 className="text-xl font-semibold text-[#FF7A00] mb-4">
-            Character Preview
-          </h3>
-          <div className="flex items-start space-x-4">
-            <Avatar className="w-16 h-16 border-2 border-[#FF7A00]/30">
-              <AvatarImage src={formData.avatar} />
-              <AvatarFallback className="bg-gray-800 text-gray-400">
-                <User className="w-6 h-6" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h4 className="text-white font-semibold text-lg">{formData.name}</h4>
-              {formData.description && (
-                <p className="text-gray-300 mt-2 leading-relaxed">
-                  {formData.description}
-                </p>
-              )}
+            {/* Title/Tagline */}
+            <div className="space-y-2">
+              <Label htmlFor="character-title" className="text-white font-medium">
+                Title/Tagline
+              </Label>
+              <Input
+                id="character-title"
+                placeholder="e.g., Rogue Netrunner with a heart of gold"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-11"
+              />
+            </div>
+
+            {/* Short Description */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="character-description" className="text-white font-medium">
+                  Short Description *
+                </Label>
+                <span className="text-xs text-gray-400">
+                  {formData.description.length}/150
+                </span>
+              </div>
+              <Textarea
+                id="character-description"
+                placeholder="A brief summary of your character for the discovery page."
+                value={formData.description}
+                onChange={(e) => {
+                  if (e.target.value.length <= 150) {
+                    handleInputChange('description', e.target.value);
+                  }
+                }}
+                rows={4}
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none"
+              />
+              <p className="text-xs text-gray-500">
+                This is what other users will see at a glance in the discovery page.
+              </p>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Navigation */}
-      <div className="flex justify-end mt-12">
-        <Button
-          onClick={handleNext}
-          disabled={!isValid}
-          className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-8 py-3 text-lg font-semibold"
-        >
-          Next: Personality →
-        </Button>
+        {/* Navigation - Bottom Right */}
+        <div className="flex justify-end mt-8 pt-6 border-t border-gray-700/50">
+          <Button
+            onClick={handleNext}
+            disabled={!isValid}
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next: Personality →
+          </Button>
+        </div>
       </div>
     </div>
   );
