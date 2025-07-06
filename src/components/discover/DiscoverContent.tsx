@@ -28,8 +28,8 @@ export function DiscoverContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212]">
-      {/* Header with single sidebar trigger */}
+    <div className="min-h-screen bg-[#121212] w-full">
+      {/* Header */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
