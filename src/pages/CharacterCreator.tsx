@@ -119,10 +119,10 @@ const CharacterCreator = () => {
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
         
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Creation Steps Header - contained within main content */}
-          <div className="border-b border-gray-700/50">
+        {/* Main Content Area - properly offset from sidebar */}
+        <div className="flex-1 flex flex-col min-w-0 md:ml-64">
+          {/* Creation Steps Header - now properly contained */}
+          <div className="w-full">
             <CreationStepsHeader
               steps={steps}
               currentStep={currentStep}

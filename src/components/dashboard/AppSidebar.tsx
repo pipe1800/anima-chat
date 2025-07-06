@@ -52,7 +52,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r border-gray-700/50 bg-[#1b1b1b] w-64 h-screen fixed"
+      className="border-r border-gray-700/50 bg-[#1b1b1b] w-64 h-screen fixed z-40"
       collapsible="none"
     >
       <div className="flex flex-col h-full">

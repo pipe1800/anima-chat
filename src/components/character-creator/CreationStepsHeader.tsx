@@ -16,9 +16,9 @@ interface CreationStepsHeaderProps {
 
 const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationStepsHeaderProps) => {
   return (
-    <div className="bg-[#1a1a2e]/90 backdrop-blur-sm p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-4 sm:mb-6">
+    <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Character Creator
           </h1>
@@ -29,7 +29,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
 
         {/* Steps Progress Bar */}
         <div className="flex items-center justify-between relative">
-          {/* Progress Line */}
+          {/* Progress Line - hidden on mobile */}
           <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-600 -z-10 hidden sm:block">
             <div 
               className="h-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 transition-all duration-500"
@@ -47,7 +47,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                 key={step.id}
                 className={`flex flex-col items-center cursor-pointer transition-all duration-300 ${
                   isCurrent ? 'transform scale-105' : ''
-                } flex-1 sm:flex-none`}
+                } flex-1 sm:flex-none sm:min-w-0`}
                 onClick={() => onStepChange(step.id)}
               >
                 {/* Step Circle */}
@@ -59,15 +59,15 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                       : 'bg-gray-600 text-gray-300'
                 }`}>
                   {isCompleted ? (
-                    <Check className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                   ) : (
-                    <Circle className={`w-5 h-5 sm:w-6 sm:h-6 ${isCurrent ? 'animate-spin-slow' : ''}`} />
+                    <Circle className={`w-4 h-4 sm:w-5 sm:h-5 ${isCurrent ? 'animate-spin-slow' : ''}`} />
                   )}
                 </div>
 
                 {/* Step Info */}
-                <div className="text-center">
-                  <h3 className={`font-semibold text-xs sm:text-sm transition-colors duration-300 ${
+                <div className="text-center max-w-full">
+                  <h3 className={`font-semibold text-xs sm:text-sm transition-colors duration-300 truncate ${
                     isCurrent 
                       ? 'text-[#FF7A00]' 
                       : isCompleted 
@@ -76,7 +76,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                   }`}>
                     {step.title}
                   </h3>
-                  <p className={`text-xs mt-1 transition-colors duration-300 hidden sm:block ${
+                  <p className={`text-xs mt-1 transition-colors duration-300 hidden sm:block truncate ${
                     isCurrent 
                       ? 'text-[#FF7A00]/70' 
                       : 'text-gray-400'
