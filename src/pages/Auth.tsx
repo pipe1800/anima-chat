@@ -36,8 +36,14 @@ const Auth = () => {
         console.log('Auth state change:', event, session?.user?.email);
         setUser(session?.user ?? null);
         if (session?.user && !showSuccess) {
-          // Always redirect to onboarding for testing - let onboarding decide what to do
-          if (event === 'SIGNED_IN') {
+          // Check if user has completed onboarding
+          const isOnboardingCompleted = session.user.user_metadata?.onboarding_completed;
+          
+          if (isOnboardingCompleted) {
+            // User already completed onboarding, go to dashboard
+            navigate('/dashboard');
+          } else {
+            // New user or incomplete onboarding, go to onboarding
             navigate('/onboarding');
           }
         }
@@ -48,7 +54,13 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user && !showSuccess) {
-        navigate('/onboarding');
+        const isOnboardingCompleted = session.user.user_metadata?.onboarding_completed;
+        
+        if (isOnboardingCompleted) {
+          navigate('/dashboard');
+        } else {
+          navigate('/onboarding');
+        }
       }
     });
 
@@ -106,7 +118,7 @@ const Auth = () => {
       options: {
         data: {
           username: username.trim(),
-          onboarding_completed: false // Mark as needing onboarding
+          onboarding_completed: false // Explicitly set to false for new users
         },
         emailRedirectTo: undefined
       }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,19 +15,27 @@ const Onboarding = () => {
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [hasShownWelcome, setHasShownWelcome] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check for existing session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Onboarding session check:', session?.user?.email);
       if (session?.user) {
         setUser(session.user);
-        // Show welcome modal only once per session
-        if (!hasShownWelcome) {
+        
+        // Check if user has completed onboarding
+        const isCompleted = session.user.user_metadata?.onboarding_completed;
+        console.log('Onboarding completed status:', isCompleted);
+        
+        if (isCompleted) {
+          // User already completed onboarding, redirect to dashboard
+          setOnboardingCompleted(true);
+          navigate('/dashboard');
+        } else {
+          // New user, show welcome modal
           setShowWelcome(true);
-          setHasShownWelcome(true);
         }
       } else {
         // No user, redirect to auth
@@ -37,10 +46,16 @@ const Onboarding = () => {
 
     // Then set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Onboarding auth change:', event, session?.user?.email);
         if (session?.user) {
           setUser(session.user);
+          
+          // Check onboarding status for new sessions
+          const isCompleted = session.user.user_metadata?.onboarding_completed;
+          if (isCompleted && !onboardingCompleted) {
+            navigate('/dashboard');
+          }
         } else if (!loading && event !== 'INITIAL_SESSION') {
           navigate('/auth');
         }
@@ -48,7 +63,7 @@ const Onboarding = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate, loading, hasShownWelcome]);
+  }, [navigate, loading, onboardingCompleted]);
 
   const handleWelcomeClose = () => {
     setShowWelcome(false);
@@ -73,9 +88,32 @@ const Onboarding = () => {
     setCurrentStep(2);
   };
 
-  const handleCharacterSelect = (character: any) => {
+  const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
-    // This will be handled by the CharacterSelection component itself
+    
+    // Mark onboarding as completed in user metadata
+    if (user) {
+      try {
+        const { error } = await supabase.auth.updateUser({
+          data: { 
+            onboarding_completed: true,
+            first_character: character.id 
+          }
+        });
+        
+        if (error) {
+          console.error('Error updating user metadata:', error);
+        } else {
+          console.log('Onboarding marked as completed');
+          setOnboardingCompleted(true);
+        }
+      } catch (error) {
+        console.error('Error completing onboarding:', error);
+      }
+    }
+    
+    // Navigate to chat with selected character
+    navigate('/chat', { state: { selectedCharacter: character } });
   };
 
   if (loading) {
@@ -90,6 +128,15 @@ const Onboarding = () => {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Redirecting to authentication...</div>
+      </div>
+    );
+  }
+
+  // If onboarding is completed, redirect to dashboard
+  if (onboardingCompleted) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-white">Redirecting to dashboard...</div>
       </div>
     );
   }
