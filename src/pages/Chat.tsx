@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import ChatInterface from '@/components/chat/ChatInterface';
+import { ChatLayout } from '@/components/chat/ChatLayout';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
 
 const Chat = () => {
@@ -17,7 +18,6 @@ const Chat = () => {
   const selectedCharacter = location.state?.selectedCharacter;
 
   useEffect(() => {
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
@@ -27,7 +27,6 @@ const Chat = () => {
       setLoading(false);
     });
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
@@ -44,10 +43,9 @@ const Chat = () => {
   const handleFirstMessage = () => {
     if (isFirstMessage) {
       setIsFirstMessage(false);
-      // Trigger onboarding completion animation
       setTimeout(() => {
         setShowOnboarding(false);
-      }, 2000); // Show completed checklist for 2 seconds before fading out
+      }, 2000);
     }
   };
 
@@ -65,7 +63,7 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] relative">
+    <>
       {/* Onboarding Checklist - shows completion animation */}
       {showOnboarding && (
         <OnboardingChecklist
@@ -75,12 +73,14 @@ const Chat = () => {
         />
       )}
 
-      {/* Main Chat Interface */}
-      <ChatInterface
-        character={selectedCharacter}
-        onFirstMessage={handleFirstMessage}
-      />
-    </div>
+      {/* Main Chat Layout */}
+      <ChatLayout character={selectedCharacter}>
+        <ChatInterface
+          character={selectedCharacter}
+          onFirstMessage={handleFirstMessage}
+        />
+      </ChatLayout>
+    </>
   );
 };
 

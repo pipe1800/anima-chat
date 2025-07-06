@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Trophy } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +46,6 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
   };
 
   useEffect(() => {
-    // Add character's greeting message immediately
     const greeting: Message = {
       id: 'greeting',
       content: getGreeting(character.id),
@@ -54,14 +54,12 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
     };
     setMessages([greeting]);
 
-    // Focus input field
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, [character]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages are added
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -79,12 +77,10 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
 
-    // Trigger first message handler and show achievement toast
     if (isFirstMessage) {
       setIsFirstMessage(false);
       onFirstMessage();
       
-      // Show celebratory toast
       toast({
         title: "🏆 Achievement Unlocked: First Contact!",
         description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
@@ -92,7 +88,6 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
       });
     }
 
-    // Simulate AI response after a short delay
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -105,7 +100,6 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
   };
 
   const getAIResponse = (userInput: string, characterId: string) => {
-    // Simple response logic based on character
     const responses = {
       luna: "🔮 I see... the stars whisper interesting things about your words. Tell me more about what draws you to the mystical arts?",
       zyx: "⚡ Fascinating! In my timeline, we solved similar questions using quantum probability matrices. What's your take on this?",
@@ -117,23 +111,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Chat Header */}
-      <div className="bg-[#1a1a2e] border-b border-gray-700/50 p-4">
-        <div className="flex items-center space-x-3">
-          <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-            <AvatarImage src={character.avatar} alt={character.name} />
-            <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-              {character.fallback}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-white font-semibold text-lg">{character.name}</h1>
-            <p className="text-gray-400 text-sm">{character.tagline}</p>
-          </div>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
@@ -152,7 +130,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
               )}
               
               <div
-                className={`px-4 py-2 rounded-2xl ${
+                className={`px-4 py-3 rounded-2xl ${
                   message.isUser
                     ? 'bg-[#FF7A00] text-white rounded-br-md'
                     : 'bg-[#1a1a2e] text-white border border-gray-700/50 rounded-bl-md'
@@ -167,7 +145,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
       </div>
 
       {/* Input Area */}
-      <div className="bg-[#1a1a2e] border-t border-gray-700/50 p-4">
+      <div className="bg-[#1a1a2e] border-t border-gray-700/50 p-4 flex-shrink-0">
         <form onSubmit={handleSendMessage} className="flex space-x-3">
           <input
             ref={inputRef}
@@ -175,7 +153,7 @@ const ChatInterface = ({ character, onFirstMessage }: ChatInterfaceProps) => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`Message ${character.name}...`}
-            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all animate-pulse"
+            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all"
           />
           <Button 
             type="submit" 
