@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
@@ -63,7 +64,7 @@ const Chat = () => {
   }
 
   return (
-    <>
+    <SidebarProvider>
       {/* Onboarding Checklist - shows completion animation */}
       {showOnboarding && (
         <OnboardingChecklist
@@ -80,7 +81,7 @@ const Chat = () => {
           onFirstMessage={handleFirstMessage}
         />
       </ChatLayout>
-    </>
+    </SidebarProvider>
   );
 };
 
