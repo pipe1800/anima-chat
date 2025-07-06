@@ -9,7 +9,7 @@ const Discover = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
-        <main className="flex-1">
+        <main className="flex-1 min-w-0">
           <DiscoverContent />
         </main>
       </div>

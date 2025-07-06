@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -86,10 +87,6 @@ export function AppSidebar() {
             </>
           )}
         </div>
-
-        {!isCollapsed && (
-          <SidebarTrigger className="absolute top-4 right-4 text-gray-400 hover:text-white" />
-        )}
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-4">
@@ -102,6 +99,7 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={getNavClasses(isActive(item.url))}
+                      title={isCollapsed ? item.title : undefined}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && <span className="font-medium">{item.title}</span>}
@@ -120,6 +118,7 @@ export function AppSidebar() {
           <NavLink 
             to="/settings" 
             className={getNavClasses(isActive('/settings'))}
+            title={isCollapsed ? "Settings" : undefined}
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span className="font-medium">Settings</span>}
@@ -131,17 +130,13 @@ export function AppSidebar() {
           variant="ghost" 
           className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
           onClick={() => {
-            // Add logout logic here
             console.log('Logout clicked');
           }}
+          title={isCollapsed ? "Logout" : undefined}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!isCollapsed && <span className="ml-3 font-medium">Logout</span>}
         </Button>
-
-        {isCollapsed && (
-          <SidebarTrigger className="mt-2 text-gray-400 hover:text-white" />
-        )}
       </SidebarFooter>
     </Sidebar>
   );
