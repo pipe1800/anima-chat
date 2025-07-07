@@ -166,7 +166,8 @@ export function DashboardContent() {
     name: character.name,
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
-    totalChats: character.interaction_count || 0,
+    totalChats: character.actual_chat_count || 0,
+    likesCount: character.likes_count || 0,
     originalCharacter: character
   }));
 
@@ -175,7 +176,9 @@ export function DashboardContent() {
     name: character.name,
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
-    totalChats: character.interaction_count || 0,
+    totalChats: character.actual_chat_count || 0,
+    likesCount: character.likes_count || 0,
+    creatorUsername: character.creator?.username || 'Unknown',
     originalCharacter: character
   }));
 
@@ -396,7 +399,7 @@ export function DashboardContent() {
                               </div>
                               <div className="flex items-center space-x-1 text-gray-300">
                                 <Heart className="w-4 h-4" />
-                                <span>0</span>
+                                <span>{character.likesCount}</span>
                               </div>
                             </div>
                             
@@ -460,7 +463,7 @@ export function DashboardContent() {
                             </h3>
                             
                             <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
-                              by @Unknown
+                              by @{character.creatorUsername}
                             </p>
                             
                             <div className="flex items-center justify-center space-x-4 text-sm mb-3">
@@ -470,7 +473,7 @@ export function DashboardContent() {
                               </div>
                               <div className="flex items-center space-x-1 text-gray-300">
                                 <Heart className="w-4 h-4" />
-                                <span>0</span>
+                                <span>{character.likesCount}</span>
                               </div>
                             </div>
                             

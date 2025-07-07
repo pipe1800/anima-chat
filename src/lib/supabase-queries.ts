@@ -91,7 +91,34 @@ export const getUserCharacters = async (userId: string) => {
     .eq('creator_id', userId)
     .order('updated_at', { ascending: false })
 
-  return { data: data || [], error }
+  if (error || !data) {
+    return { data: data || [], error }
+  }
+
+  // Get actual chat counts and likes for each character
+  const charactersWithCounts = await Promise.all(
+    data.map(async (character) => {
+      // Get actual chat count
+      const { count: chatCount } = await supabase
+        .from('chats')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      // Get likes count
+      const { count: likesCount } = await supabase
+        .from('character_likes')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      return {
+        ...character,
+        actual_chat_count: chatCount || 0,
+        likes_count: likesCount || 0
+      }
+    })
+  )
+
+  return { data: charactersWithCounts, error: null }
 }
 
 /**
@@ -472,7 +499,39 @@ export const getUserFavorites = async (userId: string) => {
 
   // Filter out any null characters and map to character data
   const characters = data?.map(fav => fav.character).filter(Boolean) || [];
-  console.log('Processed favorite characters:', characters);
   
-  return { data: characters, error: null };
+  // Get creator info, actual chat counts and likes for each character
+  const charactersWithDetails = await Promise.all(
+    characters.map(async (character) => {
+      // Get creator profile
+      const { data: creatorData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', character.creator_id)
+        .maybeSingle()
+
+      // Get actual chat count
+      const { count: chatCount } = await supabase
+        .from('chats')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      // Get likes count
+      const { count: likesCount } = await supabase
+        .from('character_likes')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      return {
+        ...character,
+        creator: creatorData,
+        actual_chat_count: chatCount || 0,
+        likes_count: likesCount || 0
+      }
+    })
+  )
+
+  console.log('Processed favorite characters:', charactersWithDetails);
+  
+  return { data: charactersWithDetails, error: null };
 }
