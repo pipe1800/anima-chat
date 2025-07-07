@@ -19,11 +19,13 @@ const HeroSection = () => {
               
               {/* Video container with 4:3 aspect ratio to match 1,660 x 1,244 */}
               <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#121212] rounded-2xl border border-[#FF7A00]/20 overflow-hidden shadow-2xl" style={{ aspectRatio: '1660/1244' }}>
-                <iframe
-                  src="https://drive.google.com/file/d/1RBT8C-1EJaP6CkTcb84XgZ6XjVdTWTiY/preview"
-                  className="w-full h-full"
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
+                <video
+                  src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/videos/20250707_1505_video.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MvMjAyNTA3MDdfMTUwNV92aWRlby5tcDQiLCJpYXQiOjE3NTE5MjM1NjYsImV4cCI6MTc4MzQ1OTU2Nn0.VYCXNwQU7GSp3N790Nr0SX5zKv7fY9zzd5ErsYULwyc"
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
                 />
                 
                 {/* Subtle overlay for theme integration */}
