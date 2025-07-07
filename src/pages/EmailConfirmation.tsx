@@ -50,8 +50,7 @@ const EmailConfirmation = () => {
                   <img
                     src="/lovable-uploads/e732b32c-b885-4735-81c8-6905347a03b9.png"
                     alt="Friendly AI Character"
-                    className="w-full h-auto max-w-sm mx-auto"
-                    style={{ transform: 'scale(1.2)' }}
+                    className="w-full h-auto max-w-lg mx-auto"
                   />
                   
                   {/* Subtle overlay for theme integration */}
