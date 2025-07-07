@@ -55,7 +55,7 @@ export function DashboardContent() {
         const { data: charactersData } = await getUserCharacters(user.id);
         setMyCharacters(charactersData || []);
 
-        // Fetch user's credits
+        // Fetch user's credits - fix null safety
         const { data: creditsData } = await getUserCredits(user.id);
         setUserCredits(creditsData?.balance || 0);
 

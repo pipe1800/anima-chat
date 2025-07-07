@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client'
-import type { Profile, Character, Plan } from '@/integrations/supabase/types'
+import type { Profile, Character, Plan, Subscription, Credits, Chat, Message, OnboardingChecklistItem, UserOnboardingProgress } from '@/types/database'
 
 // =============================================================================
 // PROFILE QUERIES - Safe public/private data handling
@@ -147,7 +147,7 @@ export const createCharacter = async (characterData: {
     .select()
     .single()
 
-  if (characterError) return { data: null, error: characterError }
+  if (characterError || !character) return { data: null, error: characterError }
 
   // Create character definition
   const { error: definitionError } = await supabase

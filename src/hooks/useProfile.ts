@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { getPublicProfile, getPrivateProfile } from '@/lib/supabase-queries'
-import type { Profile } from '@/integrations/supabase/types'
+import type { Profile } from '@/types/database'
 
 export const useProfile = (userId?: string) => {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -42,7 +42,31 @@ export const useProfile = (userId?: string) => {
     fetchProfile()
   }, [userId])
 
-  return { profile, loading, error, refetch: () => fetchProfile() }
+  const refetch = async () => {
+    if (!userId) return
+    
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      const isOwnProfile = user?.id === userId
+
+      const { data, error } = isOwnProfile 
+        ? await getPrivateProfile(userId)
+        : await getPublicProfile(userId)
+
+      if (error) throw error
+      setProfile(data)
+    } catch (err) {
+      console.error('Error fetching profile:', err)
+      setError(err as Error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { profile, loading, error, refetch }
 }
 
 export const useCurrentUser = () => {
