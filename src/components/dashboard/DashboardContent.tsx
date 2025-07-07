@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,47 +39,71 @@ export function DashboardContent() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('DashboardContent render - user:', user, 'profile:', profile, 'userLoading:', userLoading);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user || !profile) return;
+      console.log('fetchDashboardData called - user:', user, 'profile:', profile);
+      
+      if (!user) {
+        console.log('No user, setting loading to false');
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
+        console.log('Starting to fetch dashboard data for user:', user.id);
 
         // Fetch user's chats
-        const { data: chatsData } = await getUserChats(user.id);
-        setRecentChats(chatsData?.slice(0, 5) || []);
+        console.log('Fetching chats...');
+        const chatsResult = await getUserChats(user.id);
+        console.log('Chats result:', chatsResult);
+        setRecentChats(chatsResult.data?.slice(0, 5) || []);
 
         // Fetch user's characters
-        const { data: charactersData } = await getUserCharacters(user.id);
-        setMyCharacters(charactersData || []);
+        console.log('Fetching characters...');
+        const charactersResult = await getUserCharacters(user.id);
+        console.log('Characters result:', charactersResult);
+        setMyCharacters(charactersResult.data || []);
 
-        // Fetch user's credits with proper null handling
-        const { data: creditsData } = await getUserCredits(user.id);
-        console.log('Credits data received:', creditsData);
+        // Fetch user's credits
+        console.log('Fetching credits...');
+        const creditsResult = await getUserCredits(user.id);
+        console.log('Credits result:', creditsResult);
         
-        if (creditsData && typeof creditsData.balance === 'number') {
-          setUserCredits(creditsData.balance);
+        if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
+          setUserCredits(creditsResult.data.balance);
         } else {
           console.warn('Credits data is null or invalid, defaulting to 0');
           setUserCredits(0);
         }
 
         // Fetch user's subscription
-        const { data: subscriptionData } = await getUserSubscription(user.id);
-        setSubscription(subscriptionData);
+        console.log('Fetching subscription...');
+        const subscriptionResult = await getUserSubscription(user.id);
+        console.log('Subscription result:', subscriptionResult);
+        setSubscription(subscriptionResult.data);
 
+        console.log('All data fetched successfully');
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
+        console.log('Setting loading to false');
         setLoading(false);
       }
     };
 
-    fetchDashboardData();
-  }, [user, profile]);
+    // Only fetch data when we have a user and user loading is complete
+    if (!userLoading) {
+      fetchDashboardData();
+    }
+  }, [user, userLoading]);
+
+  console.log('Current state - userLoading:', userLoading, 'loading:', loading, 'user exists:', !!user);
 
   if (userLoading || loading) {
+    console.log('Showing loading screen');
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading your dashboard...</div>
@@ -89,12 +112,15 @@ export function DashboardContent() {
   }
 
   if (!user) {
+    console.log('No user, showing sign in message');
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Please sign in to access your dashboard.</div>
       </div>
     );
   }
+
+  console.log('Rendering dashboard content');
 
   // Determine user tier
   const userTier = subscription?.plan?.name || "Guest Pass";
