@@ -13,12 +13,12 @@ const HeroSection = () => {
         <img 
           src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
           alt="Anima AI Chat" 
-          className="h-14 w-auto"
+          className="h-16 w-auto"
         />
       </div>
       
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen pt-8 px-4 sm:px-6">
+      <div className="relative z-10 flex items-center justify-center min-h-screen pt-2 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
           {/* Left Column - Video */}
           <div className="relative flex justify-center lg:justify-start">
