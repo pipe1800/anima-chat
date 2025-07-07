@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +15,10 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
       yearlyPrice: "$0",
       period: isYearly ? "year" : "month",
       features: [
-        "Limited Daily Messages",
-        "Standard AI Models",
+        "75 Messages/Day",
+        "Standard AI Models", 
         "Create 1 Custom Character",
-        "Contains Ads",
+        "Community Access",
         "Queue during peak hours"
       ],
       ctaText: "Start for Free",
@@ -36,9 +35,8 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
         "Unlimited Messages",
         "Access to Premium AI Models",
         "Create up to 50 Characters",
-        "No Ads & No Queue",
-        "Enhanced Memory (8k Context)",
-        "Longer AI Responses"
+        "No Queue",
+        "Enhanced Memory (8k Context)"
       ],
       ctaText: "Become a True Fan",
       ctaVariant: "default" as const,
@@ -54,8 +52,7 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
         "All 'True Fan' benefits",
         "Priority Access to Experimental Models",
         "God-Tier Memory (16k+ Context)",
-        "Generate Images with AI",
-        "Text-to-Speech (TTS) for AI"
+        "Monthly Bonus Credits"
       ],
       ctaText: "Go All In",
       ctaVariant: "default" as const,
