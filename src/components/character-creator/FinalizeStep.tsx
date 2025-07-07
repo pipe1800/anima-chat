@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,14 @@ type VisibilityType = 'public' | 'unlisted' | 'private';
 const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false, isEditing = false }: FinalizeStepProps) => {
   const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
   const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
+
+  // Update form data when character data is loaded
+  useEffect(() => {
+    if (data) {
+      setVisibility(data.visibility || 'public');
+      setEnableNSFW(data.nsfw_enabled || false);
+    }
+  }, [data]);
 
   const visibilityOptions = [
     {

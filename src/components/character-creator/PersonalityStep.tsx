@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,25 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   const [scenarioDefinition, setScenarioDefinition] = useState(data.personality?.scenario_definition || '');
   const [newTag, setNewTag] = useState('');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+
+  // Update form data when character data is loaded
+  useEffect(() => {
+    if (data.personality) {
+      setCorePersonality(data.personality.core_personality || '');
+      setPersonalityTags(data.personality.tags || []);
+      setKnowledgeBase(data.personality.knowledge_base || '');
+      setScenarioDefinition(data.personality.scenario_definition || '');
+      
+      // Auto-expand advanced section if there's content
+      const hasAdvancedContent = 
+        (data.personality.knowledge_base && data.personality.knowledge_base.trim()) ||
+        (data.personality.scenario_definition && data.personality.scenario_definition.trim());
+      
+      if (hasAdvancedContent) {
+        setIsAdvancedOpen(true);
+      }
+    }
+  }, [data]);
 
   const addTag = () => {
     if (newTag.trim() && !personalityTags.includes(newTag.trim())) {

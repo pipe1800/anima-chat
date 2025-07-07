@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,14 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
   const [dialoguePairs, setDialoguePairs] = useState<DialoguePair[]>(
     data.dialogue?.example_dialogues || [{ user: '', character: '' }]
   );
+
+  // Update form data when character data is loaded
+  useEffect(() => {
+    if (data.dialogue) {
+      setGreeting(data.dialogue.greeting || '');
+      setDialoguePairs(data.dialogue.example_dialogues || [{ user: '', character: '' }]);
+    }
+  }, [data]);
 
   const addDialoguePair = () => {
     setDialoguePairs(prev => [...prev, { user: '', character: '' }]);

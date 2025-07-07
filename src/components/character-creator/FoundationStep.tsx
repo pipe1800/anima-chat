@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,18 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
     title: data.title || '',
     description: data.description || ''
   });
+
+  // Update form data when character data is loaded
+  useEffect(() => {
+    if (data) {
+      setFormData({
+        name: data.name || '',
+        avatar: data.avatar || '',
+        title: data.title || '',
+        description: data.description || ''
+      });
+    }
+  }, [data]);
   const [isUploading, setIsUploading] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [tempImageUrl, setTempImageUrl] = useState('');
