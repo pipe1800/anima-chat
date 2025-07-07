@@ -394,9 +394,13 @@ export const getDailyMessageCount = async (userId: string) => {
  * Get user's favorite characters
  */
 export const getUserFavorites = async (userId: string) => {
+  console.log('Fetching favorites for user:', userId);
+  
   const { data, error } = await supabase
     .from('character_favorites')
     .select(`
+      id,
+      created_at,
       character:characters(
         id,
         name,
@@ -404,11 +408,22 @@ export const getUserFavorites = async (userId: string) => {
         avatar_url,
         interaction_count,
         created_at,
-        creator:profiles!creator_id(id, username, avatar_url)
+        creator_id
       )
     `)
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  return { data: data?.map(fav => fav.character).filter(Boolean) || [], error }
+  console.log('Favorites query result:', { data, error });
+
+  if (error) {
+    console.error('Error fetching favorites:', error);
+    return { data: [], error };
+  }
+
+  // Filter out any null characters and map to character data
+  const characters = data?.map(fav => fav.character).filter(Boolean) || [];
+  console.log('Processed favorite characters:', characters);
+  
+  return { data: characters, error: null };
 }

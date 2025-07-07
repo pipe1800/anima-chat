@@ -63,6 +63,14 @@ export function DashboardContent() {
           getDailyMessageCount(user.id)
         ]);
 
+        console.log('Dashboard data results:', {
+          chats: chatsResult.data?.length,
+          characters: charactersResult.data?.length,
+          favorites: favoritesResult.data?.length,
+          favoritesError: favoritesResult.error,
+          favoritesData: favoritesResult.data
+        });
+
         setRecentChats(chatsResult.data || []);
         setMyCharacters(charactersResult.data || []);
         setFavoriteCharacters(favoritesResult.data || []);
@@ -155,9 +163,11 @@ export function DashboardContent() {
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
     totalChats: character.interaction_count || 0,
-    creator: character.creator?.username || 'Unknown',
+    creator: 'Loading...', // We'll fetch this separately since we don't have creator info yet
     originalCharacter: character
   }));
+
+  console.log('Formatted favorite characters:', formattedFavoriteCharacters);
 
   return (
     <div className="min-h-screen bg-[#121212]">
