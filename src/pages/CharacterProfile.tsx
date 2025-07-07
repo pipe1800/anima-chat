@@ -61,13 +61,12 @@ export default function CharacterProfile() {
       try {
         setLoading(true);
 
-        // Fetch character with definitions and creator info
+        // Fetch character with definitions
         const { data: characterData, error: characterError } = await supabase
           .from('characters')
           .select(`
             *,
-            character_definitions(*),
-            profiles!characters_creator_id_fkey(username, avatar_url)
+            character_definitions(*)
           `)
           .eq('id', characterId)
           .eq('visibility', 'public')
@@ -79,6 +78,13 @@ export default function CharacterProfile() {
           setLoading(false);
           return;
         }
+
+        // Fetch creator profile separately
+        const { data: creatorProfile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', characterData.creator_id)
+          .single();
 
         // Get chat count
         const { count: chatCount } = await supabase
@@ -107,9 +113,7 @@ export default function CharacterProfile() {
 
         setCharacter({
           ...characterData,
-          creator: Array.isArray(characterData.profiles) && characterData.profiles.length > 0 
-            ? characterData.profiles[0] 
-            : { username: 'Unknown', avatar_url: null },
+          creator: creatorProfile || { username: 'Unknown', avatar_url: null },
           actual_chat_count: chatCount || 0,
           likes_count: likesCount || 0
         });

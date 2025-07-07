@@ -181,18 +181,18 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 </p>
 
                 {/* Action Buttons */}
-                <div className="flex space-x-2">
+                <div className="flex flex-col space-y-2">
                   <Button
                     onClick={() => handleViewCharacter(character)}
                     variant="outline"
-                    className="flex-1 border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent"
+                    className="w-full border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     View Character
                   </Button>
                   <Button
                     onClick={() => handleStartChat(character)}
-                    className="flex-1 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                    className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Start Chat
