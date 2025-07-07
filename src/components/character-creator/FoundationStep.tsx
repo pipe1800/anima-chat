@@ -56,7 +56,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
       toast({
         title: "File Too Large",
         description: "Please upload an image smaller than 5MB.",
-        variant: "descriptive",
+        variant: "destructive",
       });
       return;
     }
