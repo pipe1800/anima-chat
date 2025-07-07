@@ -103,27 +103,6 @@ export function AppSidebar() {
             />
           </div>
 
-          {/* User Profile Section */}
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-              <AvatarImage 
-                src={profile?.avatar_url || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=150&h=150&fit=crop&crop=face"} 
-                alt={profile?.username || "User"} 
-              />
-              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-white text-sm font-medium">
-                @{profile?.username || user?.email?.split('@')[0] || 'User'}
-              </p>
-              <div className="bg-[#FF7A00]/20 px-2 py-1 rounded-lg border border-[#FF7A00]/30 flex items-center space-x-2 mt-1 w-fit">
-                <Zap className="w-3 h-3 text-[#FF7A00]" />
-                <span className="text-[#FF7A00] text-xs font-bold">{userCredits.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="px-2 py-4 flex-1">
