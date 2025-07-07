@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   BarChart3, 
-  Queue, 
+  List, 
   Users, 
   BookOpen, 
   Shield,
@@ -25,7 +25,7 @@ const navigationItems = [
   {
     id: 'content-queue',
     label: 'Content Queue',
-    icon: Queue,
+    icon: List,
     description: 'Pending reviews',
     badge: 12
   },
