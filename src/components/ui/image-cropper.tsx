@@ -1,9 +1,9 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { RotateCw, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -26,76 +26,60 @@ export const ImageCropper = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [minZoom, setMinZoom] = useState(0.1);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [minZoom, setMinZoom] = useState(1);
+  const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 });
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const CROP_SIZE = 200; // Fixed crop circle size
+  const CONTAINER_SIZE = 400; // Fixed container size
 
-  const cropSize = 200; // The diameter of the crop circle
-  const containerSize = 400; // Preview container size
-
-  const handleImageLoad = () => {
+  const handleImageLoad = useCallback(() => {
     const image = imageRef.current;
     if (!image) return;
 
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
     
-    // Store natural dimensions for cropping calculations
-    setImageDimensions({ width: naturalWidth, height: naturalHeight });
+    setImageNaturalSize({ width: naturalWidth, height: naturalHeight });
     
-    // Calculate how the image will be displayed in the preview container
-    const imageAspectRatio = naturalWidth / naturalHeight;
-    let displayWidth, displayHeight;
-    
-    // The image will be sized to fit within the container while maintaining aspect ratio
-    if (imageAspectRatio > 1) {
-      // Landscape image - constrain by height if it would exceed container
-      displayHeight = Math.min(naturalHeight, containerSize);
-      displayWidth = displayHeight * imageAspectRatio;
-      if (displayWidth > containerSize) {
-        displayWidth = containerSize;
-        displayHeight = displayWidth / imageAspectRatio;
-      }
-    } else {
-      // Portrait or square image - constrain by width if it would exceed container
-      displayWidth = Math.min(naturalWidth, containerSize);
-      displayHeight = displayWidth / imageAspectRatio;
-      if (displayHeight > containerSize) {
-        displayHeight = containerSize;
-        displayWidth = displayHeight * imageAspectRatio;
-      }
-    }
-    
-    // Calculate minimum zoom so that the image always covers the crop circle
-    // The crop circle diameter must never exceed the image dimensions at current zoom
-    const minZoomForWidth = cropSize / displayWidth;
-    const minZoomForHeight = cropSize / displayHeight;
-    const calculatedMinZoom = Math.max(minZoomForWidth, minZoomForHeight, 0.1);
+    // Calculate minimum zoom so image always covers the crop circle
+    const scaleX = CROP_SIZE / naturalWidth;
+    const scaleY = CROP_SIZE / naturalHeight;
+    const calculatedMinZoom = Math.max(scaleX, scaleY);
     
     setMinZoom(calculatedMinZoom);
-    setZoom(Math.max(calculatedMinZoom, 1));
+    setZoom(calculatedMinZoom);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
     setImageLoaded(true);
-  };
+  }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-  };
+    setDragStart({ 
+      x: e.clientX - position.x, 
+      y: e.clientY - position.y 
+    });
+  }, [position]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    setPosition({ x: newX, y: newY });
   }, [isDragging, dragStart]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -106,88 +90,86 @@ export const ImageCropper = ({
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  const handleCrop = async () => {
+  const handleCrop = useCallback(async () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
-    if (!canvas || !image) return;
+    if (!canvas || !image || !imageLoaded) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = cropSize;
-    canvas.height = cropSize;
+    // Set canvas size to crop size
+    canvas.width = CROP_SIZE;
+    canvas.height = CROP_SIZE;
 
-    // Calculate the scale factor between natural image size and displayed size
-    const imageAspectRatio = imageDimensions.width / imageDimensions.height;
-    let displayWidth, displayHeight;
-    
-    if (imageAspectRatio > 1) {
-      displayHeight = Math.min(imageDimensions.height, containerSize);
-      displayWidth = displayHeight * imageAspectRatio;
-      if (displayWidth > containerSize) {
-        displayWidth = containerSize;
-        displayHeight = displayWidth / imageAspectRatio;
-      }
-    } else {
-      displayWidth = Math.min(imageDimensions.width, containerSize);
-      displayHeight = displayWidth / imageAspectRatio;
-      if (displayHeight > containerSize) {
-        displayHeight = containerSize;
-        displayWidth = displayHeight * imageAspectRatio;
-      }
-    }
-
-    // Scale factor from display size to natural size
-    const scaleX = imageDimensions.width / displayWidth;
-    const scaleY = imageDimensions.height / displayHeight;
+    // Clear canvas
+    ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
 
     // Create circular clipping path
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cropSize / 2, cropSize / 2, cropSize / 2, 0, Math.PI * 2);
+    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2);
     ctx.clip();
 
-    // Calculate the center of the crop area in the preview container
-    const containerCenter = { x: containerSize / 2, y: containerSize / 2 };
+    // Calculate the source area from the natural image
+    const centerX = imageNaturalSize.width / 2;
+    const centerY = imageNaturalSize.height / 2;
     
-    // Convert preview position to natural image coordinates
-    const naturalOffsetX = (position.x / zoom) * scaleX;
-    const naturalOffsetY = (position.y / zoom) * scaleY;
+    // The crop area size in natural image coordinates
+    const cropAreaSize = CROP_SIZE / zoom;
     
-    // Apply transformations to canvas
-    ctx.translate(cropSize / 2, cropSize / 2);
+    // Account for position offset (convert screen pixels to natural image pixels)
+    const offsetX = -position.x / zoom;
+    const offsetY = -position.y / zoom;
+    
+    // Source rectangle in natural image coordinates
+    const sourceX = centerX - cropAreaSize / 2 + offsetX;
+    const sourceY = centerY - cropAreaSize / 2 + offsetY;
+
+    // Apply transformations
+    ctx.translate(CROP_SIZE / 2, CROP_SIZE / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(zoom, zoom);
-    
-    // Calculate source rectangle in natural image coordinates
-    const sourceWidth = (cropSize / zoom) * scaleX;
-    const sourceHeight = (cropSize / zoom) * scaleY;
-    const sourceX = (imageDimensions.width / 2) - (sourceWidth / 2) - naturalOffsetX;
-    const sourceY = (imageDimensions.height / 2) - (sourceHeight / 2) - naturalOffsetY;
-    
-    // Draw the cropped portion
+    ctx.translate(-CROP_SIZE / 2, -CROP_SIZE / 2);
+
+    // Draw the image
     ctx.drawImage(
       image,
-      sourceX, sourceY, sourceWidth, sourceHeight,
-      -cropSize / (2 * zoom), -cropSize / (2 * zoom), cropSize / zoom, cropSize / zoom
+      sourceX, sourceY, cropAreaSize, cropAreaSize,
+      0, 0, CROP_SIZE, CROP_SIZE
     );
-    
+
     ctx.restore();
 
     const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
     onCrop(croppedImageUrl);
-  };
+  }, [imageLoaded, zoom, position, rotation, imageNaturalSize, onCrop]);
 
-  const handleClose = () => {
-    // Reset all states when closing
+  const handleClose = useCallback(() => {
     setZoom(1);
     setRotation(0);
     setPosition({ x: 0, y: 0 });
     setImageLoaded(false);
-    setMinZoom(0.1);
-    setImageDimensions({ width: 0, height: 0 });
+    setMinZoom(1);
+    setImageNaturalSize({ width: 0, height: 0 });
     onClose();
-  };
+  }, [onClose]);
+
+  const handleReset = useCallback(() => {
+    setZoom(minZoom);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+  }, [minZoom]);
+
+  const getImageStyle = useCallback(() => {
+    return {
+      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+      transformOrigin: 'center center',
+      maxWidth: 'none',
+      maxHeight: 'none',
+      userSelect: 'none' as const,
+      pointerEvents: 'none' as const
+    };
+  }, [position, zoom, rotation]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -201,20 +183,25 @@ export const ImageCropper = ({
         
         <div className="space-y-4">
           {/* Preview Area */}
-          <div className="relative bg-gray-800 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+          <div 
+            ref={containerRef}
+            className="relative bg-gray-800 rounded-lg overflow-hidden mx-auto"
+            style={{ 
+              width: `${CONTAINER_SIZE}px`, 
+              height: `${CONTAINER_SIZE}px` 
+            }}
+          >
             <div 
-              className="absolute inset-0 flex items-center justify-center cursor-move"
+              className="absolute inset-0 flex items-center justify-center cursor-move select-none"
               onMouseDown={handleMouseDown}
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             >
               <img
                 ref={imageRef}
                 src={imageUrl}
                 alt="Crop preview"
-                className="max-w-none"
-                style={{
-                  transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
-                  transformOrigin: 'center center'
-                }}
+                className="block"
+                style={getImageStyle()}
                 onLoad={handleImageLoad}
                 draggable={false}
               />
@@ -222,15 +209,18 @@ export const ImageCropper = ({
             
             {/* Crop overlay */}
             <div className="absolute inset-0 pointer-events-none">
+              {/* Dark overlay */}
               <div className="absolute inset-0 bg-black/50"></div>
+              {/* Crop circle */}
               <div 
                 className="absolute bg-transparent border-2 border-[#FF7A00] rounded-full"
                 style={{
-                  width: `${cropSize}px`,
-                  height: `${cropSize}px`,
+                  width: `${CROP_SIZE}px`,
+                  height: `${CROP_SIZE}px`,
                   top: '50%',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
                 }}
               ></div>
             </div>
@@ -239,6 +229,7 @@ export const ImageCropper = ({
           {/* Controls */}
           {imageLoaded && (
             <div className="space-y-4">
+              {/* Zoom Control */}
               <div className="flex items-center space-x-4">
                 <ZoomOut className="w-4 h-4 text-gray-400" />
                 <Slider
@@ -252,6 +243,7 @@ export const ImageCropper = ({
                 <ZoomIn className="w-4 h-4 text-gray-400" />
               </div>
               
+              {/* Rotation Control */}
               <div className="flex items-center space-x-4">
                 <RotateCw className="w-4 h-4 text-gray-400" />
                 <Slider
@@ -264,15 +256,12 @@ export const ImageCropper = ({
                 />
               </div>
 
-              <div className="flex justify-center space-x-2">
+              {/* Reset Button */}
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setZoom(minZoom);
-                    setRotation(0);
-                    setPosition({ x: 0, y: 0 });
-                  }}
+                  onClick={handleReset}
                   className="border-gray-600 text-gray-300"
                 >
                   Reset
