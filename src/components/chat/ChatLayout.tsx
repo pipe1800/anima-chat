@@ -73,7 +73,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
       <AppSidebar />
 
       {/* Center Panel - Main Chat */}
-      <div className={`flex-1 flex flex-col min-w-0 ml-64 ${rightPanelOpen ? 'mr-80' : ''}`}>
+      <div className="flex-1 flex flex-col min-w-0 ml-64">
         {/* Chat Header */}
         <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
