@@ -368,6 +368,32 @@ export const getChatMessages = async (chatId: string) => {
 }
 
 /**
+ * Create a new message in a chat
+ */
+export const createMessage = async (chatId: string, authorId: string, content: string, isAiMessage: boolean = false) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      chat_id: chatId,
+      author_id: authorId,
+      content: content,
+      is_ai_message: isAiMessage
+    })
+    .select()
+    .single()
+
+  // Update the chat's last_message_at timestamp
+  if (!error && data) {
+    await supabase
+      .from('chats')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', chatId)
+  }
+
+  return { data, error }
+}
+
+/**
  * Get user's daily message count
  */
 export const getDailyMessageCount = async (userId: string) => {

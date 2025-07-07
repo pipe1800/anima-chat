@@ -5,6 +5,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { MessageLimitToast } from './MessageLimitToast';
 import { DailyLimitModal } from './DailyLimitModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  createChat, 
+  createMessage, 
+  getChatMessages, 
+  getDailyMessageCount,
+  getUserSubscription,
+  getCharacterDetails
+} from '@/lib/supabase-queries';
 
 interface Message {
   id: string;
@@ -34,50 +44,87 @@ const ChatInterface = ({
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [characterGreeting, setCharacterGreeting] = useState<string>('');
+  const [loading, setLoading] = useState(true);
   
-  // Daily usage tracking (mock data - in real app this would come from props/context)
-  const [messagesUsed, setMessagesUsed] = useState(5); // Mock: user has used 5 messages
-  const dailyLimit = 75;
-  const messagesRemaining = dailyLimit - messagesUsed;
-  const isGuestPass = true; // Mock: user is on Guest Pass
+  // Daily usage tracking - now using real data
+  const [messagesUsed, setMessagesUsed] = useState(0);
+  const [dailyLimit, setDailyLimit] = useState(75);
+  const [isGuestPass, setIsGuestPass] = useState(true);
   const [showLimitToast, setShowLimitToast] = useState(false);
   const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+
+        // Get user's daily message count and subscription
+        const [messageCountResult, subscriptionResult, characterDetailsResult] = await Promise.all([
+          getDailyMessageCount(user.id),
+          getUserSubscription(user.id),
+          getCharacterDetails(character.id)
+        ]);
+
+        // Set message count and daily limit
+        setMessagesUsed(messageCountResult.data?.count || 0);
+        
+        // Determine if user is on guest pass and set limits
+        const userTier = subscriptionResult.data?.plan?.name || "Guest Pass";
+        const isGuest = userTier === "Guest Pass";
+        setIsGuestPass(isGuest);
+        setDailyLimit(isGuest ? 75 : 999999);
+
+        // Set character greeting
+        const greeting = characterDetailsResult.data?.definition?.[0]?.greeting || 
+                        `Hello! I'm ${character.name}. It's great to meet you. What would you like to talk about?`;
+        setCharacterGreeting(greeting);
+
+        // Add greeting message
+        const greetingMessage: Message = {
+          id: 'greeting',
+          content: greeting,
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages([greetingMessage]);
+
+        console.log('Chat initialized:', { 
+          messagesUsed: messageCountResult.data?.count, 
+          userTier, 
+          isGuest,
+          greeting 
+        });
+
+      } catch (error) {
+        console.error('Error loading initial chat data:', error);
+      } finally {
+        setLoading(false);
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }
+    };
+
+    loadInitialData();
+  }, [user, character]);
 
   // Show toast when user has exactly 10 messages remaining
   useEffect(() => {
+    const messagesRemaining = dailyLimit - messagesUsed;
     if (isGuestPass && messagesRemaining === 10 && messagesUsed > 0) {
       setShowLimitToast(true);
     }
-  }, [messagesRemaining, isGuestPass, messagesUsed]);
-
-  // Character greeting messages
-  const getGreeting = (characterId: string) => {
-    const greetings = {
-      luna: "✨ Hello there! I sense a spark of magic in you. What mystical adventures shall we embark on together?",
-      zyx: "🚀 Greetings, traveler! I've just returned from the year 3024. Ready to explore the boundaries of possibility?",
-      sakura: "🌸 Hi! I'm so excited to meet you! What kind of fun adventure should we go on today?",
-      raven: "🌙 *emerges from the shadows* Interesting... you've found your way to me. What secrets do you seek?",
-      phoenix: "🔥 Well, well! Look who's ready for some excitement. I can already tell we're going to have a blast!"
-    };
-    return greetings[characterId as keyof typeof greetings] || "Hello! It's great to meet you. What would you like to talk about?";
-  };
-
-  useEffect(() => {
-    const greeting: Message = {
-      id: 'greeting',
-      content: getGreeting(character.id),
-      isUser: false,
-      timestamp: new Date()
-    };
-    setMessages([greeting]);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [character]);
+  }, [messagesUsed, dailyLimit, isGuestPass]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -85,9 +132,9 @@ const ChatInterface = ({
     });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || !user) return;
 
     // Check if user has reached their daily limit
     if (isGuestPass && messagesUsed >= dailyLimit) {
@@ -103,32 +150,93 @@ const ChatInterface = ({
     };
     
     setMessages(prev => [...prev, userMessage]);
+    const messageContent = inputValue;
     setInputValue('');
     setIsTyping(true);
-    
-    // Increment message count
-    setMessagesUsed(prev => prev + 1);
 
-    if (isFirstMessage) {
-      setIsFirstMessage(false);
-      onFirstMessage();
+    try {
+      // Create chat session if it doesn't exist
+      let chatId = currentChatId;
+      if (!chatId) {
+        console.log('Creating new chat session...');
+        const { data: newChat, error: chatError } = await createChat(
+          user.id, 
+          character.id, 
+          `Chat with ${character.name}`
+        );
+        
+        if (chatError) {
+          console.error('Error creating chat:', chatError);
+          toast({
+            title: "Error",
+            description: "Failed to create chat session. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        chatId = newChat.id;
+        setCurrentChatId(chatId);
+        console.log('Created new chat:', chatId);
+      }
+
+      // Save user message to database
+      console.log('Saving user message...');
+      const { error: messageError } = await createMessage(chatId, user.id, messageContent, false);
+      
+      if (messageError) {
+        console.error('Error saving message:', messageError);
+        toast({
+          title: "Error",
+          description: "Failed to save message. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update message count
+      setMessagesUsed(prev => prev + 1);
+
+      // Handle first message achievement
+      if (isFirstMessage) {
+        setIsFirstMessage(false);
+        onFirstMessage();
+        toast({
+          title: "🏆 Achievement Unlocked: First Contact!",
+          description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
+          duration: 5000
+        });
+      }
+
+      // Generate AI response
+      setTimeout(async () => {
+        setIsTyping(false);
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          content: getAIResponse(messageContent, character.id),
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiResponse]);
+
+        // Save AI response to database
+        try {
+          await createMessage(chatId, user.id, aiResponse.content, true);
+          console.log('AI response saved to database');
+        } catch (error) {
+          console.error('Error saving AI response:', error);
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error handling message:', error);
+      setIsTyping(false);
       toast({
-        title: "🏆 Achievement Unlocked: First Contact!",
-        description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
-        duration: 5000
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
       });
     }
-
-    setTimeout(() => {
-      setIsTyping(false);
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: getAIResponse(inputValue, character.id),
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 2000);
   };
 
   const getAIResponse = (userInput: string, characterId: string) => {
@@ -154,6 +262,16 @@ const ChatInterface = ({
   const handleCloseDailyLimitModal = () => {
     setShowDailyLimitModal(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-white">Loading chat...</div>
+      </div>
+    );
+  }
+
+  const messagesRemaining = dailyLimit - messagesUsed;
 
   return (
     <div className="flex flex-col h-full">
