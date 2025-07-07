@@ -73,18 +73,33 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
     return { data: [], error }
   }
 
-  // Fetch creator profiles separately for each character
+  // Fetch creator profiles and counts separately for each character
   const charactersWithCreators = await Promise.all(
     data.map(async (character) => {
+      // Get creator profile
       const { data: creatorData } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
         .eq('id', character.creator_id)
         .maybeSingle()
 
+      // Get actual chat count
+      const { count: chatCount } = await supabase
+        .from('chats')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      // Get likes count
+      const { count: likesCount } = await supabase
+        .from('character_likes')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
       return {
         ...character,
-        creator: creatorData
+        creator: creatorData,
+        actual_chat_count: chatCount || 0,
+        likes_count: likesCount || 0
       }
     })
   )

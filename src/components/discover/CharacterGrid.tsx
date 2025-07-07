@@ -25,6 +25,8 @@ type PublicCharacter = {
   interaction_count: number;
   created_at: string;
   creator: any; // Temporary to handle the query response
+  actual_chat_count: number;
+  likes_count: number;
 };
 
 export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridProps) {
@@ -78,9 +80,9 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'popularity':
       case 'conversations':
-        return b.interaction_count - a.interaction_count;
+        return b.actual_chat_count - a.actual_chat_count;
       default: // relevance
-        return b.interaction_count - a.interaction_count;
+        return b.actual_chat_count - a.actual_chat_count;
     }
   });
 
@@ -134,8 +136,8 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
           >
             <CardContent className="p-0">
               {/* Character Avatar Section - Top Half */}
-              <div className="relative h-48 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
-                <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
+              <div className="relative h-32 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
+                <Avatar className="w-24 h-24 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
                   <AvatarImage src={character.avatar_url || "/placeholder.svg"} alt={character.name} />
                   <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
                     {character.name.charAt(0).toUpperCase()}
@@ -164,11 +166,11 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-1 text-gray-300">
                     <MessageCircle className="w-4 h-4" />
-                    <span>{character.interaction_count.toLocaleString()}</span>
+                    <span>{character.actual_chat_count.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-gray-300">
                     <Heart className="w-4 h-4" />
-                    <span>0</span>
+                    <span>{character.likes_count.toLocaleString()}</span>
                   </div>
                 </div>
 
