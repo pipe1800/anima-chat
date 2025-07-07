@@ -195,22 +195,28 @@ export function DashboardContent() {
             <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
           </div>
           
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4">
+            {/* User Avatar */}
+            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+              <AvatarImage 
+                src={profile?.avatar_url || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=150&h=150&fit=crop&crop=face"} 
+                alt={profile?.username || "User"} 
+              />
+              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                {profile?.username?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            
+            {/* Username and Credits */}
             <div className="text-right">
-              <p className="text-gray-400 text-sm">Subscription Tier:</p>
-              <p className="text-[#FF7A00] font-bold text-lg">{userTier}</p>
-            </div>
-            {!isGuestPass && (
-              <div className="bg-[#FF7A00]/20 px-4 py-3 rounded-lg border border-[#FF7A00]/30">
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-[#FF7A00]" />
-                  <div className="text-right">
-                    <p className="text-gray-400 text-xs">Credits:</p>
-                    <p className="text-[#FF7A00] font-bold text-lg">{userCredits.toLocaleString()}</p>
-                  </div>
-                </div>
+              <p className="text-white text-lg font-bold">
+                @{username}
+              </p>
+              <div className="flex items-center justify-end space-x-2 mt-1">
+                <Zap className="w-4 h-4 text-[#FF7A00]" />
+                <span className="text-[#FF7A00] text-sm font-bold">{userCredits.toLocaleString()} credits</span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </header>
