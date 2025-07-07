@@ -10,14 +10,19 @@ import {
 export const SubscriptionFAQ = () => {
   const faqItems = [
     {
-      id: "change-plan",
-      question: "Can I change my plan later?",
-      answer: "Absolutely! You can upgrade or downgrade your plan at any time from your account settings. When upgrading, you'll be charged the prorated difference immediately. When downgrading, the change takes effect at your next billing cycle, so you keep your current benefits until then."
+      id: "message-count",
+      question: "What counts as a message?",
+      answer: "Every time you send a message or regenerate an AI response, it counts as one message towards your daily limit."
     },
     {
       id: "payment-methods",
       question: "What payment methods do you accept?",
-      answer: "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and various local payment methods depending on your region. All transactions are secured with bank-level encryption and processed through our trusted payment partner Stripe."
+      answer: "We currently accept all major credit/debit cards and PayPal for all subscription plans."
+    },
+    {
+      id: "change-plan",
+      question: "Can I change my plan later?",
+      answer: "Absolutely! You can upgrade or downgrade your plan at any time from your account settings. When upgrading, you'll be charged the prorated difference immediately. When downgrading, the change takes effect at your next billing cycle, so you keep your current benefits until then."
     },
     {
       id: "money-back",
