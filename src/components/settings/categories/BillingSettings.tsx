@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,41 @@ import { Separator } from '@/components/ui/separator';
 import { CreditCard } from 'lucide-react';
 
 export const BillingSettings = () => {
+  // This would typically come from your payment provider/database
+  const paymentMethod = {
+    type: 'card', // or 'paypal'
+    cardType: 'Visa',
+    lastFour: '4242',
+    expiryMonth: '12',
+    expiryYear: '25'
+  };
+
+  const renderPaymentMethod = () => {
+    if (paymentMethod.type === 'paypal') {
+      return (
+        <div className="flex items-center">
+          <div className="w-6 h-6 bg-blue-600 rounded mr-3 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">PP</span>
+          </div>
+          <div>
+            <p className="text-white">PayPal</p>
+            <p className="text-gray-400 text-sm">Connected account</p>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center">
+          <CreditCard className="w-6 h-6 text-gray-400 mr-3" />
+          <div>
+            <p className="text-white">{paymentMethod.cardType} ending in {paymentMethod.lastFour}</p>
+            <p className="text-gray-400 text-sm">Expires {paymentMethod.expiryMonth}/{paymentMethod.expiryYear}</p>
+          </div>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="max-w-2xl">
       <div className="mb-8">
@@ -46,16 +80,10 @@ export const BillingSettings = () => {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Payment Method</h3>
           <div className="bg-gray-800/50 rounded-lg p-4">
-            <div className="flex items-center">
-              <CreditCard className="w-6 h-6 text-gray-400 mr-3" />
-              <div>
-                <p className="text-white">•••• •••• •••• 4242</p>
-                <p className="text-gray-400 text-sm">Expires 12/25</p>
-              </div>
-            </div>
+            {renderPaymentMethod()}
           </div>
           <Button variant="outline" className="mt-3 border-gray-600 text-white hover:bg-gray-800">
-            Update Payment Method
+            Manage Payment Method
           </Button>
         </div>
 
