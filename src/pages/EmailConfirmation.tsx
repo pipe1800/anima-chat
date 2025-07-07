@@ -36,21 +36,21 @@ const EmailConfirmation = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-4xl mx-4">
+      <div className="relative z-10 w-full max-w-6xl mx-4">
         <div className="bg-[#1a1a2e]/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left Column - Character Image */}
             <div className="relative flex justify-center">
-              <div className="relative">
+              <div className="relative w-full max-w-lg">
                 {/* Glowing backdrop effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/20 via-purple-500/10 to-blue-500/20 rounded-2xl blur-3xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/20 via-purple-500/10 to-blue-500/20 rounded-2xl blur-3xl scale-110"></div>
                 
                 {/* Character Image */}
                 <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#121212] rounded-2xl border border-[#FF7A00]/20 overflow-hidden shadow-2xl">
                   <img
                     src="/lovable-uploads/e732b32c-b885-4735-81c8-6905347a03b9.png"
                     alt="Friendly AI Character"
-                    className="w-96 h-auto mx-auto"
+                    className="w-full h-auto"
                   />
                   
                   {/* Subtle overlay for theme integration */}
