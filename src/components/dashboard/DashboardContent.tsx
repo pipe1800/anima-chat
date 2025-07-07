@@ -30,7 +30,8 @@ import {
   Share,
   CreditCard,
   CheckCircle,
-  Crown
+  Crown,
+  Heart
 } from 'lucide-react';
 
 export function DashboardContent() {
@@ -175,7 +176,6 @@ export function DashboardContent() {
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
     totalChats: character.interaction_count || 0,
-    creator: 'Loading...', // We'll fetch this separately since we don't have creator info yet
     originalCharacter: character
   }));
 
@@ -332,25 +332,25 @@ export function DashboardContent() {
                                     {chat.timestamp}
                                   </p>
                                 </div>
-                                <div className="mb-3">
+                                <div className="flex items-center justify-between">
                                   {chat.lastMessage !== "No messages yet" ? (
-                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
+                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-2 flex-1 mr-3">
                                       <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
                                         {chat.lastMessageIsAI ? chat.character.name : 'You'}:
                                       </span>
                                       {' '}{chat.lastMessage}
                                     </p>
                                   ) : (
-                                    <p className="text-gray-400 text-sm">No messages yet</p>
+                                    <p className="text-gray-400 text-sm flex-1 mr-3">No messages yet</p>
                                   )}
+                                  <Button
+                                    onClick={() => handleContinueChat(chat.originalChat)}
+                                    size="sm"
+                                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white flex-shrink-0"
+                                  >
+                                    Continue Chat
+                                  </Button>
                                 </div>
-                                <Button
-                                  onClick={() => handleContinueChat(chat.originalChat)}
-                                  size="sm"
-                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                >
-                                  Continue chat
-                                </Button>
                               </div>
                             </div>
                           </CardContent>
@@ -389,9 +389,16 @@ export function DashboardContent() {
                               {character.name}
                             </h3>
                             
-                            <p className="text-gray-400 text-sm mb-3">
-                              {character.totalChats} total chats
-                            </p>
+                            <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                              <div className="flex items-center space-x-1 text-gray-300">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>{character.totalChats}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-300">
+                                <Heart className="w-4 h-4" />
+                                <span>0</span>
+                              </div>
+                            </div>
                             
                             <div className="flex gap-2 justify-center">
                               <Button
@@ -400,7 +407,7 @@ export function DashboardContent() {
                                 onClick={() => handleStartChat(character.originalCharacter)}
                               >
                                 <MessageCircle className="w-3 h-3 mr-1" />
-                                Chat
+                                New Chat
                               </Button>
                               <Button
                                 size="sm"
@@ -452,13 +459,20 @@ export function DashboardContent() {
                               {character.name}
                             </h3>
                             
-                            <p className="text-gray-400 text-sm mb-1">
-                              by @{character.creator}
+                            <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
+                              by @Unknown
                             </p>
                             
-                            <p className="text-gray-400 text-sm mb-3">
-                              {character.totalChats} total chats
-                            </p>
+                            <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                              <div className="flex items-center space-x-1 text-gray-300">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>{character.totalChats}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-300">
+                                <Heart className="w-4 h-4" />
+                                <span>0</span>
+                              </div>
+                            </div>
                             
                             <div className="flex gap-2 justify-center">
                               <Button
@@ -467,7 +481,7 @@ export function DashboardContent() {
                                 onClick={() => handleStartChat(character.originalCharacter)}
                               >
                                 <MessageCircle className="w-3 h-3 mr-1" />
-                                Chat
+                                New Chat
                               </Button>
                             </div>
                           </CardContent>
