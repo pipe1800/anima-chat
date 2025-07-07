@@ -98,6 +98,8 @@ export const getUserCharacters = async (userId: string) => {
  * Get character with full details (respects visibility rules)
  */
 export const getCharacterDetails = async (characterId: string) => {
+  console.log('🔍 getCharacterDetails called with characterId:', characterId)
+
   const { data, error } = await supabase
     .from('characters')
     .select(`
@@ -113,18 +115,25 @@ export const getCharacterDetails = async (characterId: string) => {
     .eq('id', characterId)
     .maybeSingle()
 
+  console.log('📊 Character query result:', { data, error })
+
   if (error || !data) {
+    console.error('❌ Failed to fetch character:', error)
     return { data: null, error }
   }
 
   // Fetch character definition separately
+  console.log('🔍 Fetching character definition for characterId:', characterId)
   const { data: definitionData, error: definitionError } = await supabase
     .from('character_definitions')
     .select('greeting, long_description, definition')
     .eq('character_id', characterId)
     .maybeSingle()
 
+  console.log('📄 Definition query result:', { definitionData, definitionError })
+
   // Fetch character tags separately
+  console.log('🔍 Fetching character tags for characterId:', characterId)
   const { data: tagsData, error: tagsError } = await supabase
     .from('character_tags')
     .select(`
@@ -132,12 +141,16 @@ export const getCharacterDetails = async (characterId: string) => {
     `)
     .eq('character_id', characterId)
 
+  console.log('🏷️ Tags query result:', { tagsData, tagsError })
+
   // Combine the data
   const characterWithDetails = {
     ...data,
     definition: definitionData ? [definitionData] : [],
     tags: tagsData || []
   }
+
+  console.log('✅ Final character with details:', characterWithDetails)
 
   return { data: characterWithDetails, error: null }
 }
