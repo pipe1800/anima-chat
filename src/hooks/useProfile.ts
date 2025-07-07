@@ -80,21 +80,33 @@ export const useCurrentUser = () => {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      console.log('useCurrentUser: Getting initial session...');
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('useCurrentUser: Initial session:', session?.user ? 'User found' : 'No user');
-      
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        console.log('useCurrentUser: Fetching profile for user:', session.user.id);
-        const { data, error } = await getPrivateProfile(session.user.id)
-        console.log('useCurrentUser: Profile fetch result:', { data, error });
-        setProfile(data)
+      try {
+        console.log('useCurrentUser: Getting initial session...');
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('useCurrentUser: Initial session:', session?.user ? 'User found' : 'No user');
+        
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          console.log('useCurrentUser: Fetching profile for user:', session.user.id);
+          try {
+            const { data, error } = await getPrivateProfile(session.user.id)
+            console.log('useCurrentUser: Profile fetch result:', { data, error });
+            if (error) {
+              console.error('Profile fetch error:', error);
+            }
+            setProfile(data || null)
+          } catch (profileError) {
+            console.error('Profile fetch failed:', profileError);
+            setProfile(null)
+          }
+        }
+      } catch (sessionError) {
+        console.error('Session fetch failed:', sessionError);
+      } finally {
+        console.log('useCurrentUser: Setting loading to false');
+        setLoading(false)
       }
-      
-      console.log('useCurrentUser: Setting loading to false');
-      setLoading(false)
     }
 
     getInitialSession()
@@ -102,20 +114,32 @@ export const useCurrentUser = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('useCurrentUser: Auth state changed:', event);
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          console.log('useCurrentUser: Fetching profile after auth change for user:', session.user.id);
-          const { data, error } = await getPrivateProfile(session.user.id)
-          console.log('useCurrentUser: Profile fetch after auth change:', { data, error });
-          setProfile(data)
-        } else {
-          setProfile(null)
+        try {
+          console.log('useCurrentUser: Auth state changed:', event);
+          setUser(session?.user ?? null)
+          
+          if (session?.user) {
+            console.log('useCurrentUser: Fetching profile after auth change for user:', session.user.id);
+            try {
+              const { data, error } = await getPrivateProfile(session.user.id)
+              console.log('useCurrentUser: Profile fetch after auth change:', { data, error });
+              if (error) {
+                console.error('Profile fetch error after auth change:', error);
+              }
+              setProfile(data || null)
+            } catch (profileError) {
+              console.error('Profile fetch failed after auth change:', profileError);
+              setProfile(null)
+            }
+          } else {
+            setProfile(null)
+          }
+        } catch (authError) {
+          console.error('Auth state change error:', authError);
+        } finally {
+          console.log('useCurrentUser: Setting loading to false after auth change');
+          setLoading(false)
         }
-        
-        console.log('useCurrentUser: Setting loading to false after auth change');
-        setLoading(false)
       }
     )
 
