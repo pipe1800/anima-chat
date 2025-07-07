@@ -63,13 +63,33 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
       avatar_url,
       interaction_count,
       created_at,
-      creator:profiles!creator_id(id, username, avatar_url)
+      creator_id
     `)
     .eq('visibility', 'public')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  return { data: data || [], error }
+  if (error || !data) {
+    return { data: [], error }
+  }
+
+  // Fetch creator profiles separately for each character
+  const charactersWithCreators = await Promise.all(
+    data.map(async (character) => {
+      const { data: creatorData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', character.creator_id)
+        .maybeSingle()
+
+      return {
+        ...character,
+        creator: creatorData
+      }
+    })
+  )
+
+  return { data: charactersWithCreators, error: null }
 }
 
 /**
