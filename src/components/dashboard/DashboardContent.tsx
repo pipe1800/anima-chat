@@ -55,9 +55,9 @@ export function DashboardContent() {
         const { data: charactersData } = await getUserCharacters(user.id);
         setMyCharacters(charactersData || []);
 
-        // Fetch user's credits - properly handle null/undefined
+        // Fetch user's credits - handle potential null/undefined response
         const { data: creditsData } = await getUserCredits(user.id);
-        setUserCredits(creditsData ? creditsData.balance : 0);
+        setUserCredits(creditsData?.balance || 0);
 
         // Fetch user's subscription
         const { data: subscriptionData } = await getUserSubscription(user.id);
