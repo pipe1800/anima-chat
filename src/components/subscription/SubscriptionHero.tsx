@@ -7,12 +7,12 @@ export const SubscriptionHero = () => {
       <div className="max-w-4xl mx-auto">
         {/* Main Headline */}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-          Choose Your Power Level
+          Go Beyond the Limit.
         </h1>
         
         {/* Supporting Headline */}
         <p className="text-xl sm:text-2xl text-gray-400 mb-8 leading-relaxed max-w-3xl mx-auto">
-          The free experience is just the beginning. Unleash the true potential of your AI companions and support the simulation.
+          The free experience is just a taste. Upgrade now to unlock unlimited messages, more powerful AI, and an uninterrupted experience.
         </p>
         
         {/* Trust Indicators */}
