@@ -94,7 +94,7 @@ export function DashboardContent() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
-        <div className="text-white">Please sign in to access your dashboard.</div>
+        <div className="text-white">Please sign in to access your ANIMA dashboard.</div>
       </div>
     );
   }
@@ -136,7 +136,7 @@ export function DashboardContent() {
             <SidebarTrigger className="text-gray-400 hover:text-white" />
             <div>
               <h1 className="text-white text-3xl font-bold">
-                Welcome back, @{profile?.username || 'User'}
+                Welcome back to ANIMA, @{profile?.username || 'User'}
               </h1>
               <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
             </div>

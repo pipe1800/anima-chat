@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   MessageCircle, 
   User, 
@@ -28,6 +28,10 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useCurrentUser } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { getUserCredits } from '@/lib/supabase-queries';
+import { useState, useEffect } from 'react';
 
 const mainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
@@ -39,16 +43,46 @@ const mainItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile } = useCurrentUser();
+  const [userCredits, setUserCredits] = useState(0);
   const currentPath = location.pathname;
+
+  // Fetch user credits
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      
+      try {
+        const creditsResult = await getUserCredits(user.id);
+        if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
+          setUserCredits(creditsResult.data.balance);
+        }
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+      }
+    };
+
+    fetchCredits();
+  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
 
   const getNavClasses = (active: boolean) => 
-    `flex items-center justify-start w-full space-x-3 transition-all duration-200 ${
+    `flex items-center justify-start w-full space-x-2 px-3 py-2 transition-all duration-200 text-sm ${
       active 
         ? 'bg-[#FF7A00]/20 text-[#FF7A00] border-r-2 border-[#FF7A00]' 
         : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
     }`;
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <Sidebar 
@@ -58,29 +92,33 @@ export function AppSidebar() {
       <div className="flex flex-col h-full">
         <SidebarHeader className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
-          <div className="flex items-center justify-start mb-4">
+          <div className="flex items-center justify-start mb-6">
             <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
               <Zap className="w-6 h-6 text-white" />
             </div>
             <div className="ml-3">
-              <h2 className="text-white font-bold text-lg">AI Command</h2>
-              <p className="text-[#FF7A00] text-xs font-medium">Neural Interface</p>
+              <h2 className="text-white font-bold text-lg">ANIMA</h2>
             </div>
           </div>
 
           {/* User Profile Section */}
           <div className="flex items-center space-x-3">
             <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-              <AvatarImage src="/placeholder.svg" alt="User" />
+              <AvatarImage 
+                src={profile?.avatar_url || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=150&h=150&fit=crop&crop=face"} 
+                alt={profile?.username || "User"} 
+              />
               <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                SG
+                {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="text-white text-sm font-medium">@xX_ShadowGamer_Xx</p>
+              <p className="text-white text-sm font-medium">
+                @{profile?.username || user?.email?.split('@')[0] || 'User'}
+              </p>
               <div className="bg-[#FF7A00]/20 px-2 py-1 rounded-lg border border-[#FF7A00]/30 flex items-center space-x-2 mt-1 w-fit">
                 <Zap className="w-3 h-3 text-[#FF7A00]" />
-                <span className="text-[#FF7A00] text-xs font-bold">1,247</span>
+                <span className="text-[#FF7A00] text-xs font-bold">{userCredits.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -89,7 +127,7 @@ export function AppSidebar() {
         <SidebarContent className="px-2 py-4 flex-1">
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="space-y-2">
                 {mainItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
@@ -97,8 +135,8 @@ export function AppSidebar() {
                         to={item.url} 
                         className={getNavClasses(isActive(item.url))}
                       >
-                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium">{item.title}</span>
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-medium text-sm">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -113,12 +151,10 @@ export function AppSidebar() {
           <Button 
             variant="ghost" 
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
-            onClick={() => {
-              console.log('Logout clicked');
-            }}
+            onClick={handleLogout}
           >
-            <PowerOff className="w-5 h-5 flex-shrink-0" />
-            <span className="ml-3 font-medium">Logout</span>
+            <PowerOff className="w-4 h-4 flex-shrink-0" />
+            <span className="ml-3 font-medium text-sm">Logout</span>
           </Button>
         </SidebarFooter>
       </div>
