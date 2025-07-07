@@ -79,7 +79,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/'); // Redirect to landing page instead of auth page
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -172,7 +172,6 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="border-t border-gray-700/50 p-4">
-          {/* Logout Button */}
           <Button 
             variant="ghost" 
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"

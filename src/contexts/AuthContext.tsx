@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,13 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await getPrivateProfile(user.id);
       if (error) {
         console.warn('Profile fetch warning:', error);
-        // Don't set profile to null on error, keep existing state
       } else {
         setProfile(data || null);
       }
     } catch (error) {
       console.warn('Profile fetch failed:', error);
-      // Don't set profile to null on error, keep existing state
     }
   };
 
@@ -71,13 +70,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Try to fetch profile, but don't block on failure
+          // Try to fetch profile
           try {
             const { data, error } = await getPrivateProfile(session.user.id);
             if (mounted) {
               if (error) {
                 console.warn('Profile fetch warning:', error);
-                // Set a minimal profile if none exists
                 setProfile(null);
               } else {
                 setProfile(data || null);
@@ -95,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Always set loading to false after handling auth state
         if (mounted) {
           setLoading(false);
         }

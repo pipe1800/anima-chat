@@ -51,7 +51,6 @@ export function DashboardContent() {
       try {
         setDataLoading(true);
 
-        // Fetch all data in parallel
         const [chatsResult, charactersResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
           getUserChats(user.id),
           getUserCharacters(user.id),
@@ -77,14 +76,13 @@ export function DashboardContent() {
         // Set daily limits based on subscription
         if (subscriptionResult.data?.plan) {
           const plan = subscriptionResult.data.plan;
-          // Set daily limit based on plan - this would be configured per plan
           if (plan.name === 'Guest Pass') {
             setDailyLimit(75);
           } else {
-            setDailyLimit(999999); // Unlimited for paid plans
+            setDailyLimit(999999);
           }
         } else {
-          setDailyLimit(75); // Default guest limit
+          setDailyLimit(75);
         }
 
       } catch (error) {
@@ -94,16 +92,13 @@ export function DashboardContent() {
       }
     };
 
-    // Only fetch data when we have a user and auth is not loading
     if (user && !authLoading) {
       fetchDashboardData();
     } else if (!authLoading && !user) {
-      // Not authenticated and not loading
       setDataLoading(false);
     }
   }, [user, authLoading]);
 
-  // Show loading while auth is initializing
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
@@ -112,7 +107,6 @@ export function DashboardContent() {
     );
   }
 
-  // Show message if not authenticated
   if (!user) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
@@ -121,12 +115,10 @@ export function DashboardContent() {
     );
   }
 
-  // Determine user tier and if it's guest pass
   const userTier = subscription?.plan?.name || "Guest Pass";
   const isGuestPass = userTier === "Guest Pass";
   const username = profile?.username || user.email?.split('@')[0] || 'User';
 
-  // Format recent chats for display
   const formattedRecentChats = recentChats.map(chat => ({
     id: chat.id,
     character: {
@@ -138,7 +130,6 @@ export function DashboardContent() {
     timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString()
   }));
 
-  // Format characters for display  
   const formattedMyCharacters = myCharacters.map(character => ({
     id: character.id,
     name: character.name,
@@ -149,10 +140,8 @@ export function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#121212]">
-      {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          {/* Left side - Welcome Message */}
           <div>
             <h1 className="text-white text-3xl font-bold">
               Welcome back to ANIMA, @{username}
@@ -160,7 +149,6 @@ export function DashboardContent() {
             <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
           </div>
           
-          {/* Right side - Account Status */}
           <div className="flex items-center space-x-8">
             <div className="text-right">
               <p className="text-gray-400 text-sm">Subscription Tier:</p>
@@ -181,14 +169,11 @@ export function DashboardContent() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="p-6 space-y-6">
-        {/* Daily Usage Widget - Only for Guest Pass users */}
         {isGuestPass && (
           <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
         )}
 
-        {/* Daily Quest Widget */}
         <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center space-x-2">
@@ -213,10 +198,8 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Discord CTA */}
         <DiscordCTA />
 
-        {/* Main Tabbed Widget */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
@@ -249,7 +232,6 @@ export function DashboardContent() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Recent Chats Tab */}
                 <TabsContent value="recent-chats" className="mt-6">
                   <div className="space-y-3">
                     {formattedRecentChats.length > 0 ? (
@@ -294,7 +276,6 @@ export function DashboardContent() {
                   </div>
                 </TabsContent>
 
-                {/* My Characters Tab */}
                 <TabsContent value="my-characters" className="mt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {formattedMyCharacters.length > 0 ? (
@@ -343,7 +324,6 @@ export function DashboardContent() {
                   </div>
                 </TabsContent>
 
-                {/* Favorites Tab */}
                 <TabsContent value="favorites" className="mt-6">
                   <div className="text-center py-8">
                     <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
@@ -355,7 +335,6 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
             <CardContent className="p-6">
@@ -406,7 +385,6 @@ export function DashboardContent() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center space-x-2">
