@@ -56,7 +56,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
       toast({
         title: "File Too Large",
         description: "Please upload an image smaller than 5MB.",
-        variant: "destructive",
+        variant: "descriptive",
       });
       return;
     }
@@ -99,11 +99,27 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
       });
     } finally {
       setIsUploading(false);
-      // Clean up temporary URL
-      if (tempImageUrl) {
-        URL.revokeObjectURL(tempImageUrl);
-        setTempImageUrl('');
-      }
+      cleanupTempImage();
+      resetFileInput();
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    cleanupTempImage();
+    resetFileInput();
+  };
+
+  const cleanupTempImage = () => {
+    if (tempImageUrl) {
+      URL.revokeObjectURL(tempImageUrl);
+      setTempImageUrl('');
+    }
+  };
+
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -282,13 +298,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
         <ImageCropper
           imageUrl={tempImageUrl}
           isOpen={showCropper}
-          onClose={() => {
-            setShowCropper(false);
-            if (tempImageUrl) {
-              URL.revokeObjectURL(tempImageUrl);
-              setTempImageUrl('');
-            }
-          }}
+          onClose={handleCropCancel}
           onCrop={handleCropComplete}
         />
       )}
