@@ -154,8 +154,10 @@ export function DashboardContent() {
       avatar: chat.character?.name?.charAt(0) || 'U',
       image: chat.character?.avatar_url || "/placeholder.svg"
     },
-    lastMessage: "Continue your conversation...",
-    timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString()
+    lastMessage: chat.lastMessage || "No messages yet",
+    lastMessageIsAI: chat.lastMessageIsAI || false,
+    timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString(),
+    originalChat: chat
   }));
 
   const formattedMyCharacters = myCharacters.map(character => ({
@@ -306,11 +308,10 @@ export function DashboardContent() {
                       formattedRecentChats.map((chat) => (
                         <Card
                           key={chat.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
-                          onClick={() => handleContinueChat(chat)}
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
                         >
                           <CardContent className="p-4">
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-start space-x-4">
                               <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
                                 <AvatarImage 
                                   src={chat.character.image} 
@@ -323,18 +324,33 @@ export function DashboardContent() {
                               </Avatar>
                               
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-bold text-lg mb-1">
-                                  {chat.character.name}
-                                </h3>
-                                <p className="text-gray-400 text-sm line-clamp-1">
-                                  {chat.lastMessage}
-                                </p>
-                              </div>
-                              
-                              <div className="text-right">
-                                <p className="text-gray-500 text-sm">
-                                  {chat.timestamp}
-                                </p>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className="text-white font-bold text-lg">
+                                    {chat.character.name}
+                                  </h3>
+                                  <p className="text-gray-500 text-sm flex-shrink-0 ml-2">
+                                    {chat.timestamp}
+                                  </p>
+                                </div>
+                                <div className="mb-3">
+                                  {chat.lastMessage !== "No messages yet" ? (
+                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
+                                      <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
+                                        {chat.lastMessageIsAI ? chat.character.name : 'You'}:
+                                      </span>
+                                      {' '}{chat.lastMessage}
+                                    </p>
+                                  ) : (
+                                    <p className="text-gray-400 text-sm">No messages yet</p>
+                                  )}
+                                </div>
+                                <Button
+                                  onClick={() => handleContinueChat(chat.originalChat)}
+                                  size="sm"
+                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                >
+                                  Continue chat
+                                </Button>
                               </div>
                             </div>
                           </CardContent>

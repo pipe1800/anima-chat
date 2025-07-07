@@ -285,7 +285,16 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                               <p className={`text-sm truncate ${
                                 isActiveChat ? 'text-[#FF7A00]/80' : 'text-gray-400'
                               }`}>
-                                {isActiveChat ? '• Active Chat' : (chat.title || 'New conversation')}
+                                {isActiveChat ? '• Active Chat' : 
+                                 chat.lastMessage ? (
+                                   <>
+                                     <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
+                                       {chat.lastMessageIsAI ? chat.character?.name?.split(' ')[0] : 'You'}:
+                                     </span>
+                                     {' '}{chat.lastMessage}
+                                   </>
+                                 ) : 'New conversation'
+                                }
                               </p>
                             </div>
                           </div>

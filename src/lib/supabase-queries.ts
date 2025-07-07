@@ -313,7 +313,7 @@ export const completeOnboardingTask = async (userId: string, taskId: number) => 
 // =============================================================================
 
 /**
- * Get user's chat sessions
+ * Get user's chat sessions with last message preview
  */
 export const getUserChats = async (userId: string) => {
   const { data, error } = await supabase
@@ -328,7 +328,30 @@ export const getUserChats = async (userId: string) => {
     .eq('user_id', userId)
     .order('last_message_at', { ascending: false })
 
-  return { data: data || [], error }
+  if (error || !data) {
+    return { data: data || [], error }
+  }
+
+  // Fetch last message for each chat
+  const chatsWithLastMessage = await Promise.all(
+    data.map(async (chat) => {
+      const { data: lastMessage } = await supabase
+        .from('messages')
+        .select('content, is_ai_message')
+        .eq('chat_id', chat.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      return {
+        ...chat,
+        lastMessage: lastMessage?.content || null,
+        lastMessageIsAI: lastMessage?.is_ai_message || false
+      }
+    })
+  )
+
+  return { data: chatsWithLastMessage, error: null }
 }
 
 /**
