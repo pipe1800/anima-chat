@@ -50,7 +50,8 @@ const EmailConfirmation = () => {
                   <img
                     src="/lovable-uploads/e732b32c-b885-4735-81c8-6905347a03b9.png"
                     alt="Friendly AI Character"
-                    className="w-full h-auto max-w-md mx-auto"
+                    className="w-full h-auto max-w-sm mx-auto"
+                    style={{ transform: 'scale(1.2)' }}
                   />
                   
                   {/* Subtle overlay for theme integration */}
@@ -65,12 +66,6 @@ const EmailConfirmation = () => {
 
             {/* Right Column - Content */}
             <div className="text-center md:text-left">
-              {/* Mail Icon */}
-              <div className="mb-6 flex justify-center md:justify-start">
-                <div className="w-16 h-16 bg-[#FF7A00]/20 rounded-full flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-[#FF7A00]" />
-                </div>
-              </div>
 
               {/* Main Headline */}
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-white">
