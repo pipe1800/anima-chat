@@ -67,9 +67,12 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
+      // Don't show error to user for logout failures - just redirect
+    } finally {
+      // Always navigate to home regardless of logout success/failure
+      navigate('/');
     }
   };
 

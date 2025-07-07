@@ -46,7 +46,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear local state first
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      // Attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      
+      // Don't throw error if session is already invalid
+      if (error && !error.message?.includes('session_not_found') && !error.message?.includes('Session not found')) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
+      
+      // Clear any additional local storage that might be cached
+      localStorage.removeItem('supabase.auth.token');
+      
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Even if sign out fails, clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      throw error;
+    }
   };
 
   useEffect(() => {
