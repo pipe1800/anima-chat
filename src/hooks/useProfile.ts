@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { getPublicProfile, getPrivateProfile } from '@/lib/supabase-queries'
@@ -30,7 +29,10 @@ export const useProfile = (userId?: string) => {
           : await getPublicProfile(userId)
 
         if (error) throw error
-        setProfile(data)
+        
+        // For public profiles, we need to cast the partial data to Profile
+        // since we only fetch safe public fields
+        setProfile(data as Profile)
       } catch (err) {
         console.error('Error fetching profile:', err)
         setError(err as Error)
@@ -57,7 +59,7 @@ export const useProfile = (userId?: string) => {
         : await getPublicProfile(userId)
 
       if (error) throw error
-      setProfile(data)
+      setProfile(data as Profile)
     } catch (err) {
       console.error('Error fetching profile:', err)
       setError(err as Error)
