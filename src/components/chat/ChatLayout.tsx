@@ -44,24 +44,23 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
           const { data: chats } = await getUserChats(user.id);
           setChatHistory(chats || []);
           
-          // TODO: Re-enable like/favorite checks once types are updated
           // Check if character is liked
-          // const { data: likes } = await supabase
-          //   .from('character_likes')
-          //   .select('id')
-          //   .eq('character_id', character.id)
-          //   .eq('user_id', user.id)
-          //   .maybeSingle();
-          // setIsLiked(!!likes);
+          const { data: likes } = await supabase
+            .from('character_likes')
+            .select('id')
+            .eq('character_id', character.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsLiked(!!likes);
 
           // Check if character is favorited
-          // const { data: favorites } = await supabase
-          //   .from('character_favorites')
-          //   .select('id')
-          //   .eq('character_id', character.id)
-          //   .eq('user_id', user.id)
-          //   .maybeSingle();
-          // setIsFavorited(!!favorites);
+          const { data: favorites } = await supabase
+            .from('character_favorites')
+            .select('id')
+            .eq('character_id', character.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsFavorited(!!favorites);
         }
 
         const { data: charDetails } = await getCharacterDetails(character.id);
@@ -83,63 +82,55 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const handleLike = async () => {
     if (!currentUser) return;
 
-    // TODO: Re-enable once types are updated
-    // Temporary UI-only toggle
-    setIsLiked(!isLiked);
-    
-    // try {
-    //   if (isLiked) {
-    //     // Remove like
-    //     await supabase
-    //       .from('character_likes')
-    //       .delete()
-    //       .eq('character_id', character.id)
-    //       .eq('user_id', currentUser.id);
-    //     setIsLiked(false);
-    //   } else {
-    //     // Add like
-    //     await supabase
-    //       .from('character_likes')
-    //       .insert([{
-    //         character_id: character.id,
-    //         user_id: currentUser.id
-    //       }]);
-    //     setIsLiked(true);
-    //   }
-    // } catch (error) {
-    //   console.error('Error updating like status:', error);
-    // }
+    try {
+      if (isLiked) {
+        // Remove like
+        await supabase
+          .from('character_likes')
+          .delete()
+          .eq('character_id', character.id)
+          .eq('user_id', currentUser.id);
+        setIsLiked(false);
+      } else {
+        // Add like
+        await supabase
+          .from('character_likes')
+          .insert([{
+            character_id: character.id,
+            user_id: currentUser.id
+          }]);
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+    }
   };
 
   const handleFavorite = async () => {
     if (!currentUser) return;
 
-    // TODO: Re-enable once types are updated
-    // Temporary UI-only toggle
-    setIsFavorited(!isFavorited);
-    
-    // try {
-    //   if (isFavorited) {
-    //     // Remove favorite
-    //     await supabase
-    //       .from('character_favorites')
-    //       .delete()
-    //       .eq('character_id', character.id)
-    //       .eq('user_id', currentUser.id);
-    //     setIsFavorited(false);
-    //   } else {
-    //     // Add favorite
-    //     await supabase
-    //       .from('character_favorites')
-    //       .insert([{
-    //         character_id: character.id,
-    //         user_id: currentUser.id
-    //       }]);
-    //     setIsFavorited(true);
-    //   }
-    // } catch (error) {
-    //   console.error('Error updating favorite status:', error);
-    // }
+    try {
+      if (isFavorited) {
+        // Remove favorite
+        await supabase
+          .from('character_favorites')
+          .delete()
+          .eq('character_id', character.id)
+          .eq('user_id', currentUser.id);
+        setIsFavorited(false);
+      } else {
+        // Add favorite
+        await supabase
+          .from('character_favorites')
+          .insert([{
+            character_id: character.id,
+            user_id: currentUser.id
+          }]);
+        setIsFavorited(true);
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
   };
 
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
@@ -150,7 +141,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
       <AppSidebar />
       
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col ml-64">
         {/* Chat Header */}
         <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
