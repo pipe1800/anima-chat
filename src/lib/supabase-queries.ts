@@ -389,3 +389,26 @@ export const getDailyMessageCount = async (userId: string) => {
     error 
   }
 }
+
+/**
+ * Get user's favorite characters
+ */
+export const getUserFavorites = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('character_favorites')
+    .select(`
+      character:characters(
+        id,
+        name,
+        short_description,
+        avatar_url,
+        interaction_count,
+        created_at,
+        creator:profiles!creator_id(id, username, avatar_url)
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  return { data: data?.map(fav => fav.character).filter(Boolean) || [], error }
+}

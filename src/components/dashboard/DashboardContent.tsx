@@ -13,7 +13,8 @@ import {
   getUserCharacters, 
   getUserCredits, 
   getUserSubscription,
-  getDailyMessageCount
+  getDailyMessageCount,
+  getUserFavorites
 } from '@/lib/supabase-queries';
 import { 
   MessageCircle, 
@@ -37,6 +38,7 @@ export function DashboardContent() {
   const navigate = useNavigate();
   const [recentChats, setRecentChats] = useState([]);
   const [myCharacters, setMyCharacters] = useState([]);
+  const [favoriteCharacters, setFavoriteCharacters] = useState([]);
   const [userCredits, setUserCredits] = useState(0);
   const [subscription, setSubscription] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -52,9 +54,10 @@ export function DashboardContent() {
       try {
         setDataLoading(true);
 
-        const [chatsResult, charactersResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
+        const [chatsResult, charactersResult, favoritesResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
           getUserChats(user.id),
           getUserCharacters(user.id),
+          getUserFavorites(user.id),
           getUserCredits(user.id),
           getUserSubscription(user.id),
           getDailyMessageCount(user.id)
@@ -62,6 +65,7 @@ export function DashboardContent() {
 
         setRecentChats(chatsResult.data || []);
         setMyCharacters(charactersResult.data || []);
+        setFavoriteCharacters(favoritesResult.data || []);
         setUserCredits(creditsResult.data?.balance || 0);
         setSubscription(subscriptionResult.data);
         setMessagesUsed(messageCountResult.data?.count || 0);
@@ -142,6 +146,16 @@ export function DashboardContent() {
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
     totalChats: character.interaction_count || 0,
+    originalCharacter: character
+  }));
+
+  const formattedFavoriteCharacters = favoriteCharacters.map(character => ({
+    id: character.id,
+    name: character.name,
+    avatar: character.name.charAt(0),
+    image: character.avatar_url || "/placeholder.svg",
+    totalChats: character.interaction_count || 0,
+    creator: character.creator?.username || 'Unknown',
     originalCharacter: character
   }));
 
@@ -378,9 +392,56 @@ export function DashboardContent() {
                 </TabsContent>
 
                 <TabsContent value="favorites" className="mt-6">
-                  <div className="text-center py-8">
-                    <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">Your favorite characters will appear here.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {formattedFavoriteCharacters.length > 0 ? (
+                      formattedFavoriteCharacters.map((character) => (
+                        <Card
+                          key={character.id}
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
+                        >
+                          <CardContent className="p-4 text-center">
+                            <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-yellow-600">
+                              <AvatarImage 
+                                src={character.image} 
+                                alt={character.name}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-yellow-700 text-white font-bold text-lg">
+                                {character.avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <h3 className="text-white font-bold text-lg mb-2">
+                              {character.name}
+                            </h3>
+                            
+                            <p className="text-gray-400 text-sm mb-1">
+                              by @{character.creator}
+                            </p>
+                            
+                            <p className="text-gray-400 text-sm mb-3">
+                              {character.totalChats} total chats
+                            </p>
+                            
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                size="sm"
+                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                onClick={() => handleStartChat(character.originalCharacter)}
+                              >
+                                <MessageCircle className="w-3 h-3 mr-1" />
+                                Chat
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-8">
+                        <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400">No favorite characters yet. Explore and favorite some characters!</p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -388,30 +449,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Daily Quest - moved below Your Dashboard */}
-        <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white flex items-center space-x-2">
-              <Trophy className="w-5 h-5 text-[#FF7A00]" />
-              <span>Daily Quest</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-white text-lg mb-2">Start a conversation with a character tagged #Sci-Fi</p>
-                <p className="text-[#FF7A00] font-semibold">Reward: 25 Credits</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-32">
-                  <Progress value={0} className="h-2" />
-                  <p className="text-xs text-gray-400 mt-1">0/1 completed</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-gray-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+{/* Daily Quest section hidden for now */}
 
         <DiscordCTA />
       </div>
