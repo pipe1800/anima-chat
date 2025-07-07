@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface Character {
@@ -42,6 +43,24 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
         if (user) {
           const { data: chats } = await getUserChats(user.id);
           setChatHistory(chats || []);
+          
+          // Check if character is liked
+          const { data: likes } = await supabase
+            .from('character_likes')
+            .select('id')
+            .eq('character_id', character.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsLiked(!!likes);
+
+          // Check if character is favorited
+          const { data: favorites } = await supabase
+            .from('character_favorites')
+            .select('id')
+            .eq('character_id', character.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsFavorited(!!favorites);
         }
 
         const { data: charDetails } = await getCharacterDetails(character.id);
@@ -60,20 +79,67 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
     navigate(`/character-creator?edit=${character.id}`);
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    // TODO: Implement actual like functionality with API call
+  const handleLike = async () => {
+    if (!currentUser) return;
+
+    try {
+      if (isLiked) {
+        // Remove like
+        await supabase
+          .from('character_likes')
+          .delete()
+          .eq('character_id', character.id)
+          .eq('user_id', currentUser.id);
+        setIsLiked(false);
+      } else {
+        // Add like
+        await supabase
+          .from('character_likes')
+          .insert([{
+            character_id: character.id,
+            user_id: currentUser.id
+          }]);
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+    }
   };
 
-  const handleFavorite = () => {
-    setIsFavorited(!isFavorited);
-    // TODO: Implement actual favorite functionality with API call
+  const handleFavorite = async () => {
+    if (!currentUser) return;
+
+    try {
+      if (isFavorited) {
+        // Remove favorite
+        await supabase
+          .from('character_favorites')
+          .delete()
+          .eq('character_id', character.id)
+          .eq('user_id', currentUser.id);
+        setIsFavorited(false);
+      } else {
+        // Add favorite
+        await supabase
+          .from('character_favorites')
+          .insert([{
+            character_id: character.id,
+            user_id: currentUser.id
+          }]);
+        setIsFavorited(true);
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
   };
 
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
     <div className="flex h-screen w-full bg-[#121212]">
+      {/* Left Sidebar */}
+      <AppSidebar />
+      
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
@@ -257,7 +323,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                       <div>
                         <h3 className="text-white font-semibold mb-2">Creator</h3>
                         <p className="text-gray-400 text-sm">
-                          Created by @{characterDetails?.creator?.username || 'Unknown'}
+                          Created by @{characterDetails?.profiles?.username || characterDetails?.creator?.username || 'Unknown'}
                         </p>
                       </div>
 
