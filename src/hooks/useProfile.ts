@@ -76,16 +76,20 @@ export const useCurrentUser = () => {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    let mounted = true
+
+    const initializeAuth = async () => {
       try {
         console.log('useCurrentUser: Getting initial session...');
+        
+        // Get initial session
         const { data: { session } } = await supabase.auth.getSession()
         console.log('useCurrentUser: Initial session:', session?.user ? 'User found' : 'No user');
         
+        if (!mounted) return
+
         setUser(session?.user ?? null)
         
         if (session?.user) {
@@ -96,10 +100,14 @@ export const useCurrentUser = () => {
             if (error) {
               console.error('Profile fetch error:', error);
             }
-            setProfile(data || null)
+            if (mounted) {
+              setProfile(data || null)
+            }
           } catch (profileError) {
             console.error('Profile fetch failed:', profileError);
-            setProfile(null)
+            if (mounted) {
+              setProfile(null)
+            }
           }
         } else {
           setProfile(null)
@@ -107,22 +115,24 @@ export const useCurrentUser = () => {
       } catch (sessionError) {
         console.error('Session fetch failed:', sessionError);
       } finally {
-        console.log('useCurrentUser: Setting loading to false and initialized to true');
-        setLoading(false)
-        setInitialized(true)
+        if (mounted) {
+          console.log('useCurrentUser: Setting loading to false');
+          setLoading(false)
+        }
       }
     }
 
-    // Only initialize once
-    if (!initialized) {
-      getInitialSession()
-    }
+    // Initialize auth state
+    initializeAuth()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         try {
           console.log('useCurrentUser: Auth state changed:', event);
+          
+          if (!mounted) return
+
           setUser(session?.user ?? null)
           
           if (session?.user) {
@@ -133,18 +143,19 @@ export const useCurrentUser = () => {
               if (error) {
                 console.error('Profile fetch error after auth change:', error);
               }
-              setProfile(data || null)
+              if (mounted) {
+                setProfile(data || null)
+              }
             } catch (profileError) {
               console.error('Profile fetch failed after auth change:', profileError);
-              setProfile(null)
+              if (mounted) {
+                setProfile(null)
+              }
             }
           } else {
-            setProfile(null)
-          }
-          
-          // Only set loading to false if we've initialized
-          if (initialized) {
-            setLoading(false)
+            if (mounted) {
+              setProfile(null)
+            }
           }
         } catch (authError) {
           console.error('Auth state change error:', authError);
@@ -152,10 +163,13 @@ export const useCurrentUser = () => {
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [initialized])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, []) // Empty dependency array - effect only runs once
 
-  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading, initialized });
+  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading });
 
   return { user, profile, loading }
 }
