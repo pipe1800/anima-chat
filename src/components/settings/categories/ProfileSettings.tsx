@@ -6,22 +6,38 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Camera } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useProfile';
+import { updateProfile } from '@/lib/supabase-queries';
+import { toast } from 'sonner';
 
 export const ProfileSettings = () => {
-  // Mock current user data - in a real app, this would come from your auth/user context
+  const { user, profile, loading } = useCurrentUser();
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize form data with current profile data
   const [originalData] = useState({
-    avatar: '',
-    username: 'john_doe',
-    bio: 'AI enthusiast and character creator. Love exploring new worlds through conversation.'
+    avatar: profile?.avatar_url || '',
+    username: profile?.username || '',
+    bio: profile?.bio || ''
   });
 
   const [formData, setFormData] = useState({
-    avatar: originalData.avatar,
-    username: originalData.username,
-    bio: originalData.bio
+    avatar: profile?.avatar_url || '',
+    username: profile?.username || '',
+    bio: profile?.bio || ''
   });
 
-  const [isUploading, setIsUploading] = useState(false);
+  // Update form data when profile loads
+  React.useEffect(() => {
+    if (profile) {
+      setFormData({
+        avatar: profile.avatar_url || '',
+        username: profile.username || '',
+        bio: profile.bio || ''
+      });
+    }
+  }, [profile]);
 
   // Check if any changes have been made
   const hasChanges = 
@@ -63,16 +79,50 @@ export const ProfileSettings = () => {
     }
   };
 
-  const handleSaveChanges = () => {
-    // Here you would implement the actual save logic
-    // For now, we'll just log the changes
-    console.log('Saving profile changes:', formData);
-    // You could show a toast notification here
+  const handleSaveChanges = async () => {
+    if (!user) {
+      toast.error('You must be logged in to update your profile');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { data, error } = await updateProfile(user.id, {
+        username: formData.username,
+        bio: formData.bio,
+        avatar_url: formData.avatar
+      });
+
+      if (error) {
+        toast.error('Failed to update profile: ' + error.message);
+      } else {
+        toast.success('Profile updated successfully!');
+        // Update original data to reflect saved state
+        setFormData({
+          avatar: data?.avatar_url || formData.avatar,
+          username: data?.username || formData.username,
+          bio: data?.bio || formData.bio
+        });
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getUserInitials = (username: string) => {
     return username.charAt(0).toUpperCase();
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl">
+        <div className="text-white">Loading profile settings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl">
@@ -173,16 +223,16 @@ export const ProfileSettings = () => {
         <div className="flex justify-end pt-4">
           <Button
             onClick={handleSaveChanges}
-            disabled={!hasChanges}
+            disabled={!hasChanges || isSaving}
             className={`
               px-6 py-2 font-medium transition-all
-              ${hasChanges 
+              ${hasChanges && !isSaving
                 ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white' 
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
               }
             `}
           >
-            Save Changes
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>

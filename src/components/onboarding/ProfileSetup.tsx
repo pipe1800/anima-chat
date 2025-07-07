@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, User } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useProfile';
+import { updateProfile } from '@/lib/supabase-queries';
+import { toast } from 'sonner';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -11,9 +14,11 @@ interface ProfileSetupProps {
 }
 
 const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
+  const { user, profile } = useCurrentUser();
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,10 +32,34 @@ const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
     }
   };
 
-  const handleSaveAndContinue = () => {
-    // Here you would typically save the profile data to your backend
-    console.log('Saving profile:', { bio, avatar });
-    onComplete();
+  const handleSaveAndContinue = async () => {
+    if (!user) {
+      toast.error('You must be logged in to update your profile');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // For now, we'll just save the bio. In a real app, you'd upload the avatar to storage first
+      const avatarUrl = avatarPreview || profile?.avatar_url || '';
+      
+      const { error } = await updateProfile(user.id, {
+        bio: bio.trim() || undefined,
+        avatar_url: avatarUrl || undefined
+      });
+
+      if (error) {
+        toast.error('Failed to save profile: ' + error.message);
+      } else {
+        console.log('Profile updated successfully');
+        onComplete();
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,14 +132,16 @@ const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
         <div className="mt-8 space-y-3">
           <Button
             onClick={handleSaveAndContinue}
+            disabled={isLoading}
             className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300"
           >
-            Save & Continue
+            {isLoading ? 'Saving...' : 'Save & Continue'}
           </Button>
           
           <button
             onClick={onSkip}
-            className="w-full text-gray-400 hover:text-[#FF7A00] transition-colors duration-300 text-sm underline-offset-4 hover:underline"
+            disabled={isLoading}
+            className="w-full text-gray-400 hover:text-[#FF7A00] transition-colors duration-300 text-sm underline-offset-4 hover:underline disabled:opacity-50"
           >
             I'll do this later
           </button>
