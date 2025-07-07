@@ -85,9 +85,28 @@ export function AppSidebar() {
     }
   };
 
-  // Don't render sidebar if auth is still loading
+  // Show sidebar even if auth is loading, but with fallback content
   if (loading) {
-    return null;
+    return (
+      <Sidebar 
+        className="border-r border-gray-700/50 bg-[#1b1b1b] w-64 h-screen fixed z-40"
+        collapsible="none"
+      >
+        <div className="flex flex-col h-full">
+          <SidebarHeader className="border-b border-gray-700/50 p-4">
+            <div className="flex items-center justify-start mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div className="ml-3">
+                <h2 className="text-white font-bold text-lg">ANIMA</h2>
+              </div>
+            </div>
+            <div className="text-white text-center">Loading...</div>
+          </SidebarHeader>
+        </div>
+      </Sidebar>
+    );
   }
 
   return (
