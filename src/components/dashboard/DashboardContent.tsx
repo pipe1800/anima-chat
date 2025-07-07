@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { DailyUsageWidget } from './DailyUsageWidget';
 import DiscordCTA from '../DiscordCTA';
-import { useCurrentUser } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   getUserChats, 
   getUserCharacters, 
@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 export function DashboardContent() {
-  const { user, profile, loading: userLoading } = useCurrentUser();
+  const { user, profile, loading: userLoading } = useAuth();
   const [recentChats, setRecentChats] = useState([]);
   const [myCharacters, setMyCharacters] = useState([]);
   const [userCredits, setUserCredits] = useState(0);

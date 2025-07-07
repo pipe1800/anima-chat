@@ -28,8 +28,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useCurrentUser } from '@/hooks/useProfile';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { getUserCredits } from '@/lib/supabase-queries';
 import { useState, useEffect } from 'react';
 
@@ -44,7 +43,7 @@ const mainItems = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile } = useCurrentUser();
+  const { user, profile, signOut } = useAuth();
   const [userCredits, setUserCredits] = useState(0);
   const currentPath = location.pathname;
 
@@ -77,7 +76,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       navigate('/'); // Redirect to landing page instead of auth page
     } catch (error) {
       console.error('Error signing out:', error);
