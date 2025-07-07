@@ -3,12 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true); // Default to login for testing
+  const [searchParams] = useSearchParams();
+  const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -146,6 +147,12 @@ const Auth = () => {
     if (error) {
       console.log('Login error:', error.message);
       setError(`Login failed: ${error.message}`);
+    } else if (rememberMe) {
+      // Set session to persist for 30 days if remember me is checked
+      localStorage.setItem('supabase.auth.remember', 'true');
+    } else {
+      // Clear remember flag if not checked
+      localStorage.removeItem('supabase.auth.remember');
     }
     setLoading(false);
   };
@@ -277,12 +284,6 @@ const Auth = () => {
             <p className="text-gray-400">
               {isLogin ? 'Sign in to continue your journey' : 'Join thousands creating their perfect AI companions'}
             </p>
-            {/* Testing note */}
-            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-              <p className="text-blue-300 text-sm">
-                For testing: Add users directly in Supabase, then login here to see onboarding
-              </p>
-            </div>
           </div>
 
           {/* Social Auth Buttons */}
