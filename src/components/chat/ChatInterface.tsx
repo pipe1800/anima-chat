@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Plus, Pencil, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { MessageLimitToast } from './MessageLimitToast';
+import { DailyLimitModal } from './DailyLimitModal';
 
 interface Message {
   id: string;
@@ -41,6 +41,7 @@ const ChatInterface = ({
   const messagesRemaining = dailyLimit - messagesUsed;
   const isGuestPass = true; // Mock: user is on Guest Pass
   const [showLimitToast, setShowLimitToast] = useState(false);
+  const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -90,11 +91,7 @@ const ChatInterface = ({
 
     // Check if user has reached their daily limit
     if (isGuestPass && messagesUsed >= dailyLimit) {
-      toast({
-        title: "Daily limit reached",
-        description: "You've used all your daily messages. Upgrade to continue chatting!",
-        duration: 5000
-      });
+      setShowDailyLimitModal(true);
       return;
     }
 
@@ -154,6 +151,10 @@ const ChatInterface = ({
     setShowLimitToast(false);
   };
 
+  const handleCloseDailyLimitModal = () => {
+    setShowDailyLimitModal(false);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Message Limit Toast */}
@@ -164,6 +165,13 @@ const ChatInterface = ({
           onUpgrade={handleUpgrade}
         />
       )}
+
+      {/* Daily Limit Modal */}
+      <DailyLimitModal
+        isOpen={showDailyLimitModal}
+        onClose={handleCloseDailyLimitModal}
+        onUpgrade={handleUpgrade}
+      />
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif]">
