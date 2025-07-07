@@ -12,7 +12,7 @@ import type { Profile, Character, Plan, Subscription, Credits, Chat, Message, On
  */
 export const getPublicProfile = async (userId: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('id, username, avatar_url, bio, created_at')
     .eq('id', userId)
     .single()
@@ -25,7 +25,7 @@ export const getPublicProfile = async (userId: string) => {
  */
 export const getPrivateProfile = async (userId: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('*')
     .eq('id', userId)
     .single()
@@ -38,7 +38,7 @@ export const getPrivateProfile = async (userId: string) => {
  */
 export const updateProfile = async (userId: string, updates: Partial<Profile>) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .update(updates)
     .eq('id', userId)
     .select('id, username, avatar_url, bio, created_at')
@@ -56,7 +56,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>) =
  */
 export const getPublicCharacters = async (limit = 20, offset = 0) => {
   const { data, error } = await supabase
-    .from('characters')
+    .from('characters' as any)
     .select(`
       id,
       name,
@@ -78,7 +78,7 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
  */
 export const getUserCharacters = async (userId: string) => {
   const { data, error } = await supabase
-    .from('characters')
+    .from('characters' as any)
     .select(`
       id,
       name,
@@ -100,7 +100,7 @@ export const getUserCharacters = async (userId: string) => {
  */
 export const getCharacterDetails = async (characterId: string) => {
   const { data, error } = await supabase
-    .from('characters')
+    .from('characters' as any)
     .select(`
       id,
       name,
@@ -136,7 +136,7 @@ export const createCharacter = async (characterData: {
 
   // Create character
   const { data: character, error: characterError } = await supabase
-    .from('characters')
+    .from('characters' as any)
     .insert({
       creator_id: user.user.id,
       name: characterData.name,
@@ -151,7 +151,7 @@ export const createCharacter = async (characterData: {
 
   // Create character definition
   const { error: definitionError } = await supabase
-    .from('character_definitions')
+    .from('character_definitions' as any)
     .insert({
       character_id: character.id,
       definition: characterData.definition,
@@ -161,7 +161,7 @@ export const createCharacter = async (characterData: {
 
   if (definitionError) {
     // Cleanup: delete the character if definition creation failed
-    await supabase.from('characters').delete().eq('id', character.id)
+    await supabase.from('characters' as any).delete().eq('id', character.id)
     return { data: null, error: definitionError }
   }
 
@@ -177,7 +177,7 @@ export const createCharacter = async (characterData: {
  */
 export const getSubscriptionPlans = async () => {
   const { data, error } = await supabase
-    .from('plans')
+    .from('plans' as any)
     .select('*')
     .eq('is_active', true)
     .order('price_monthly', { ascending: true })
@@ -190,7 +190,7 @@ export const getSubscriptionPlans = async () => {
  */
 export const getUserSubscription = async (userId: string) => {
   const { data, error } = await supabase
-    .from('subscriptions')
+    .from('subscriptions' as any)
     .select(`
       *,
       plan:plans(*)
@@ -206,7 +206,7 @@ export const getUserSubscription = async (userId: string) => {
  */
 export const getUserCredits = async (userId: string) => {
   const { data, error } = await supabase
-    .from('credits')
+    .from('credits' as any)
     .select('balance')
     .eq('user_id', userId)
     .single()
@@ -223,7 +223,7 @@ export const getUserCredits = async (userId: string) => {
  */
 export const getOnboardingChecklist = async () => {
   const { data, error } = await supabase
-    .from('onboarding_checklist_items')
+    .from('onboarding_checklist_items' as any)
     .select('*')
     .order('id', { ascending: true })
 
@@ -235,7 +235,7 @@ export const getOnboardingChecklist = async () => {
  */
 export const getUserOnboardingProgress = async (userId: string) => {
   const { data, error } = await supabase
-    .from('user_onboarding_progress')
+    .from('user_onboarding_progress' as any)
     .select(`
       *,
       task:onboarding_checklist_items(*)
@@ -250,7 +250,7 @@ export const getUserOnboardingProgress = async (userId: string) => {
  */
 export const completeOnboardingTask = async (userId: string, taskId: number) => {
   const { data, error } = await supabase
-    .from('user_onboarding_progress')
+    .from('user_onboarding_progress' as any)
     .upsert({
       user_id: userId,
       task_id: taskId,
@@ -270,7 +270,7 @@ export const completeOnboardingTask = async (userId: string, taskId: number) => 
  */
 export const getUserChats = async (userId: string) => {
   const { data, error } = await supabase
-    .from('chats')
+    .from('chats' as any)
     .select(`
       id,
       title,
@@ -289,7 +289,7 @@ export const getUserChats = async (userId: string) => {
  */
 export const createChat = async (userId: string, characterId: string, title?: string) => {
   const { data, error } = await supabase
-    .from('chats')
+    .from('chats' as any)
     .insert({
       user_id: userId,
       character_id: characterId,
@@ -306,7 +306,7 @@ export const createChat = async (userId: string, characterId: string, title?: st
  */
 export const getChatMessages = async (chatId: string) => {
   const { data, error } = await supabase
-    .from('messages')
+    .from('messages' as any)
     .select(`
       id,
       content,
