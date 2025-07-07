@@ -99,7 +99,7 @@ export function AppSidebar() {
             <img 
               src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
               alt="Anima AI Chat" 
-              className="h-10 w-auto"
+              className="h-16 w-auto"
             />
           </div>
 
