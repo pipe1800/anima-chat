@@ -106,6 +106,13 @@ const Chat = () => {
     return null;
   }
 
+  // Map avatar_url to avatar for compatibility
+  const character = {
+    ...selectedCharacter,
+    avatar: selectedCharacter.avatar_url || selectedCharacter.avatar,
+    fallback: selectedCharacter.name?.split(' ').map((n: string) => n[0]).join('') || 'C'
+  };
+
   return (
     <SidebarProvider>
       {/* Onboarding Checklist - shows completion animation */}
@@ -118,9 +125,9 @@ const Chat = () => {
       )}
 
       {/* Main Chat Layout */}
-      <ChatLayout character={selectedCharacter}>
+      <ChatLayout character={character}>
         <ChatInterface
-          character={selectedCharacter}
+          character={character}
           onFirstMessage={handleFirstMessage}
         />
       </ChatLayout>

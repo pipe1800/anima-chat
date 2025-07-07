@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface Character {
@@ -63,9 +62,6 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
 
   return (
     <div className="flex h-screen w-full bg-[#121212]">
-      {/* Left Sidebar */}
-      <AppSidebar />
-      
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
@@ -73,7 +69,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
           <div className="flex items-center space-x-3">
             <SidebarTrigger className="text-gray-400 hover:text-white" />
             <Avatar className="w-10 h-10 ring-2 ring-[#FF7A00]/50">
-              <AvatarImage src={character.avatar} alt={character.name} />
+              <AvatarImage src={character.avatar || characterDetails?.avatar_url} alt={character.name} />
               <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
                 {character.fallback}
               </AvatarFallback>
@@ -214,7 +210,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                     <div className="space-y-6">
                       <div className="text-center">
                         <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-[#FF7A00]/30">
-                          <AvatarImage src={character.avatar} alt={character.name} />
+                          <AvatarImage src={character.avatar || characterDetails?.avatar_url} alt={character.name} />
                           <AvatarFallback className="bg-[#FF7A00] text-white text-2xl font-bold">
                             {character.fallback}
                           </AvatarFallback>
