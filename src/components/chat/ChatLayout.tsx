@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface Character {
   id: string;
@@ -15,9 +16,6 @@ interface Character {
   tagline: string;
   avatar: string;
   fallback: string;
-  description?: string;
-  tags?: string[];
-  creator?: string;
 }
 
 interface ChatLayoutProps {
@@ -37,17 +35,14 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         setCurrentUser(user);
 
         if (user) {
-          // Load chat history
           const { data: chats } = await getUserChats(user.id);
           setChatHistory(chats || []);
         }
 
-        // Load character details
         const { data: charDetails } = await getCharacterDetails(character.id);
         setCharacterDetails(charDetails);
       } catch (error) {
@@ -67,53 +62,57 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
-    <div className="h-screen flex bg-[#121212]">
+    <div className="flex h-screen w-full bg-[#121212]">
       {/* Left Sidebar */}
       <AppSidebar />
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex min-w-0">
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
-          <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                  <AvatarImage src={character.avatar} alt={character.name} />
-                  <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                    {character.fallback}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div>
-                  <h1 className="text-white font-semibold text-lg">{character.name}</h1>
-                  <p className="text-gray-400 text-sm">{character.tagline}</p>
-                </div>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setRightPanelOpen(!rightPanelOpen)}
-                className="text-gray-400 hover:text-white hover:bg-gray-800"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat Header */}
+        <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <SidebarTrigger className="text-gray-400 hover:text-white" />
+            <Avatar className="w-10 h-10 ring-2 ring-[#FF7A00]/50">
+              <AvatarImage src={character.avatar} alt={character.name} />
+              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                {character.fallback}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-white font-semibold">{character.name}</h1>
+              <p className="text-gray-400 text-sm">{character.tagline}</p>
             </div>
-          </header>
-
-          {/* Chat Interface */}
-          <div className="flex-1 overflow-hidden">
-            {children}
           </div>
-        </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setRightPanelOpen(!rightPanelOpen)}
+            className="text-gray-400 hover:text-white hover:bg-gray-800"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </header>
 
-        {/* Right Panel */}
-        {rightPanelOpen && (
-          <div className="w-80 bg-[#0f0f0f] border-l border-gray-700/50 flex flex-col">
-            {/* Panel Header with Tabs */}
-            <div className="p-4 border-b border-gray-700/50 flex-shrink-0">
+        {/* Chat Content */}
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
+      </div>
+
+      {/* Right Panel - Slide in from right */}
+      {rightPanelOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setRightPanelOpen(false)}
+          />
+          
+          {/* Panel */}
+          <div className="fixed right-0 top-0 h-full w-80 bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
+            {/* Panel Header */}
+            <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-white font-semibold">Panel</h2>
                 <Button
@@ -157,7 +156,6 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
             <div className="flex-1 overflow-y-auto">
               {activeTab === 'history' && (
                 <div className="p-4">
-                  {/* Search Bar */}
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
@@ -166,7 +164,6 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                     />
                   </div>
 
-                  {/* Chat History List */}
                   <div className="space-y-2">
                     {loading ? (
                       <div className="text-gray-400 text-center py-4">Loading chats...</div>
@@ -214,100 +211,88 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                   {loading ? (
                     <div className="text-gray-400 text-center py-4">Loading character details...</div>
                   ) : (
-                    <>
-                      {/* Character Header */}
-                      <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold text-white mb-4">{character.name}</h2>
-                        
-                        {/* Large Avatar */}
-                        <div className="mb-4">
-                          <Avatar className="w-32 h-32 mx-auto ring-4 ring-[#FF7A00]/30">
-                            <AvatarImage src={character.avatar} alt={character.name} />
-                            <AvatarFallback className="bg-[#FF7A00] text-white text-3xl font-bold">
-                              {character.fallback}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
+                    <div className="space-y-6">
+                      <div className="text-center">
+                        <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-[#FF7A00]/30">
+                          <AvatarImage src={character.avatar} alt={character.name} />
+                          <AvatarFallback className="bg-[#FF7A00] text-white text-2xl font-bold">
+                            {character.fallback}
+                          </AvatarFallback>
+                        </Avatar>
+                        <h2 className="text-xl font-bold text-white">{character.name}</h2>
                       </div>
 
-                      {/* Details Section */}
-                      <div className="space-y-6">
-                        {/* Bio/Description */}
-                        <div>
-                          <h3 className="text-white font-semibold mb-2">About</h3>
-                          <p className="text-gray-300 text-sm leading-relaxed">
-                            {characterDetails?.short_description || character.tagline || 'No description available.'}
-                          </p>
-                        </div>
+                      <div>
+                        <h3 className="text-white font-semibold mb-2">About</h3>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {characterDetails?.short_description || character.tagline || 'No description available.'}
+                        </p>
+                      </div>
 
-                        {/* Tags */}
-                        {characterDetails?.tags && characterDetails.tags.length > 0 && (
-                          <div>
-                            <h3 className="text-white font-semibold mb-3">Tags</h3>
-                            <div className="flex flex-wrap gap-2">
-                              {characterDetails.tags.map((tagItem: any, index: number) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="bg-[#1a1a2e] text-gray-300 border border-gray-600/50 text-xs px-2 py-1"
-                                >
-                                  {tagItem.tag?.name || tagItem.name}
-                                </Badge>
-                              ))}
-                            </div>
+                      {characterDetails?.tags && characterDetails.tags.length > 0 && (
+                        <div>
+                          <h3 className="text-white font-semibold mb-3">Tags</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {characterDetails.tags.map((tagItem: any, index: number) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="bg-[#1a1a2e] text-gray-300 border border-gray-600/50 text-xs"
+                              >
+                                {tagItem.tag?.name || tagItem.name}
+                              </Badge>
+                            ))}
                           </div>
-                        )}
-
-                        {/* Creator */}
-                        <div>
-                          <h3 className="text-white font-semibold mb-2">Creator</h3>
-                          <p className="text-gray-400 text-sm">
-                            Created by @{characterDetails?.creator?.username || 'Unknown'}
-                          </p>
                         </div>
+                      )}
 
-                        {/* Quick Actions */}
-                        <div>
-                          <h3 className="text-white font-semibold mb-3">Actions</h3>
-                          <div className="flex flex-col space-y-3">
-                            {isCharacterOwner && (
-                              <Button
-                                onClick={handleEditCharacter}
-                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Character
-                              </Button>
-                            )}
-                            <div className="flex space-x-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
-                              >
-                                <Heart className="w-4 h-4 mr-2" />
-                                Like
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
-                              >
-                                <Star className="w-4 h-4 mr-2" />
-                                Favorite
-                              </Button>
-                            </div>
+                      <div>
+                        <h3 className="text-white font-semibold mb-2">Creator</h3>
+                        <p className="text-gray-400 text-sm">
+                          Created by @{characterDetails?.creator?.username || 'Unknown'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <h3 className="text-white font-semibold mb-3">Actions</h3>
+                        <div className="space-y-3">
+                          {isCharacterOwner && (
+                            <Button
+                              onClick={handleEditCharacter}
+                              className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Character
+                            </Button>
+                          )}
+                          <div className="flex space-x-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                            >
+                              <Heart className="w-4 h-4 mr-2" />
+                              Like
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                            >
+                              <Star className="w-4 h-4 mr-2" />
+                              Favorite
+                            </Button>
                           </div>
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               )}
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };
