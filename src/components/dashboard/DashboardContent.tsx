@@ -39,57 +39,40 @@ export function DashboardContent() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('DashboardContent render - user:', user, 'profile:', profile, 'userLoading:', userLoading);
-
   useEffect(() => {
     const fetchDashboardData = async () => {
-      console.log('fetchDashboardData called - user:', user, 'profile:', profile);
-      
       if (!user) {
-        console.log('No user, setting loading to false');
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        console.log('Starting to fetch dashboard data for user:', user.id);
 
         // Fetch user's chats
-        console.log('Fetching chats...');
         const chatsResult = await getUserChats(user.id);
-        console.log('Chats result:', chatsResult);
         setRecentChats(chatsResult.data?.slice(0, 5) || []);
 
         // Fetch user's characters
-        console.log('Fetching characters...');
         const charactersResult = await getUserCharacters(user.id);
-        console.log('Characters result:', charactersResult);
         setMyCharacters(charactersResult.data || []);
 
         // Fetch user's credits
-        console.log('Fetching credits...');
         const creditsResult = await getUserCredits(user.id);
-        console.log('Credits result:', creditsResult);
         
         if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
           setUserCredits(creditsResult.data.balance);
         } else {
-          console.warn('Credits data is null or invalid, defaulting to 0');
           setUserCredits(0);
         }
 
         // Fetch user's subscription
-        console.log('Fetching subscription...');
         const subscriptionResult = await getUserSubscription(user.id);
-        console.log('Subscription result:', subscriptionResult);
         setSubscription(subscriptionResult.data);
 
-        console.log('All data fetched successfully');
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
-        console.log('Setting loading to false');
         setLoading(false);
       }
     };
@@ -100,27 +83,21 @@ export function DashboardContent() {
     }
   }, [user, userLoading]);
 
-  console.log('Current state - userLoading:', userLoading, 'loading:', loading, 'user exists:', !!user);
-
   if (userLoading || loading) {
-    console.log('Showing loading screen');
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
         <div className="text-white">Loading your dashboard...</div>
       </div>
     );
   }
 
   if (!user) {
-    console.log('No user, showing sign in message');
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
         <div className="text-white">Please sign in to access your dashboard.</div>
       </div>
     );
   }
-
-  console.log('Rendering dashboard content');
 
   // Determine user tier
   const userTier = subscription?.plan?.name || "Guest Pass";
@@ -150,7 +127,7 @@ export function DashboardContent() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-[#121212] ml-64">
       {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
