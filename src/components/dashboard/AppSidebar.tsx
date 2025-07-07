@@ -96,12 +96,11 @@ export function AppSidebar() {
         <div className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
           <div className="flex items-center justify-start mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <div className="ml-3">
-              <h2 className="text-white font-bold text-lg">ANIMA</h2>
-            </div>
+            <img 
+              src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+              alt="Anima AI Chat" 
+              className="h-10 w-auto"
+            />
           </div>
 
           {/* User Profile Section */}
