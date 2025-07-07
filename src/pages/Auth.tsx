@@ -121,14 +121,18 @@ const Auth = () => {
           username: username.trim(),
           onboarding_completed: false // Explicitly set to false for new users
         },
-        emailRedirectTo: undefined
+        emailRedirectTo: `${window.location.origin}/onboarding`
       }
     });
 
     if (error) {
       console.log('Signup error:', error.message);
       setError(`Signup failed: ${error.message}. Try using the login form instead if you added a user manually in Supabase.`);
+    } else if (data.user && !data.user.email_confirmed_at) {
+      // User needs to confirm email, redirect to confirmation page
+      navigate('/email-confirmation');
     } else if (data.user) {
+      // Email already confirmed (shouldn't happen with new signups, but just in case)
       showSuccessMessage(username.trim());
     }
     setLoading(false);
