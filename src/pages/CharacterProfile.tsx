@@ -180,7 +180,7 @@ export default function CharacterProfile() {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-[#121212]">
           <AppSidebar />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col ml-64">
             <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center px-6">
               <SidebarTrigger className="text-gray-400 hover:text-white" />
             </header>
@@ -201,7 +201,7 @@ export default function CharacterProfile() {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-[#121212]">
           <AppSidebar />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col ml-64">
             <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center px-6">
               <SidebarTrigger className="text-gray-400 hover:text-white" />
             </header>
@@ -225,7 +225,7 @@ export default function CharacterProfile() {
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col ml-64">{/* Added ml-64 to account for sidebar width */}
           {/* Header */}
           <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center justify-between px-6">
             <div className="flex items-center space-x-4">
