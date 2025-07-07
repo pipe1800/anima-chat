@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
 
 interface Character {
   id: string;
@@ -67,10 +66,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
-    <div className="h-screen flex bg-[#121212]">
-      {/* Left Sidebar */}
-      <AppSidebar />
-
+    <div className="h-full flex bg-[#121212]">
       {/* Main Content Area */}
       <div className="flex-1 flex">
         {/* Chat Area */}
