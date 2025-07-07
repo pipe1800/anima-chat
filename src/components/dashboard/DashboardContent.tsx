@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,7 +56,8 @@ export function DashboardContent() {
 
         // Fetch user's credits - handle potential null/undefined response
         const { data: creditsData } = await getUserCredits(user.id);
-        setUserCredits(creditsData?.balance || 0);
+        console.log('Credits data received:', creditsData);
+        setUserCredits(creditsData?.balance ?? 0);
 
         // Fetch user's subscription
         const { data: subscriptionData } = await getUserSubscription(user.id);
