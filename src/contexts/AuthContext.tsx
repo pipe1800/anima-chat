@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,14 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await getPrivateProfile(user.id);
       if (error) {
-        console.warn('Profile fetch warning:', error);
-        // Don't set profile to null on error, keep existing state
+        console.error('Profile fetch error:', error);
+        setProfile(null);
       } else {
         setProfile(data || null);
       }
     } catch (error) {
-      console.warn('Profile fetch failed:', error);
-      // Don't set profile to null on error, keep existing state
+      console.error('Profile fetch failed:', error);
+      setProfile(null);
     }
   };
 
@@ -60,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
@@ -71,20 +72,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Try to fetch profile, but don't block on failure
+          // Fetch profile for authenticated users
           try {
             const { data, error } = await getPrivateProfile(session.user.id);
             if (mounted) {
               if (error) {
-                console.warn('Profile fetch warning:', error);
-                // Set a minimal profile if none exists
+                console.error('Profile fetch error:', error);
                 setProfile(null);
               } else {
                 setProfile(data || null);
               }
             }
           } catch (error) {
-            console.warn('Profile fetch failed:', error);
+            console.error('Profile fetch failed:', error);
             if (mounted) {
               setProfile(null);
             }
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Always set loading to false after handling auth state
+        // Always set loading to false after handling auth state change
         if (mounted) {
           setLoading(false);
         }
@@ -109,6 +109,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('Session fetch error:', error);
+          if (mounted) {
+            setUser(null);
+            setProfile(null);
+            setSession(null);
+            setLoading(false);
+          }
+          return;
         }
 
         if (mounted) {
@@ -118,15 +125,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             try {
               const { data, error: profileError } = await getPrivateProfile(session.user.id);
-              if (profileError) {
-                console.warn('Profile fetch warning:', profileError);
-                setProfile(null);
-              } else {
-                setProfile(data || null);
+              if (mounted) {
+                if (profileError) {
+                  console.error('Profile fetch error:', profileError);
+                  setProfile(null);
+                } else {
+                  setProfile(data || null);
+                }
               }
             } catch (error) {
-              console.warn('Profile fetch failed:', error);
-              setProfile(null);
+              console.error('Profile fetch failed:', error);
+              if (mounted) {
+                setProfile(null);
+              }
             }
           } else {
             setProfile(null);
@@ -145,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Initialize auth
     getInitialSession();
 
     return () => {

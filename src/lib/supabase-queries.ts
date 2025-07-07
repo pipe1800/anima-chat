@@ -15,7 +15,7 @@ export const getPublicProfile = async (userId: string) => {
     .from('profiles')
     .select('id, username, avatar_url, bio, created_at')
     .eq('id', userId)
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -28,7 +28,7 @@ export const getPrivateProfile = async (userId: string) => {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -42,7 +42,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>) =
     .update(updates)
     .eq('id', userId)
     .select('id, username, avatar_url, bio, created_at')
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -70,7 +70,7 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -92,7 +92,7 @@ export const getUserCharacters = async (userId: string) => {
     .eq('creator_id', userId)
     .order('updated_at', { ascending: false })
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -114,7 +114,7 @@ export const getCharacterDetails = async (characterId: string) => {
       tags:character_tags(tag:tags(id, name))
     `)
     .eq('id', characterId)
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -182,7 +182,7 @@ export const getSubscriptionPlans = async () => {
     .eq('is_active', true)
     .order('price_monthly', { ascending: true })
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -196,7 +196,7 @@ export const getUserSubscription = async (userId: string) => {
       plan:plans(*)
     `)
     .eq('user_id', userId)
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -209,7 +209,7 @@ export const getUserCredits = async (userId: string) => {
     .from('credits')
     .select('balance')
     .eq('user_id', userId)
-    .maybeSingle()
+    .single()
 
   return { data, error }
 }
@@ -227,7 +227,7 @@ export const getOnboardingChecklist = async () => {
     .select('*')
     .order('id', { ascending: true })
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -242,7 +242,7 @@ export const getUserOnboardingProgress = async (userId: string) => {
     `)
     .eq('user_id', userId)
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -281,7 +281,7 @@ export const getUserChats = async (userId: string) => {
     .eq('user_id', userId)
     .order('last_message_at', { ascending: false })
 
-  return { data: data || [], error }
+  return { data, error }
 }
 
 /**
@@ -317,28 +317,5 @@ export const getChatMessages = async (chatId: string) => {
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true })
 
-  return { data: data || [], error }
-}
-
-/**
- * Get user's daily message count
- */
-export const getDailyMessageCount = async (userId: string) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  const { count, error } = await supabase
-    .from('messages')
-    .select('id', { count: 'exact' })
-    .eq('author_id', userId)
-    .eq('is_ai_message', false)
-    .gte('created_at', today.toISOString())
-    .lt('created_at', tomorrow.toISOString())
-
-  return { 
-    data: { count: count || 0 }, 
-    error 
-  }
+  return { data, error }
 }

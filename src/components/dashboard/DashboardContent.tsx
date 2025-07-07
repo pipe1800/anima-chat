@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -12,8 +13,7 @@ import {
   getUserChats, 
   getUserCharacters, 
   getUserCredits, 
-  getUserSubscription,
-  getDailyMessageCount
+  getUserSubscription 
 } from '@/lib/supabase-queries';
 import { 
   MessageCircle, 
@@ -39,8 +39,6 @@ export function DashboardContent() {
   const [userCredits, setUserCredits] = useState(0);
   const [subscription, setSubscription] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
-  const [messagesUsed, setMessagesUsed] = useState(0);
-  const [dailyLimit, setDailyLimit] = useState(75);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -52,40 +50,17 @@ export function DashboardContent() {
         setDataLoading(true);
 
         // Fetch all data in parallel
-        const [chatsResult, charactersResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
+        const [chatsResult, charactersResult, creditsResult, subscriptionResult] = await Promise.all([
           getUserChats(user.id),
           getUserCharacters(user.id),
           getUserCredits(user.id),
-          getUserSubscription(user.id),
-          getDailyMessageCount(user.id)
+          getUserSubscription(user.id)
         ]);
-
-        console.log('Dashboard data fetched:', {
-          chats: chatsResult.data,
-          characters: charactersResult.data,
-          credits: creditsResult.data,
-          subscription: subscriptionResult.data,
-          messageCount: messageCountResult.data
-        });
 
         setRecentChats(chatsResult.data?.slice(0, 5) || []);
         setMyCharacters(charactersResult.data || []);
         setUserCredits(creditsResult.data?.balance || 0);
         setSubscription(subscriptionResult.data);
-        setMessagesUsed(messageCountResult.data?.count || 0);
-
-        // Set daily limits based on subscription
-        if (subscriptionResult.data?.plan) {
-          const plan = subscriptionResult.data.plan;
-          // Set daily limit based on plan - this would be configured per plan
-          if (plan.name === 'Guest Pass') {
-            setDailyLimit(75);
-          } else {
-            setDailyLimit(999999); // Unlimited for paid plans
-          }
-        } else {
-          setDailyLimit(75); // Default guest limit
-        }
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -106,7 +81,7 @@ export function DashboardContent() {
   // Show loading while auth is initializing
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
         <div className="text-white">Loading your dashboard...</div>
       </div>
     );
@@ -115,16 +90,17 @@ export function DashboardContent() {
   // Show message if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
         <div className="text-white">Please sign in to access your ANIMA dashboard.</div>
       </div>
     );
   }
 
-  // Determine user tier and if it's guest pass
+  // Determine user tier
   const userTier = subscription?.plan?.name || "Guest Pass";
   const isGuestPass = userTier === "Guest Pass";
-  const username = profile?.username || user.email?.split('@')[0] || 'User';
+  const messagesUsed = 45; // This would come from actual usage tracking
+  const dailyLimit = 75;
 
   // Format recent chats for display
   const formattedRecentChats = recentChats.map(chat => ({
@@ -148,16 +124,19 @@ export function DashboardContent() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-[#121212] ml-64">
       {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           {/* Left side - Welcome Message */}
-          <div>
-            <h1 className="text-white text-3xl font-bold">
-              Welcome back to ANIMA, @{username}
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
+          <div className="flex items-center space-x-4">
+            <SidebarTrigger className="text-gray-400 hover:text-white" />
+            <div>
+              <h1 className="text-white text-3xl font-bold">
+                Welcome back to ANIMA, @{profile?.username || 'User'}
+              </h1>
+              <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
+            </div>
           </div>
           
           {/* Right side - Account Status */}
@@ -386,7 +365,7 @@ export function DashboardContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm">Credits</p>
-                  <p className="text-white text-2xl font-bold">{userCredits.toLocaleString()}</p>
+                  <p className="text-white text-2xl font-bold">{userCredits}</p>
                 </div>
                 <Sparkles className="w-8 h-8 text-[#FF7A00]" />
               </div>
