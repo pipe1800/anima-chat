@@ -110,7 +110,7 @@ export const getCharacterDetails = async (characterId: string) => {
       visibility,
       interaction_count,
       created_at,
-      creator:profiles!creator_id(id, username, avatar_url)
+      creator_id
     `)
     .eq('id', characterId)
     .maybeSingle()
@@ -121,6 +121,16 @@ export const getCharacterDetails = async (characterId: string) => {
     console.error('❌ Failed to fetch character:', error)
     return { data: null, error }
   }
+
+  // Fetch creator profile separately
+  console.log('🔍 Fetching creator profile for userId:', data.creator_id)
+  const { data: creatorData, error: creatorError } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .eq('id', data.creator_id)
+    .maybeSingle()
+
+  console.log('👤 Creator query result:', { creatorData, creatorError })
 
   // Fetch character definition separately
   console.log('🔍 Fetching character definition for characterId:', characterId)
@@ -146,6 +156,7 @@ export const getCharacterDetails = async (characterId: string) => {
   // Combine the data
   const characterWithDetails = {
     ...data,
+    creator: creatorData,
     definition: definitionData ? [definitionData] : [],
     tags: tagsData || []
   }
