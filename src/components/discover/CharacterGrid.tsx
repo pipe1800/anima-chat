@@ -144,10 +144,6 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                   </AvatarFallback>
                 </Avatar>
                 
-                {/* AI Badge */}
-                <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full">
-                  AI Character
-                </div>
               </div>
 
               {/* Character Info - Bottom Half */}
@@ -179,10 +175,10 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                   by @{character.creator?.username || 'Unknown'}
                 </p>
 
-                {/* Hover Action Button */}
+                {/* Action Button */}
                 <Button
                   onClick={() => handleStartChat(character)}
-                  className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 font-medium"
+                  className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Start Chat
