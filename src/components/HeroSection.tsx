@@ -16,6 +16,18 @@ const HeroSection = () => {
           className="h-16 w-auto"
         />
       </div>
+
+      {/* Login Button */}
+      <div className="absolute top-6 right-6 z-20">
+        <Link to="/auth">
+          <Button 
+            variant="outline" 
+            className="bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
+          >
+            Login
+          </Button>
+        </Link>
+      </div>
       
       {/* Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen pt-2 px-4 sm:px-6">
