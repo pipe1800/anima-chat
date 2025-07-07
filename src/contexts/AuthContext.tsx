@@ -61,63 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session fetch error:', error);
-          if (mounted) {
-            setUser(null);
-            setProfile(null);
-            setSession(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            // Fetch profile after setting user
-            try {
-              const { data, error: profileError } = await getPrivateProfile(session.user.id);
-              if (mounted) {
-                if (profileError) {
-                  console.error('Profile fetch error:', profileError);
-                  setProfile(null);
-                } else {
-                  setProfile(data || null);
-                }
-                setLoading(false);
-              }
-            } catch (error) {
-              console.error('Profile fetch failed:', error);
-              if (mounted) {
-                setProfile(null);
-                setLoading(false);
-              }
-            }
-          } else {
-            setProfile(null);
-            setLoading(false);
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        if (mounted) {
-          setUser(null);
-          setProfile(null);
-          setSession(null);
-          setLoading(false);
-        }
-      }
-    };
-
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
@@ -128,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fetch profile for new sessions
+          // Fetch profile for authenticated users
           try {
             const { data, error } = await getPrivateProfile(session.user.id);
             if (mounted) {
@@ -150,11 +94,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(null);
           }
         }
+
+        // Always set loading to false after handling auth state change
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session fetch error:', error);
+          if (mounted) {
+            setUser(null);
+            setProfile(null);
+            setSession(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            try {
+              const { data, error: profileError } = await getPrivateProfile(session.user.id);
+              if (mounted) {
+                if (profileError) {
+                  console.error('Profile fetch error:', profileError);
+                  setProfile(null);
+                } else {
+                  setProfile(data || null);
+                }
+              }
+            } catch (error) {
+              console.error('Profile fetch failed:', error);
+              if (mounted) {
+                setProfile(null);
+              }
+            }
+          } else {
+            setProfile(null);
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+          setLoading(false);
+        }
+      }
+    };
+
     // Initialize auth
-    initializeAuth();
+    getInitialSession();
 
     return () => {
       mounted = false;

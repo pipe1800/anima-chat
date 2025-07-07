@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,58 +33,53 @@ import {
 } from 'lucide-react';
 
 export function DashboardContent() {
-  const { user, profile, loading: userLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [recentChats, setRecentChats] = useState([]);
   const [myCharacters, setMyCharacters] = useState([]);
   const [userCredits, setUserCredits] = useState(0);
   const [subscription, setSubscription] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) {
-        setLoading(false);
+      if (!user || authLoading) {
         return;
       }
 
       try {
-        setLoading(true);
+        setDataLoading(true);
 
-        // Fetch user's chats
-        const chatsResult = await getUserChats(user.id);
+        // Fetch all data in parallel
+        const [chatsResult, charactersResult, creditsResult, subscriptionResult] = await Promise.all([
+          getUserChats(user.id),
+          getUserCharacters(user.id),
+          getUserCredits(user.id),
+          getUserSubscription(user.id)
+        ]);
+
         setRecentChats(chatsResult.data?.slice(0, 5) || []);
-
-        // Fetch user's characters
-        const charactersResult = await getUserCharacters(user.id);
         setMyCharacters(charactersResult.data || []);
-
-        // Fetch user's credits
-        const creditsResult = await getUserCredits(user.id);
-        
-        if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
-          setUserCredits(creditsResult.data.balance);
-        } else {
-          setUserCredits(0);
-        }
-
-        // Fetch user's subscription
-        const subscriptionResult = await getUserSubscription(user.id);
+        setUserCredits(creditsResult.data?.balance || 0);
         setSubscription(subscriptionResult.data);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
-    // Only fetch data when we have a user and user loading is complete
-    if (!userLoading) {
+    // Only fetch data when we have a user and auth is not loading
+    if (user && !authLoading) {
       fetchDashboardData();
+    } else if (!authLoading && !user) {
+      // Not authenticated and not loading
+      setDataLoading(false);
     }
-  }, [user, userLoading]);
+  }, [user, authLoading]);
 
-  if (userLoading || loading) {
+  // Show loading while auth is initializing
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
         <div className="text-white">Loading your dashboard...</div>
@@ -91,6 +87,7 @@ export function DashboardContent() {
     );
   }
 
+  // Show message if not authenticated
   if (!user) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
@@ -204,130 +201,136 @@ export function DashboardContent() {
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="recent-chats" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-[#121212] border border-gray-700/50">
-                <TabsTrigger 
-                  value="recent-chats" 
-                  className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
-                >
-                  Recent Chats
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="my-characters" 
-                  className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
-                >
-                  My Characters
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="favorites" 
-                  className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
-                >
-                  Favorites
-                </TabsTrigger>
-              </TabsList>
+            {dataLoading ? (
+              <div className="text-center py-8">
+                <div className="text-white">Loading your data...</div>
+              </div>
+            ) : (
+              <Tabs defaultValue="recent-chats" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 bg-[#121212] border border-gray-700/50">
+                  <TabsTrigger 
+                    value="recent-chats" 
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                  >
+                    Recent Chats
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="my-characters" 
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                  >
+                    My Characters
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="favorites" 
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                  >
+                    Favorites
+                  </TabsTrigger>
+                </TabsList>
 
-              {/* Recent Chats Tab */}
-              <TabsContent value="recent-chats" className="mt-6">
-                <div className="space-y-3">
-                  {formattedRecentChats.length > 0 ? (
-                    formattedRecentChats.map((chat) => (
-                      <Card
-                        key={chat.id}
-                        className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-4">
-                            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                              <AvatarImage src={chat.character.image} alt={chat.character.name} />
-                              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                                {chat.character.avatar}
+                {/* Recent Chats Tab */}
+                <TabsContent value="recent-chats" className="mt-6">
+                  <div className="space-y-3">
+                    {formattedRecentChats.length > 0 ? (
+                      formattedRecentChats.map((chat) => (
+                        <Card
+                          key={chat.id}
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center space-x-4">
+                              <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+                                <AvatarImage src={chat.character.image} alt={chat.character.name} />
+                                <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                                  {chat.character.avatar}
+                                </AvatarFallback>
+                              </Avatar>
+                              
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-white font-bold text-lg mb-1">
+                                  {chat.character.name}
+                                </h3>
+                                <p className="text-gray-400 text-sm line-clamp-1">
+                                  {chat.lastMessage}
+                                </p>
+                              </div>
+                              
+                              <div className="text-right">
+                                <p className="text-gray-500 text-sm">
+                                  {chat.timestamp}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400">No recent chats. Start a conversation!</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                {/* My Characters Tab */}
+                <TabsContent value="my-characters" className="mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {formattedMyCharacters.length > 0 ? (
+                      formattedMyCharacters.map((character) => (
+                        <Card
+                          key={character.id}
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
+                        >
+                          <CardContent className="p-4 text-center">
+                            <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
+                              <AvatarImage src={character.image} alt={character.name} />
+                              <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
+                                {character.avatar}
                               </AvatarFallback>
                             </Avatar>
                             
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-white font-bold text-lg mb-1">
-                                {chat.character.name}
-                              </h3>
-                              <p className="text-gray-400 text-sm line-clamp-1">
-                                {chat.lastMessage}
-                              </p>
-                            </div>
+                            <h3 className="text-white font-bold text-lg mb-2">
+                              {character.name}
+                            </h3>
                             
-                            <div className="text-right">
-                              <p className="text-gray-500 text-sm">
-                                {chat.timestamp}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <MessageCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                      <p className="text-gray-400">No recent chats. Start a conversation!</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
+                            <p className="text-gray-400 text-sm mb-3">
+                              {character.totalChats} total chats
+                            </p>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-8">
+                        <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400 mb-4">No characters created yet.</p>
+                        <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/80">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Your First Character
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
 
-              {/* My Characters Tab */}
-              <TabsContent value="my-characters" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {formattedMyCharacters.length > 0 ? (
-                    formattedMyCharacters.map((character) => (
-                      <Card
-                        key={character.id}
-                        className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
-                      >
-                        <CardContent className="p-4 text-center">
-                          <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
-                            <AvatarImage src={character.image} alt={character.name} />
-                            <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
-                              {character.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <h3 className="text-white font-bold text-lg mb-2">
-                            {character.name}
-                          </h3>
-                          
-                          <p className="text-gray-400 text-sm mb-3">
-                            {character.totalChats} total chats
-                          </p>
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
-                          >
-                            <Edit className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-8">
-                      <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                      <p className="text-gray-400 mb-4">No characters created yet.</p>
-                      <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/80">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Your First Character
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              {/* Favorites Tab */}
-              <TabsContent value="favorites" className="mt-6">
-                <div className="text-center py-8">
-                  <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                  <p className="text-gray-400">Your favorite characters will appear here.</p>
-                </div>
-              </TabsContent>
-            </Tabs>
+                {/* Favorites Tab */}
+                <TabsContent value="favorites" className="mt-6">
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Your favorite characters will appear here.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
 

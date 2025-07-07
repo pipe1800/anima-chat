@@ -43,14 +43,14 @@ const mainItems = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
   const [userCredits, setUserCredits] = useState(0);
   const currentPath = location.pathname;
 
   // Fetch user credits
   useEffect(() => {
     const fetchCredits = async () => {
-      if (!user) return;
+      if (!user || loading) return;
       
       try {
         const creditsResult = await getUserCredits(user.id);
@@ -62,8 +62,10 @@ export function AppSidebar() {
       }
     };
 
-    fetchCredits();
-  }, [user]);
+    if (user && !loading) {
+      fetchCredits();
+    }
+  }, [user, loading]);
 
   const isActive = (path: string) => currentPath === path;
 
@@ -82,6 +84,11 @@ export function AppSidebar() {
       console.error('Error signing out:', error);
     }
   };
+
+  // Don't render sidebar if auth is still loading
+  if (loading) {
+    return null;
+  }
 
   return (
     <Sidebar 
