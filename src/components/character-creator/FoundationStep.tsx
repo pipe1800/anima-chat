@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -154,13 +153,13 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                 ) : (
                   <div className="flex flex-col items-center justify-center text-[#FF7A00]/60">
                     <User className="w-16 h-16 mb-2 animate-pulse" />
-                    <div className="w-12 h-12 rounded-full bg-[#FF7A00]/20 animate-ping absolute" />
-                    <div className="w-8 h-8 rounded-full bg-[#FF7A00]/40 animate-ping absolute" style={{ animationDelay: '0.5s' }} />
+                    <div className="w-12 h-12 rounded-full bg-[#FF7A00]/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
+                    <div className="w-8 h-8 rounded-full bg-[#FF7A00]/40 animate-ping absolute" style={{ animationDelay: '1.5s', animationDuration: '3s' }} />
                   </div>
                 )}
               </div>
               
-              <div className="absolute inset-0 rounded-full border-2 border-[#FF7A00]/50 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-2 border-[#FF7A00]/50 animate-pulse" style={{ animationDuration: '2s' }} />
             </div>
 
             {/* File input (hidden) */}

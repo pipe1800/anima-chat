@@ -110,7 +110,7 @@ export const getCharacterDetails = async (characterId: string) => {
       interaction_count,
       created_at,
       creator:profiles!creator_id(id, username, avatar_url),
-      definition:character_definitions(greeting, long_description, definition),
+      definition:character_definitions!character_definitions_character_id_fkey(greeting, long_description, definition),
       tags:character_tags(tag:tags(id, name))
     `)
     .eq('id', characterId)

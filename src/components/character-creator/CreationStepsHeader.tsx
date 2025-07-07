@@ -57,7 +57,7 @@ const CreationStepsHeader = ({ steps, currentStep, onStepChange }: CreationSteps
                     : isCurrent
                       ? 'bg-[#FF7A00] text-white shadow-lg animate-pulse'
                       : 'bg-gray-600 text-gray-300'
-                }`}>
+                }`} style={isCurrent ? { animationDuration: '2s' } : {}}>
                   {isCompleted ? (
                     <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                   ) : (
