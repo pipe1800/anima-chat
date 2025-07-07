@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { TablesInsert } from '@/integrations/supabase/types';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export interface CharacterCreationData {
   name: string;
@@ -75,6 +75,60 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
     return character;
   } catch (error) {
     console.error('Error in createCharacter:', error);
+    throw error;
+  }
+};
+
+export const updateCharacter = async (characterId: string, characterData: CharacterCreationData) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // Update character record
+    const characterUpdate: TablesUpdate<'characters'> = {
+      name: characterData.name,
+      short_description: characterData.description,
+      avatar_url: characterData.avatar,
+      visibility: characterData.visibility
+    };
+
+    const { data: character, error: characterError } = await supabase
+      .from('characters')
+      .update(characterUpdate)
+      .eq('id', characterId)
+      .eq('creator_id', user.user.id) // Ensure user owns the character
+      .select()
+      .single();
+
+    if (characterError || !character) {
+      console.error('Error updating character:', characterError);
+      throw new Error('Failed to update character');
+    }
+
+    // Update character definition
+    const definition = {
+      personality: characterData.personality,
+      dialogue: characterData.dialogue,
+      title: characterData.title
+    };
+
+    const { error: definitionError } = await supabase
+      .from('character_definitions')
+      .update({
+        definition: JSON.stringify(definition),
+        greeting: characterData.dialogue.greeting,
+        long_description: characterData.personality.core_personality
+      })
+      .eq('character_id', characterId);
+
+    if (definitionError) {
+      console.error('Error updating character definition:', definitionError);
+      throw new Error('Failed to update character definition');
+    }
+
+    return character;
+  } catch (error) {
+    console.error('Error in updateCharacter:', error);
     throw error;
   }
 };

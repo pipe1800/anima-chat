@@ -5,7 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Heart } from 'lucide-react';
+import { MessageCircle, Heart, Edit, User } from 'lucide-react';
+import { getUserCharacters } from '@/lib/supabase-queries';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 
 interface CharacterGridProps {
   type: 'created' | 'favorites';
@@ -13,74 +16,75 @@ interface CharacterGridProps {
 
 export const CharacterGrid = ({ type }: CharacterGridProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Mock data - in real app this would come from props or API
-  const characters = [
-    {
-      id: 1,
-      name: 'Luna Starweaver',
-      avatar: 'L',
-      image: '',
-      category: 'Fantasy',
-      description: 'A mystical sorceress with knowledge of ancient magic and celestial powers.',
-      tagline: 'The stars whisper secrets to those who know how to listen.',
-      creator: '@johndoe',
-      rating: 4.9,
-      conversations: 234,
-      likes: 45,
-      tags: ['Fantasy', 'Magic', 'Mysterious']
+  const { data: characters = [], isLoading } = useQuery({
+    queryKey: ['user-characters', user?.id, type],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      if (type === 'created') {
+        const { data } = await getUserCharacters(user.id);
+        return data || [];
+      }
+      // For favorites, we'll return empty for now since we don't have a favorites system yet
+      return [];
     },
-    {
-      id: 2,
-      name: 'Detective Morrison',
-      avatar: 'D',
-      image: '',
-      category: 'Mystery',
-      description: 'A grizzled detective with 20 years on the force, solving the toughest cases.',
-      tagline: 'Every case has a solution, you just need to know where to look.',
-      creator: '@johndoe',
-      rating: 4.8,
-      conversations: 189,
-      likes: 32,
-      tags: ['Modern', 'Detective', 'Mystery']
-    },
-    {
-      id: 3,
-      name: 'Aria Nightsong',
-      avatar: 'A',
-      image: '',
-      category: 'Gothic',
-      description: 'An elegant vampire aristocrat from the Victorian era with a taste for poetry.',
-      tagline: 'Eternity is long enough to perfect the art of conversation.',
-      creator: '@johndoe',
-      rating: 4.7,
-      conversations: 412,
-      likes: 78,
-      tags: ['Gothic', 'Vampire', 'Victorian']
-    },
-    {
-      id: 4,
-      name: 'Captain Rex',
-      avatar: 'R',
-      image: '',
-      category: 'Sci-Fi',
-      description: 'A space marine commander leading the fight against alien invaders.',
-      tagline: 'Victory is earned through preparation and courage.',
-      creator: '@johndoe',
-      rating: 4.6,
-      conversations: 156,
-      likes: 29,
-      tags: ['Sci-Fi', 'Military', 'Space']
-    }
-  ];
+    enabled: !!user?.id,
+  });
 
-  const handleStartChat = (character: typeof characters[0]) => {
+  const handleStartChat = (character: any) => {
     navigate('/chat', { state: { selectedCharacter: character } });
   };
 
+  const handleEditCharacter = (character: any) => {
+    navigate('/character-creator', { 
+      state: { 
+        editingCharacter: character,
+        isEditing: true 
+      } 
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="bg-[#1a1a2e] border-gray-700/50 animate-pulse">
+            <CardContent className="p-0">
+              <div className="h-48 bg-gray-700/30"></div>
+              <div className="p-5 space-y-4">
+                <div className="h-6 bg-gray-700/30 rounded"></div>
+                <div className="h-4 bg-gray-700/30 rounded"></div>
+                <div className="h-4 bg-gray-700/30 rounded w-2/3"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (characters.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-400 mb-4">
+          {type === 'created' ? 'No characters created yet' : 'No favorite characters yet'}
+        </div>
+        {type === 'created' && (
+          <Button 
+            onClick={() => navigate('/character-creator')}
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+          >
+            Create Your First Character
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {characters.map((character, index) => (
+      {characters.map((character) => (
         <Card
           key={character.id}
           className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform"
@@ -89,18 +93,18 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
             {/* Character Avatar Section - Top Half */}
             <div className="relative h-48 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
               <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
-                <AvatarImage src={character.image} alt={character.name} />
+                <AvatarImage src={character.avatar_url} alt={character.name} />
                 <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
-                  {character.avatar}
+                  {character.name?.charAt(0)?.toUpperCase() || <User className="w-8 h-8" />}
                 </AvatarFallback>
               </Avatar>
               
-              {/* Category Badge */}
-              <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full">
-                {character.category}
+              {/* Visibility Badge */}
+              <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full capitalize">
+                {character.visibility}
               </div>
 
-              {/* Created/Favorites Badge */}
+              {/* Created Badge */}
               {type === 'created' && (
                 <div className="absolute top-3 right-3">
                   <Badge variant="outline" className="text-[#FF7A00] border-[#FF7A00]/30 bg-black/40">
@@ -117,9 +121,9 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
                 {character.name}
               </h3>
 
-              {/* Tagline */}
-              <p className="text-gray-400 text-sm italic line-clamp-2 leading-relaxed min-h-[2.5rem]">
-                "{character.tagline}"
+              {/* Description */}
+              <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed min-h-[2.5rem]">
+                {character.short_description || 'No description available'}
               </p>
 
               {/* Stats */}
@@ -127,28 +131,41 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-1 text-gray-300">
                     <MessageCircle className="w-4 h-4" />
-                    <span>{character.conversations.toLocaleString()}</span>
+                    <span>{character.interaction_count || 0}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-gray-300">
                     <Heart className="w-4 h-4" />
-                    <span>{character.likes.toLocaleString()}</span>
+                    <span>0</span>
                   </div>
                 </div>
               </div>
 
-              {/* Creator */}
+              {/* Created Date */}
               <p className="text-gray-500 text-xs">
-                by {character.creator}
+                Created {new Date(character.created_at).toLocaleDateString()}
               </p>
 
-              {/* Hover Action Button */}
-              <Button
-                onClick={() => handleStartChat(character)}
-                className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 font-medium"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Start Chat
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                <Button
+                  onClick={() => handleStartChat(character)}
+                  className="flex-1 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                  size="sm"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat
+                </Button>
+                {type === 'created' && (
+                  <Button
+                    onClick={() => handleEditCharacter(character)}
+                    variant="outline"
+                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10"
+                    size="sm"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -13,11 +13,12 @@ interface FinalizeStepProps {
   onFinalize: () => void;
   onPrevious: () => void;
   isCreating?: boolean;
+  isEditing?: boolean;
 }
 
 type VisibilityType = 'public' | 'unlisted' | 'private';
 
-const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false }: FinalizeStepProps) => {
+const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false, isEditing = false }: FinalizeStepProps) => {
   const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
   const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
 
@@ -54,10 +55,13 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
     <div className="max-w-4xl mx-auto p-8">
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-white mb-4">
-          Unleash Your Creation
+          {isEditing ? 'Update Your Character' : 'Unleash Your Creation'}
         </h2>
         <p className="text-gray-400 text-lg">
-          Configure your character's visibility and launch them into the world!
+          {isEditing 
+            ? 'Review your changes and update your character!'
+            : 'Configure your character\'s visibility and launch them into the world!'
+          }
         </p>
       </div>
 
@@ -221,11 +225,16 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
       <div className="text-center mb-8">
         <div className="inline-flex items-center space-x-2 text-[#FF7A00] mb-4">
           <Sparkles className="w-6 h-6" />
-          <span className="text-xl font-semibold">Ready to Launch!</span>
+          <span className="text-xl font-semibold">
+            {isEditing ? 'Ready to Update!' : 'Ready to Launch!'}
+          </span>
           <Sparkles className="w-6 h-6" />
         </div>
         <p className="text-gray-400">
-          Your character is complete and ready to interact with users. Launch when you're ready!
+          {isEditing 
+            ? 'Your character updates are ready to be saved!'
+            : 'Your character is complete and ready to interact with users. Launch when you\'re ready!'
+          }
         </p>
       </div>
 
@@ -248,11 +257,11 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
           {isCreating ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Creating Character...
+              {isEditing ? 'Updating Character...' : 'Creating Character...'}
             </>
           ) : (
             <>
-              Save & Launch Character 🚀
+              {isEditing ? 'Update Character ✨' : 'Save & Launch Character 🚀'}
             </>
           )}
         </Button>
