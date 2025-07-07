@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, User, Search, Heart, Star, MessageCircle, Info, Edit } from 'lucide-react';
+import { ChevronRight, Menu, Search, Heart, Star, MessageCircle, Info, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserChats, getCharacterDetails } from '@/lib/supabase-queries';
@@ -68,57 +67,51 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
-    <div className="h-screen flex bg-[#121212] overflow-hidden relative">
-      {/* Left Panel - Main Navigation */}
+    <div className="h-screen flex bg-[#121212]">
+      {/* Left Sidebar */}
       <AppSidebar />
 
-      {/* Center Panel - Main Chat */}
-      <div className="flex-1 flex flex-col min-w-0 ml-64">
-        {/* Chat Header */}
-        <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                <AvatarImage src={character.avatar} alt={character.name} />
-                <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                  {character.fallback}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div>
-                <h1 className="text-white font-semibold text-lg">{character.name}</h1>
-                <p className="text-gray-400 text-sm">{character.tagline}</p>
+      {/* Main Content Area */}
+      <div className="flex-1 flex">
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Chat Header */}
+          <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+                  <AvatarImage src={character.avatar} alt={character.name} />
+                  <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                    {character.fallback}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div>
+                  <h1 className="text-white font-semibold text-lg">{character.name}</h1>
+                  <p className="text-gray-400 text-sm">{character.tagline}</p>
+                </div>
               </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRightPanelOpen(!rightPanelOpen)}
+                className="text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
             </div>
+          </header>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setRightPanelOpen(!rightPanelOpen)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+          {/* Chat Interface */}
+          <div className="flex-1 overflow-hidden">
+            {children}
           </div>
-        </header>
-
-        {/* Main Chat Content */}
-        <div className="flex-1 overflow-hidden">
-          {children}
         </div>
-      </div>
 
-      {/* Right Panel - Overlay */}
-      {rightPanelOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setRightPanelOpen(false)}
-          />
-          
-          {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-80 bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
+        {/* Right Panel */}
+        {rightPanelOpen && (
+          <div className="w-80 bg-[#0f0f0f] border-l border-gray-700/50 flex flex-col">
             {/* Panel Header with Tabs */}
             <div className="p-4 border-b border-gray-700/50 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
@@ -313,8 +306,8 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
               )}
             </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
