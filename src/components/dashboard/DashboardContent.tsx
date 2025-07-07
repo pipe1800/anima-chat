@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { DailyUsageWidget } from './DailyUsageWidget';
 import DiscordCTA from '../DiscordCTA';
+import { useCurrentUser } from '@/hooks/useProfile';
+import { 
+  getUserChats, 
+  getUserCharacters, 
+  getUserCredits, 
+  getUserSubscription 
+} from '@/lib/supabase-queries';
 import { 
   MessageCircle, 
   Trophy, 
@@ -20,145 +28,93 @@ import {
   Edit,
   Share,
   CreditCard,
-  CheckCircle
+  CheckCircle,
+  Crown
 } from 'lucide-react';
 
-const recentChats = [
-  {
-    id: 1,
-    character: {
-      name: "Luna",
-      avatar: "L",
-      image: "/placeholder.svg"
-    },
-    lastMessage: "The moonlight reveals ancient secrets hidden in the shadows...",
-    timestamp: "2m ago"
-  },
-  {
-    id: 2,
-    character: {
-      name: "Zyx",
-      avatar: "Z",
-      image: "/placeholder.svg"
-    },
-    lastMessage: "Time bends around us as we navigate the quantum realm together.",
-    timestamp: "5m ago"
-  },
-  {
-    id: 3,
-    character: {
-      name: "Sakura",
-      avatar: "S",
-      image: "/placeholder.svg"
-    },
-    lastMessage: "Cherry blossoms fall like memories in the wind...",
-    timestamp: "1h ago"
-  },
-  {
-    id: 4,
-    character: {
-      name: "Aria",
-      avatar: "A",
-      image: "/placeholder.svg"
-    },
-    lastMessage: "The ancient spell requires three rare ingredients from the forgotten realm.",
-    timestamp: "3h ago"
-  },
-  {
-    id: 5,
-    character: {
-      name: "Neo",
-      avatar: "N",
-      image: "/placeholder.svg"
-    },
-    lastMessage: "The matrix simulation is glitching again. We need to find the source code.",
-    timestamp: "1d ago"
-  }
-];
-
-const myCharacters = [
-  {
-    id: 1,
-    name: "Vex",
-    avatar: "V",
-    image: "/placeholder.svg",
-    totalChats: 23
-  },
-  {
-    id: 2,
-    name: "Phoenix",
-    avatar: "P",
-    image: "/placeholder.svg",
-    totalChats: 15
-  },
-  {
-    id: 3,
-    name: "Mystic",
-    avatar: "M",
-    image: "/placeholder.svg",
-    totalChats: 31
-  },
-  {
-    id: 4,
-    name: "Cipher",
-    avatar: "C",
-    image: "/placeholder.svg",
-    totalChats: 8
-  },
-  {
-    id: 5,
-    name: "Echo",
-    avatar: "E",
-    image: "/placeholder.svg",
-    totalChats: 42
-  },
-  {
-    id: 6,
-    name: "Raven",
-    avatar: "R",
-    image: "/placeholder.svg",
-    totalChats: 19
-  }
-];
-
-const favorites = [
-  {
-    id: 1,
-    character: {
-      name: "Aria",
-      avatar: "A",
-      image: "/placeholder.svg"
-    },
-    category: "Fantasy",
-    rating: 5
-  },
-  {
-    id: 2,
-    character: {
-      name: "Nexus",
-      avatar: "N",
-      image: "/placeholder.svg"
-    },
-    category: "Sci-Fi",
-    rating: 5
-  },
-  {
-    id: 3,
-    character: {
-      name: "Echo",
-      avatar: "E",
-      image: "/placeholder.svg"
-    },
-    category: "Mystery",
-    rating: 4
-  }
-];
-
 export function DashboardContent() {
-  // Mock user data - in real app this would come from props or context
-  const userTier = "Guest Pass"; // or "True Fan", "The Whale"
-  const messagesUsed = 45;
+  const { user, profile, loading: userLoading } = useCurrentUser();
+  const [recentChats, setRecentChats] = useState([]);
+  const [myCharacters, setMyCharacters] = useState([]);
+  const [userCredits, setUserCredits] = useState(0);
+  const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user || !profile) return;
+
+      try {
+        setLoading(true);
+
+        // Fetch user's chats
+        const { data: chatsData } = await getUserChats(user.id);
+        setRecentChats(chatsData?.slice(0, 5) || []);
+
+        // Fetch user's characters
+        const { data: charactersData } = await getUserCharacters(user.id);
+        setMyCharacters(charactersData || []);
+
+        // Fetch user's credits
+        const { data: creditsData } = await getUserCredits(user.id);
+        setUserCredits(creditsData?.balance || 0);
+
+        // Fetch user's subscription
+        const { data: subscriptionData } = await getUserSubscription(user.id);
+        setSubscription(subscriptionData);
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user, profile]);
+
+  if (userLoading || loading) {
+    return (
+      <div className="min-h-screen bg-[#121212] ml-64 flex items-center justify-center">
+        <div className="text-white">Loading your dashboard...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#121212] ml-64 flex items-center justify-center">
+        <div className="text-white">Please sign in to access your dashboard.</div>
+      </div>
+    );
+  }
+
+  // Determine user tier
+  const userTier = subscription?.plan?.name || "Guest Pass";
+  const isGuestPass = userTier === "Guest Pass";
+  const messagesUsed = 45; // This would come from actual usage tracking
   const dailyLimit = 75;
+
+  // Format recent chats for display
+  const formattedRecentChats = recentChats.map(chat => ({
+    id: chat.id,
+    character: {
+      name: chat.character?.name || 'Unknown',
+      avatar: chat.character?.name?.charAt(0) || 'U',
+      image: chat.character?.avatar_url || "/placeholder.svg"
+    },
+    lastMessage: "Continue your conversation...", // Would come from last message
+    timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString()
+  }));
+
+  // Format characters for display  
+  const formattedMyCharacters = myCharacters.map(character => ({
+    id: character.id,
+    name: character.name,
+    avatar: character.name.charAt(0),
+    image: character.avatar_url || "/placeholder.svg",
+    totalChats: character.interaction_count || 0
+  }));
 
   return (
     <div className="min-h-screen bg-[#121212] ml-64">
@@ -169,7 +125,9 @@ export function DashboardContent() {
           <div className="flex items-center space-x-4">
             <SidebarTrigger className="text-gray-400 hover:text-white" />
             <div>
-              <h1 className="text-white text-3xl font-bold">Welcome back, @xX_ShadowGamer_Xx</h1>
+              <h1 className="text-white text-3xl font-bold">
+                Welcome back, @{profile?.username || 'User'}
+              </h1>
               <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
             </div>
           </div>
@@ -180,13 +138,13 @@ export function DashboardContent() {
               <p className="text-gray-400 text-sm">Subscription Tier:</p>
               <p className="text-[#FF7A00] font-bold text-lg">{userTier}</p>
             </div>
-            {userTier !== "Guest Pass" && (
+            {!isGuestPass && (
               <div className="bg-[#FF7A00]/20 px-4 py-3 rounded-lg border border-[#FF7A00]/30">
                 <div className="flex items-center space-x-2">
                   <Zap className="w-5 h-5 text-[#FF7A00]" />
                   <div className="text-right">
                     <p className="text-gray-400 text-xs">Credits:</p>
-                    <p className="text-[#FF7A00] font-bold text-lg">1,247</p>
+                    <p className="text-[#FF7A00] font-bold text-lg">{userCredits.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -198,7 +156,7 @@ export function DashboardContent() {
       {/* Main Content */}
       <div className="p-6 space-y-6">
         {/* Daily Usage Widget - Only for Guest Pass users */}
-        {userTier === "Guest Pass" && (
+        {isGuestPass && (
           <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
         )}
 
@@ -261,121 +219,102 @@ export function DashboardContent() {
               {/* Recent Chats Tab */}
               <TabsContent value="recent-chats" className="mt-6">
                 <div className="space-y-3">
-                  {recentChats.map((chat) => (
-                    <Card
-                      key={chat.id}
-                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                            <AvatarImage src={chat.character.image} alt={chat.character.name} />
-                            <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                              {chat.character.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-bold text-lg mb-1">
-                              {chat.character.name}
-                            </h3>
-                            <p className="text-gray-400 text-sm line-clamp-1">
-                              {chat.lastMessage}
-                            </p>
+                  {formattedRecentChats.length > 0 ? (
+                    formattedRecentChats.map((chat) => (
+                      <Card
+                        key={chat.id}
+                        className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center space-x-4">
+                            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+                              <AvatarImage src={chat.character.image} alt={chat.character.name} />
+                              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                                {chat.character.avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-white font-bold text-lg mb-1">
+                                {chat.character.name}
+                              </h3>
+                              <p className="text-gray-400 text-sm line-clamp-1">
+                                {chat.lastMessage}
+                              </p>
+                            </div>
+                            
+                            <div className="text-right">
+                              <p className="text-gray-500 text-sm">
+                                {chat.timestamp}
+                              </p>
+                            </div>
                           </div>
-                          
-                          <div className="text-right">
-                            <p className="text-gray-500 text-sm">
-                              {chat.timestamp}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-400">No recent chats. Start a conversation!</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
               {/* My Characters Tab */}
               <TabsContent value="my-characters" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {myCharacters.map((character) => (
-                    <Card
-                      key={character.id}
-                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
-                    >
-                      <CardContent className="p-4 text-center">
-                        <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
-                          <AvatarImage src={character.image} alt={character.name} />
-                          <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
-                            {character.avatar}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <h3 className="text-white font-bold text-lg mb-2">
-                          {character.name}
-                        </h3>
-                        
-                        <p className="text-gray-400 text-sm mb-3">
-                          {character.totalChats} total chats
-                        </p>
-                        
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {formattedMyCharacters.length > 0 ? (
+                    formattedMyCharacters.map((character) => (
+                      <Card
+                        key={character.id}
+                        className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
+                      >
+                        <CardContent className="p-4 text-center">
+                          <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
+                            <AvatarImage src={character.image} alt={character.name} />
+                            <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
+                              {character.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <h3 className="text-white font-bold text-lg mb-2">
+                            {character.name}
+                          </h3>
+                          
+                          <p className="text-gray-400 text-sm mb-3">
+                            {character.totalChats} total chats
+                          </p>
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            Edit
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8">
+                      <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-400 mb-4">No characters created yet.</p>
+                      <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/80">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Your First Character
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
-              {/* Favorites Tab */}
+              {/* Favorites Tab - placeholder for now */}
               <TabsContent value="favorites" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {favorites.map((favorite) => (
-                    <Card
-                      key={favorite.id}
-                      className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 group cursor-pointer"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                            <AvatarImage src={favorite.character.image} alt={favorite.character.name} />
-                            <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                              {favorite.character.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="text-white font-semibold">
-                                {favorite.character.name}
-                              </h3>
-                              <div className="flex items-center space-x-1">
-                                {[...Array(favorite.rating)].map((_, i) => (
-                                  <Star key={i} className="w-4 h-4 fill-[#FF7A00] text-[#FF7A00]" />
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-gray-400 text-sm mb-3">
-                              {favorite.category}
-                            </p>
-                            <Button
-                              className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                              size="sm"
-                            >
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Start Chat
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="text-center py-8">
+                  <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400">Your favorite characters will appear here.</p>
                 </div>
               </TabsContent>
             </Tabs>
@@ -389,7 +328,7 @@ export function DashboardContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm">Active Chats</p>
-                  <p className="text-white text-2xl font-bold">12</p>
+                  <p className="text-white text-2xl font-bold">{recentChats.length}</p>
                 </div>
                 <MessageCircle className="w-8 h-8 text-[#FF7A00]" />
               </div>
@@ -401,7 +340,7 @@ export function DashboardContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm">Characters Created</p>
-                  <p className="text-white text-2xl font-bold">8</p>
+                  <p className="text-white text-2xl font-bold">{myCharacters.length}</p>
                 </div>
                 <Users className="w-8 h-8 text-[#FF7A00]" />
               </div>
@@ -412,8 +351,8 @@ export function DashboardContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Total Messages</p>
-                  <p className="text-white text-2xl font-bold">2,547</p>
+                  <p className="text-gray-400 text-sm">Credits</p>
+                  <p className="text-white text-2xl font-bold">{userCredits}</p>
                 </div>
                 <Sparkles className="w-8 h-8 text-[#FF7A00]" />
               </div>
@@ -424,10 +363,10 @@ export function DashboardContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Hours Chatted</p>
-                  <p className="text-white text-2xl font-bold">127</p>
+                  <p className="text-gray-400 text-sm">Plan</p>
+                  <p className="text-white text-lg font-bold">{userTier}</p>
                 </div>
-                <Clock className="w-8 h-8 text-[#FF7A00]" />
+                <Crown className="w-8 h-8 text-[#FF7A00]" />
               </div>
             </CardContent>
           </Card>
