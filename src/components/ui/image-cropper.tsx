@@ -31,22 +31,41 @@ export const ImageCropper = ({
   const imageRef = useRef<HTMLImageElement>(null);
 
   const cropSize = 200; // The diameter of the crop circle
+  const containerSize = 400; // Preview container size
 
   const handleImageLoad = () => {
     const image = imageRef.current;
     if (!image) return;
 
-    // Calculate minimum zoom to ensure image always covers the crop circle
-    const imageAspectRatio = image.naturalWidth / image.naturalHeight;
-    const containerSize = 400; // Preview container size
+    // Calculate minimum zoom to ensure the crop circle is always fully covered by the image
+    // The crop circle should fit within the image at all times
+    const imageWidth = image.naturalWidth;
+    const imageHeight = image.naturalHeight;
     
-    // Calculate what zoom level ensures the image can always cover the crop circle
-    const minZoomX = cropSize / Math.min(image.naturalWidth, containerSize);
-    const minZoomY = cropSize / Math.min(image.naturalHeight, containerSize);
-    const calculatedMinZoom = Math.max(minZoomX, minZoomY, 0.3);
+    // Calculate what the image dimensions would be when displayed in the container
+    const imageAspectRatio = imageWidth / imageHeight;
+    let displayWidth, displayHeight;
     
-    setMinZoom(calculatedMinZoom);
-    setZoom(Math.max(1, calculatedMinZoom));
+    if (imageAspectRatio > 1) {
+      // Image is wider - height will be constrained by container
+      displayHeight = Math.min(imageHeight, containerSize);
+      displayWidth = displayHeight * imageAspectRatio;
+    } else {
+      // Image is taller - width will be constrained by container
+      displayWidth = Math.min(imageWidth, containerSize);
+      displayHeight = displayWidth / imageAspectRatio;
+    }
+    
+    // The minimum zoom ensures the crop circle (cropSize) fits within the smaller dimension
+    const minZoomForWidth = cropSize / displayWidth;
+    const minZoomForHeight = cropSize / displayHeight;
+    const calculatedMinZoom = Math.max(minZoomForWidth, minZoomForHeight);
+    
+    // Ensure minimum zoom is at least what's needed to cover the crop circle
+    const finalMinZoom = Math.max(calculatedMinZoom, 0.1);
+    
+    setMinZoom(finalMinZoom);
+    setZoom(Math.max(finalMinZoom, 1));
     setImageLoaded(true);
   };
 
@@ -181,7 +200,7 @@ export const ImageCropper = ({
                   value={[zoom]}
                   onValueChange={(value) => setZoom(value[0])}
                   min={minZoom}
-                  max={2.5}
+                  max={3}
                   step={0.05}
                   className="flex-1"
                 />
@@ -205,7 +224,7 @@ export const ImageCropper = ({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setZoom(Math.max(1, minZoom));
+                    setZoom(minZoom);
                     setRotation(0);
                     setPosition({ x: 0, y: 0 });
                   }}
