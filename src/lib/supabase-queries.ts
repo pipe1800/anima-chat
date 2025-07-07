@@ -359,7 +359,7 @@ export const getChatMessages = async (chatId: string) => {
       content,
       is_ai_message,
       created_at,
-      author:profiles!author_id(id, username, avatar_url)
+      author_id
     `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true })

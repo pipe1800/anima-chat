@@ -127,7 +127,7 @@ const Chat = () => {
         )}
 
         {/* Main Chat Layout */}
-        <ChatLayout character={character}>
+        <ChatLayout character={character} currentChatId={existingChatId}>
           <ChatInterface
             character={character}
             onFirstMessage={handleFirstMessage}

@@ -21,9 +21,10 @@ interface Character {
 interface ChatLayoutProps {
   character: Character;
   children: React.ReactNode;
+  currentChatId?: string;
 }
 
-export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
+export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutProps) => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'details'>('details');
   const [chatHistory, setChatHistory] = useState<any[]>([]);
@@ -244,16 +245,26 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                     ) : chatHistory.length === 0 ? (
                       <div className="text-gray-400 text-center py-4">No chat history yet</div>
                     ) : (
-                      chatHistory.map((chat) => (
-                        <div
-                          key={chat.id}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            chat.character?.id === character.id
-                              ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
-                              : 'hover:bg-[#1a1a2e]'
-                          }`}
-                          onClick={() => navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } })}
-                        >
+                      chatHistory.map((chat) => {
+                        const isActiveChat = chat.id === currentChatId;
+                        const isSameCharacter = chat.character?.id === character.id;
+                        
+                        return (
+                          <div
+                            key={chat.id}
+                            className={`p-3 rounded-lg transition-colors ${
+                              isActiveChat
+                                ? 'bg-[#FF7A00]/30 border border-[#FF7A00] cursor-default'
+                                : isSameCharacter
+                                ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30 cursor-pointer hover:bg-[#FF7A00]/25'
+                                : 'hover:bg-[#1a1a2e] cursor-pointer'
+                            }`}
+                            onClick={() => {
+                              if (!isActiveChat) {
+                                navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } });
+                              }
+                            }}
+                          >
                           <div className="flex items-start space-x-3">
                             <Avatar className="w-10 h-10 flex-shrink-0">
                               <AvatarImage src={chat.character?.avatar_url} alt={chat.character?.name} />
@@ -264,17 +275,23 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <h3 className={`font-medium text-sm truncate ${
-                                  chat.character?.id === character.id ? 'text-[#FF7A00]' : 'text-white'
+                                  isActiveChat ? 'text-[#FF7A00] font-bold' : 
+                                  isSameCharacter ? 'text-[#FF7A00]' : 'text-white'
                                 }`}>{chat.character?.name || 'Unknown Character'}</h3>
                                 <span className="text-gray-400 text-xs flex-shrink-0 ml-2">
                                   {chat.last_message_at ? new Date(chat.last_message_at).toLocaleDateString() : 'No messages'}
                                 </span>
                               </div>
-                              <p className="text-gray-400 text-sm truncate">{chat.title || 'New conversation'}</p>
+                              <p className={`text-sm truncate ${
+                                isActiveChat ? 'text-[#FF7A00]/80' : 'text-gray-400'
+                              }`}>
+                                {isActiveChat ? '• Active Chat' : (chat.title || 'New conversation')}
+                              </p>
                             </div>
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

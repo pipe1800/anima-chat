@@ -46,7 +46,7 @@ const ChatInterface = ({
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
   const [characterGreeting, setCharacterGreeting] = useState<string>('');
   const [loading, setLoading] = useState(true);
   
