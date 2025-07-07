@@ -1,6 +1,9 @@
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, User, Search, Heart, Star, MessageCircle, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Menu, Settings, User, Search, Heart, Star, MessageCircle, Info, Edit } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { getUserChats, getCharacterDetails } from '@/lib/supabase-queries';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -26,22 +29,43 @@ interface ChatLayoutProps {
 export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'details'>('history');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [characterDetails, setCharacterDetails] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Mock chat history data
-  const chatHistory = [
-    { id: '1', name: 'Luna Mystic', lastMessage: 'The stars whisper of ancient secrets...', timestamp: '2m ago', avatar: '/placeholder.svg', isActive: character.id === 'luna' },
-    { id: '2', name: 'Zyx Future', lastMessage: 'In the year 3024, technology will...', timestamp: '1h ago', avatar: '/placeholder.svg', isActive: character.id === 'zyx' },
-    { id: '3', name: 'Sakura Dreams', lastMessage: 'Let\'s go on a magical adventure!', timestamp: '2h ago', avatar: '/placeholder.svg', isActive: character.id === 'sakura' },
-    { id: '4', name: 'Raven Shadow', lastMessage: 'The ancient texts reveal...', timestamp: '1d ago', avatar: '/placeholder.svg', isActive: character.id === 'raven' },
-    { id: '5', name: 'Phoenix Fire', lastMessage: 'Ready for some excitement!', timestamp: '2d ago', avatar: '/placeholder.svg', isActive: character.id === 'phoenix' },
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user);
 
-  // Mock character details
-  const characterDetails = {
-    description: character.tagline + " I love exploring deep conversations and sharing mystical wisdom with those who seek it.",
-    tags: ['Mystical', 'Wise', 'Magical', 'Ancient', 'Spiritual'],
-    creator: 'mysticalcreator'
+        if (user) {
+          // Load chat history
+          const { data: chats } = await getUserChats(user.id);
+          setChatHistory(chats || []);
+        }
+
+        // Load character details
+        const { data: charDetails } = await getCharacterDetails(character.id);
+        setCharacterDetails(charDetails);
+      } catch (error) {
+        console.error('Error loading chat data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [character.id]);
+
+  const handleEditCharacter = () => {
+    navigate(`/character-creator?edit=${character.id}`);
   };
+
+  const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
     <div className="h-screen flex bg-[#121212] overflow-hidden relative">
@@ -49,7 +73,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
       <AppSidebar />
 
       {/* Center Panel - Main Chat */}
-      <div className="flex-1 flex flex-col min-w-0 ml-64">
+      <div className={`flex-1 flex flex-col min-w-0 ml-64 ${rightPanelOpen ? 'mr-80' : ''}`}>
         {/* Chat Header */}
         <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -151,112 +175,140 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
 
                   {/* Chat History List */}
                   <div className="space-y-2">
-                    {chatHistory.map((chat) => (
-                      <div
-                        key={chat.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                          chat.isActive 
-                            ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
-                            : 'hover:bg-[#1a1a2e]'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="w-10 h-10 flex-shrink-0">
-                            <AvatarImage src={chat.avatar} alt={chat.name} />
-                            <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
-                              {chat.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className={`font-medium text-sm truncate ${
-                                chat.isActive ? 'text-[#FF7A00]' : 'text-white'
-                              }`}>{chat.name}</h3>
-                              <span className="text-gray-400 text-xs flex-shrink-0 ml-2">{chat.timestamp}</span>
+                    {loading ? (
+                      <div className="text-gray-400 text-center py-4">Loading chats...</div>
+                    ) : chatHistory.length === 0 ? (
+                      <div className="text-gray-400 text-center py-4">No chat history yet</div>
+                    ) : (
+                      chatHistory.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                            chat.character?.id === character.id
+                              ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
+                              : 'hover:bg-[#1a1a2e]'
+                          }`}
+                          onClick={() => navigate('/chat', { state: { selectedCharacter: chat.character } })}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <Avatar className="w-10 h-10 flex-shrink-0">
+                              <AvatarImage src={chat.character?.avatar_url} alt={chat.character?.name} />
+                              <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
+                                {chat.character?.name?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className={`font-medium text-sm truncate ${
+                                  chat.character?.id === character.id ? 'text-[#FF7A00]' : 'text-white'
+                                }`}>{chat.character?.name || 'Unknown Character'}</h3>
+                                <span className="text-gray-400 text-xs flex-shrink-0 ml-2">
+                                  {chat.last_message_at ? new Date(chat.last_message_at).toLocaleDateString() : 'No messages'}
+                                </span>
+                              </div>
+                              <p className="text-gray-400 text-sm truncate">{chat.title || 'New conversation'}</p>
                             </div>
-                            <p className="text-gray-400 text-sm truncate">{chat.lastMessage}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               )}
 
               {activeTab === 'details' && (
                 <div className="p-4">
-                  {/* Character Header */}
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-white mb-4">{character.name}</h2>
-                    
-                    {/* Large Avatar */}
-                    <div className="mb-4">
-                      <Avatar className="w-32 h-32 mx-auto ring-4 ring-[#FF7A00]/30">
-                        <AvatarImage src={character.avatar} alt={character.name} />
-                        <AvatarFallback className="bg-[#FF7A00] text-white text-3xl font-bold">
-                          {character.fallback}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  </div>
-
-                  {/* Details Section */}
-                  <div className="space-y-6">
-                    {/* Bio/Description */}
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">About</h3>
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        {characterDetails.description}
-                      </p>
-                    </div>
-
-                    {/* Tags */}
-                    <div>
-                      <h3 className="text-white font-semibold mb-3">Tags</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {characterDetails.tags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="bg-[#1a1a2e] text-gray-300 border border-gray-600/50 text-xs px-2 py-1"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                  {loading ? (
+                    <div className="text-gray-400 text-center py-4">Loading character details...</div>
+                  ) : (
+                    <>
+                      {/* Character Header */}
+                      <div className="text-center mb-6">
+                        <h2 className="text-2xl font-bold text-white mb-4">{character.name}</h2>
+                        
+                        {/* Large Avatar */}
+                        <div className="mb-4">
+                          <Avatar className="w-32 h-32 mx-auto ring-4 ring-[#FF7A00]/30">
+                            <AvatarImage src={character.avatar} alt={character.name} />
+                            <AvatarFallback className="bg-[#FF7A00] text-white text-3xl font-bold">
+                              {character.fallback}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Creator */}
-                    <div>
-                      <h3 className="text-white font-semibold mb-2">Creator</h3>
-                      <p className="text-gray-400 text-sm">
-                        Created by @{characterDetails.creator}
-                      </p>
-                    </div>
+                      {/* Details Section */}
+                      <div className="space-y-6">
+                        {/* Bio/Description */}
+                        <div>
+                          <h3 className="text-white font-semibold mb-2">About</h3>
+                          <p className="text-gray-300 text-sm leading-relaxed">
+                            {characterDetails?.short_description || character.tagline || 'No description available.'}
+                          </p>
+                        </div>
 
-                    {/* Quick Actions */}
-                    <div>
-                      <h3 className="text-white font-semibold mb-3">Quick Actions</h3>
-                      <div className="flex space-x-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
-                        >
-                          <Heart className="w-4 h-4 mr-2" />
-                          Like
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
-                        >
-                          <Star className="w-4 h-4 mr-2" />
-                          Favorite
-                        </Button>
+                        {/* Tags */}
+                        {characterDetails?.tags && characterDetails.tags.length > 0 && (
+                          <div>
+                            <h3 className="text-white font-semibold mb-3">Tags</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {characterDetails.tags.map((tagItem: any, index: number) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="bg-[#1a1a2e] text-gray-300 border border-gray-600/50 text-xs px-2 py-1"
+                                >
+                                  {tagItem.tag?.name || tagItem.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Creator */}
+                        <div>
+                          <h3 className="text-white font-semibold mb-2">Creator</h3>
+                          <p className="text-gray-400 text-sm">
+                            Created by @{characterDetails?.creator?.username || 'Unknown'}
+                          </p>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div>
+                          <h3 className="text-white font-semibold mb-3">Actions</h3>
+                          <div className="flex flex-col space-y-3">
+                            {isCharacterOwner && (
+                              <Button
+                                onClick={handleEditCharacter}
+                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Character
+                              </Button>
+                            )}
+                            <div className="flex space-x-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                              >
+                                <Heart className="w-4 h-4 mr-2" />
+                                Like
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                              >
+                                <Star className="w-4 h-4 mr-2" />
+                                Favorite
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
