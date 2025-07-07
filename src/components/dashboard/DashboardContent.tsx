@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { DailyUsageWidget } from './DailyUsageWidget';
+import DiscordCTA from '../DiscordCTA';
 import { 
   MessageCircle, 
   Trophy, 
@@ -226,6 +226,9 @@ export function DashboardContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Discord CTA */}
+        <DiscordCTA />
 
         {/* Main Tabbed Widget */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
