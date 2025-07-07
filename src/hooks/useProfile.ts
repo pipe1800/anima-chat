@@ -76,6 +76,7 @@ export const useCurrentUser = () => {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
     // Get initial session
@@ -100,16 +101,22 @@ export const useCurrentUser = () => {
             console.error('Profile fetch failed:', profileError);
             setProfile(null)
           }
+        } else {
+          setProfile(null)
         }
       } catch (sessionError) {
         console.error('Session fetch failed:', sessionError);
       } finally {
-        console.log('useCurrentUser: Setting loading to false');
+        console.log('useCurrentUser: Setting loading to false and initialized to true');
         setLoading(false)
+        setInitialized(true)
       }
     }
 
-    getInitialSession()
+    // Only initialize once
+    if (!initialized) {
+      getInitialSession()
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -134,19 +141,21 @@ export const useCurrentUser = () => {
           } else {
             setProfile(null)
           }
+          
+          // Only set loading to false if we've initialized
+          if (initialized) {
+            setLoading(false)
+          }
         } catch (authError) {
           console.error('Auth state change error:', authError);
-        } finally {
-          console.log('useCurrentUser: Setting loading to false after auth change');
-          setLoading(false)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [initialized])
 
-  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading });
+  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading, initialized });
 
   return { user, profile, loading }
 }
