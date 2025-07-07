@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +63,21 @@ const CharacterCreator = () => {
       }
 
       // Parse the definition JSON to extract personality and dialogue data
-      let definitionData = { personality: {}, dialogue: {} };
+      let definitionData: {
+        title?: string;
+        personality?: {
+          tags?: string[];
+          knowledge_base?: string;
+          scenario_definition?: string;
+        };
+        dialogue?: {
+          example_dialogues?: Array<{
+            user: string;
+            character: string;
+          }>;
+        };
+      } = {};
+
       if (character.definition?.[0]?.definition) {
         try {
           definitionData = JSON.parse(character.definition[0].definition);
