@@ -27,6 +27,7 @@ export const ImageCropper = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [minZoom, setMinZoom] = useState(0.1);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -37,35 +38,43 @@ export const ImageCropper = ({
     const image = imageRef.current;
     if (!image) return;
 
-    // Calculate minimum zoom to ensure the crop circle is always fully covered by the image
-    // The crop circle should fit within the image at all times
-    const imageWidth = image.naturalWidth;
-    const imageHeight = image.naturalHeight;
+    const naturalWidth = image.naturalWidth;
+    const naturalHeight = image.naturalHeight;
     
-    // Calculate what the image dimensions would be when displayed in the container
-    const imageAspectRatio = imageWidth / imageHeight;
+    // Store natural dimensions for cropping calculations
+    setImageDimensions({ width: naturalWidth, height: naturalHeight });
+    
+    // Calculate how the image will be displayed in the preview container
+    const imageAspectRatio = naturalWidth / naturalHeight;
     let displayWidth, displayHeight;
     
+    // The image will be sized to fit within the container while maintaining aspect ratio
     if (imageAspectRatio > 1) {
-      // Image is wider - height will be constrained by container
-      displayHeight = Math.min(imageHeight, containerSize);
+      // Landscape image - constrain by height if it would exceed container
+      displayHeight = Math.min(naturalHeight, containerSize);
       displayWidth = displayHeight * imageAspectRatio;
+      if (displayWidth > containerSize) {
+        displayWidth = containerSize;
+        displayHeight = displayWidth / imageAspectRatio;
+      }
     } else {
-      // Image is taller - width will be constrained by container
-      displayWidth = Math.min(imageWidth, containerSize);
+      // Portrait or square image - constrain by width if it would exceed container
+      displayWidth = Math.min(naturalWidth, containerSize);
       displayHeight = displayWidth / imageAspectRatio;
+      if (displayHeight > containerSize) {
+        displayHeight = containerSize;
+        displayWidth = displayHeight * imageAspectRatio;
+      }
     }
     
-    // The minimum zoom ensures the crop circle (cropSize) fits within the smaller dimension
+    // Calculate minimum zoom so that the image always covers the crop circle
+    // The crop circle diameter must never exceed the image dimensions at current zoom
     const minZoomForWidth = cropSize / displayWidth;
     const minZoomForHeight = cropSize / displayHeight;
-    const calculatedMinZoom = Math.max(minZoomForWidth, minZoomForHeight);
+    const calculatedMinZoom = Math.max(minZoomForWidth, minZoomForHeight, 0.1);
     
-    // Ensure minimum zoom is at least what's needed to cover the crop circle
-    const finalMinZoom = Math.max(calculatedMinZoom, 0.1);
-    
-    setMinZoom(finalMinZoom);
-    setZoom(Math.max(finalMinZoom, 1));
+    setMinZoom(calculatedMinZoom);
+    setZoom(Math.max(calculatedMinZoom, 1));
     setImageLoaded(true);
   };
 
@@ -108,6 +117,30 @@ export const ImageCropper = ({
     canvas.width = cropSize;
     canvas.height = cropSize;
 
+    // Calculate the scale factor between natural image size and displayed size
+    const imageAspectRatio = imageDimensions.width / imageDimensions.height;
+    let displayWidth, displayHeight;
+    
+    if (imageAspectRatio > 1) {
+      displayHeight = Math.min(imageDimensions.height, containerSize);
+      displayWidth = displayHeight * imageAspectRatio;
+      if (displayWidth > containerSize) {
+        displayWidth = containerSize;
+        displayHeight = displayWidth / imageAspectRatio;
+      }
+    } else {
+      displayWidth = Math.min(imageDimensions.width, containerSize);
+      displayHeight = displayWidth / imageAspectRatio;
+      if (displayHeight > containerSize) {
+        displayHeight = containerSize;
+        displayWidth = displayHeight * imageAspectRatio;
+      }
+    }
+
+    // Scale factor from display size to natural size
+    const scaleX = imageDimensions.width / displayWidth;
+    const scaleY = imageDimensions.height / displayHeight;
+
     // Create circular clipping path
     ctx.save();
     ctx.beginPath();
@@ -115,18 +148,29 @@ export const ImageCropper = ({
     ctx.clip();
 
     // Calculate the center of the crop area in the preview container
-    const containerCenter = { x: 200, y: 200 }; // 400px container / 2
+    const containerCenter = { x: containerSize / 2, y: containerSize / 2 };
     
-    // Apply transformations
+    // Convert preview position to natural image coordinates
+    const naturalOffsetX = (position.x / zoom) * scaleX;
+    const naturalOffsetY = (position.y / zoom) * scaleY;
+    
+    // Apply transformations to canvas
     ctx.translate(cropSize / 2, cropSize / 2);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(zoom, zoom);
     
-    // Draw the image centered, accounting for position offset
-    const drawX = -image.naturalWidth / 2 + (position.x - containerCenter.x) / zoom;
-    const drawY = -image.naturalHeight / 2 + (position.y - containerCenter.y) / zoom;
+    // Calculate source rectangle in natural image coordinates
+    const sourceWidth = (cropSize / zoom) * scaleX;
+    const sourceHeight = (cropSize / zoom) * scaleY;
+    const sourceX = (imageDimensions.width / 2) - (sourceWidth / 2) - naturalOffsetX;
+    const sourceY = (imageDimensions.height / 2) - (sourceHeight / 2) - naturalOffsetY;
     
-    ctx.drawImage(image, drawX, drawY, image.naturalWidth, image.naturalHeight);
+    // Draw the cropped portion
+    ctx.drawImage(
+      image,
+      sourceX, sourceY, sourceWidth, sourceHeight,
+      -cropSize / (2 * zoom), -cropSize / (2 * zoom), cropSize / zoom, cropSize / zoom
+    );
     
     ctx.restore();
 
@@ -141,6 +185,7 @@ export const ImageCropper = ({
     setPosition({ x: 0, y: 0 });
     setImageLoaded(false);
     setMinZoom(0.1);
+    setImageDimensions({ width: 0, height: 0 });
     onClose();
   };
 
