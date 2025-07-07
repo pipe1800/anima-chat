@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Shield, Gavel, Ban, Eye, AlertTriangle, Heart } from 'lucide-react';
+import { Shield, Gavel, Ban, Eye, AlertTriangle, Heart, Clock, Hammer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -44,10 +43,30 @@ const CommunityGuidelines = () => {
   ];
 
   const consequences = [
-    { level: 'Warning', description: 'First-time minor violations get a heads up' },
-    { level: 'Content Removal', description: 'Problematic content gets deleted' },
-    { level: 'Temporary Suspension', description: '24-hour to 7-day cooling off period' },
-    { level: 'Permanent Ban', description: 'Serious or repeated violations mean game over' }
+    {
+      step: 1,
+      title: 'The Warning',
+      description: 'A friendly but firm notice from a mod.',
+      icon: AlertTriangle,
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-500/10'
+    },
+    {
+      step: 2,
+      title: 'The Timeout',
+      description: 'A temporary suspension from the platform.',
+      icon: Clock,
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-500/10'
+    },
+    {
+      step: 3,
+      title: 'The Ban',
+      description: 'Permanent removal from the community.',
+      icon: Ban,
+      color: 'text-red-400',
+      bgColor: 'bg-red-500/10'
+    }
   ];
 
   return (
@@ -119,29 +138,73 @@ const CommunityGuidelines = () => {
           </div>
         </div>
 
-        {/* Consequences Section */}
-        <Card className="bg-[#1A1D23] border-gray-700/50 mb-12">
-          <CardContent className="p-8">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-2">What Happens When Rules Are Broken</h3>
-                <p className="text-gray-400 text-lg">We believe in second chances, but we also believe in consequences.</p>
-              </div>
+        {/* Consequence System */}
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/10 rounded-full mb-4">
+              <Hammer className="w-8 h-8 text-red-400" />
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {consequences.map((consequence, index) => (
-                <div key={index} className="bg-[#0F1117] border border-gray-700/30 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-[#FF7A00] mb-2">{consequence.level}</h4>
-                  <p className="text-gray-300">{consequence.description}</p>
+            <h2 className="text-3xl font-bold text-white mb-4">The Banhammer: How We Enforce Rules</h2>
+            <p className="text-xl text-gray-300">
+              Fair consequences, clearly explained. We believe in second chances, but we also believe in consequences.
+            </p>
+          </div>
+
+          {/* Three-Step Visual */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {consequences.map((consequence, index) => {
+              const Icon = consequence.icon;
+              return (
+                <Card key={consequence.step} className="bg-[#1A1D23] border-gray-700/50 relative">
+                  <CardContent className="p-6 text-center">
+                    {/* Step Number */}
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="w-8 h-8 bg-[#FF7A00] rounded-full flex items-center justify-center text-white font-bold">
+                        {consequence.step}
+                      </div>
+                    </div>
+                    
+                    {/* Icon */}
+                    <div className={`w-16 h-16 ${consequence.bgColor} rounded-full flex items-center justify-center mx-auto mb-4 mt-2`}>
+                      <Icon className={`w-8 h-8 ${consequence.color}`} />
+                    </div>
+                    
+                    {/* Content */}
+                    <h3 className="text-xl font-bold text-white mb-3">{consequence.title}</h3>
+                    <p className="text-gray-300 text-lg">{consequence.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Arrow Connectors (Desktop Only) */}
+          <div className="hidden md:flex justify-center items-center mb-8 -mt-4">
+            <div className="flex items-center space-x-8">
+              <div className="w-20 h-0.5 bg-gradient-to-r from-yellow-400 to-orange-400"></div>
+              <div className="w-20 h-0.5 bg-gradient-to-r from-orange-400 to-red-400"></div>
+            </div>
+          </div>
+
+          {/* Severity Notice */}
+          <Card className="bg-gradient-to-r from-red-500/10 to-red-600/5 border-red-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div>
+                  <h4 className="text-xl font-bold text-white mb-2">⚠️ Immediate Ban Violations</h4>
+                  <p className="text-gray-300 text-lg">
+                    <span className="text-red-400 font-semibold">Severe violations</span> (like illegal content or doxxing) 
+                    will result in an <span className="text-[#FF7A00] font-semibold">immediate, permanent ban</span>. 
+                    We don't play around with safety.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Reporting Section */}
         <Card className="bg-[#1A1D23] border-gray-700/50 mb-12">
