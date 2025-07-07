@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Profile, Character, Plan, Subscription, Credits, Chat, Message, OnboardingChecklistItem, UserOnboardingProgress } from '@/types/database'
 
@@ -109,14 +108,38 @@ export const getCharacterDetails = async (characterId: string) => {
       visibility,
       interaction_count,
       created_at,
-      creator:profiles!creator_id(id, username, avatar_url),
-      definition:character_definitions!character_definitions_character_id_fkey(greeting, long_description, definition),
-      tags:character_tags(tag:tags(id, name))
+      creator:profiles!creator_id(id, username, avatar_url)
     `)
     .eq('id', characterId)
     .maybeSingle()
 
-  return { data, error }
+  if (error || !data) {
+    return { data: null, error }
+  }
+
+  // Fetch character definition separately
+  const { data: definitionData, error: definitionError } = await supabase
+    .from('character_definitions')
+    .select('greeting, long_description, definition')
+    .eq('character_id', characterId)
+    .maybeSingle()
+
+  // Fetch character tags separately
+  const { data: tagsData, error: tagsError } = await supabase
+    .from('character_tags')
+    .select(`
+      tag:tags(id, name)
+    `)
+    .eq('character_id', characterId)
+
+  // Combine the data
+  const characterWithDetails = {
+    ...data,
+    definition: definitionData ? [definitionData] : [],
+    tags: tagsData || []
+  }
+
+  return { data: characterWithDetails, error: null }
 }
 
 /**
