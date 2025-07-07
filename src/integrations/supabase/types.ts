@@ -9,7 +9,373 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      character_definitions: {
+        Row: {
+          character_id: string
+          contextual_data: Json | null
+          definition: string
+          greeting: string | null
+          long_description: string | null
+          model_id: string | null
+        }
+        Insert: {
+          character_id: string
+          contextual_data?: Json | null
+          definition: string
+          greeting?: string | null
+          long_description?: string | null
+          model_id?: string | null
+        }
+        Update: {
+          character_id?: string
+          contextual_data?: Json | null
+          definition?: string
+          greeting?: string | null
+          long_description?: string | null
+          model_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_definitions_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: true
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_tags: {
+        Row: {
+          character_id: string
+          tag_id: number
+        }
+        Insert: {
+          character_id: string
+          tag_id: number
+        }
+        Update: {
+          character_id?: string
+          tag_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_tags_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      characters: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          interaction_count: number
+          name: string
+          short_description: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          interaction_count?: number
+          name: string
+          short_description?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          interaction_count?: number
+          name?: string
+          short_description?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
+      chats: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chats_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credits: {
+        Row: {
+          balance: number
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          author_id: string
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          is_ai_message: boolean
+          model_id: string | null
+          token_cost: number | null
+        }
+        Insert: {
+          author_id: string
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_ai_message?: boolean
+          model_id?: string | null
+          token_cost?: number | null
+        }
+        Update: {
+          author_id?: string
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_ai_message?: boolean
+          model_id?: string | null
+          token_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_checklist_items: {
+        Row: {
+          description: string | null
+          id: number
+          reward_credits: number
+          task_key: string
+          title: string
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          reward_credits?: number
+          task_key: string
+          title: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          reward_credits?: number
+          task_key?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          features: Json | null
+          id: string
+          is_active: boolean
+          monthly_credits_allowance: number
+          name: string
+          price_monthly: number | null
+          price_yearly: number | null
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+        }
+        Insert: {
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          monthly_credits_allowance?: number
+          name: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+        }
+        Update: {
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          monthly_credits_allowance?: number
+          name?: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          onboarding_completed: boolean
+          onboarding_survey_data: Json | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id: string
+          onboarding_completed?: boolean
+          onboarding_survey_data?: Json | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          onboarding_completed?: boolean
+          onboarding_survey_data?: Json | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string
+          id: string
+          plan_id: string
+          status: string
+          stripe_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end: string
+          id?: string
+          plan_id: string
+          status: string
+          stripe_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          id: number
+          name: string
+        }
+        Insert: {
+          id?: number
+          name: string
+        }
+        Update: {
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      user_onboarding_progress: {
+        Row: {
+          completed_at: string | null
+          task_id: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          task_id: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          task_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_onboarding_progress_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_checklist_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
