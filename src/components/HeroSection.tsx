@@ -8,8 +8,17 @@ const HeroSection = () => {
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-radial from-[#FF7A00]/5 to-transparent opacity-50"></div>
       
+      {/* Logo */}
+      <div className="absolute top-6 left-6 z-20">
+        <img 
+          src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+          alt="Anima AI Chat" 
+          className="h-12 w-auto"
+        />
+      </div>
+      
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6">
+      <div className="relative z-10 flex items-center justify-center min-h-screen pt-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
           {/* Left Column - Video */}
           <div className="relative flex justify-center lg:justify-start">
