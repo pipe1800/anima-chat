@@ -24,11 +24,13 @@ interface ChatLayoutProps {
 
 export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'history' | 'details'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'details'>('details');
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [characterDetails, setCharacterDetails] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +58,16 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
 
   const handleEditCharacter = () => {
     navigate(`/character-creator?edit=${character.id}`);
+  };
+
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    // TODO: Implement actual like functionality with API call
+  };
+
+  const handleFavorite = () => {
+    setIsFavorited(!isFavorited);
+    // TODO: Implement actual favorite functionality with API call
   };
 
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
@@ -265,18 +277,24 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                              onClick={handleLike}
+                              className={`flex-1 bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] hover:text-white ${
+                                isLiked ? 'text-red-400 border-red-400' : 'text-gray-300'
+                              }`}
                             >
-                              <Heart className="w-4 h-4 mr-2" />
-                              Like
+                              <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                              {isLiked ? 'Liked' : 'Like'}
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 bg-transparent border-gray-600/50 text-gray-300 hover:bg-[#1a1a2e] hover:text-white"
+                              onClick={handleFavorite}
+                              className={`flex-1 bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] hover:text-white ${
+                                isFavorited ? 'text-yellow-400 border-yellow-400' : 'text-gray-300'
+                              }`}
                             >
-                              <Star className="w-4 h-4 mr-2" />
-                              Favorite
+                              <Star className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-current' : ''}`} />
+                              {isFavorited ? 'Favorited' : 'Favorite'}
                             </Button>
                           </div>
                         </div>

@@ -115,22 +115,24 @@ const Chat = () => {
 
   return (
     <SidebarProvider>
-      {/* Onboarding Checklist - shows completion animation */}
-      {showOnboarding && !onboardingCompleted && (
-        <OnboardingChecklist
-          currentStep={isFirstMessage ? 2 : 3}
-          isVisible={true}
-          isCompleting={!isFirstMessage}
-        />
-      )}
+      <div className="flex h-screen w-full">
+        {/* Onboarding Checklist - shows completion animation */}
+        {showOnboarding && !onboardingCompleted && (
+          <OnboardingChecklist
+            currentStep={isFirstMessage ? 2 : 3}
+            isVisible={true}
+            isCompleting={!isFirstMessage}
+          />
+        )}
 
-      {/* Main Chat Layout */}
-      <ChatLayout character={character}>
-        <ChatInterface
-          character={character}
-          onFirstMessage={handleFirstMessage}
-        />
-      </ChatLayout>
+        {/* Main Chat Layout */}
+        <ChatLayout character={character}>
+          <ChatInterface
+            character={character}
+            onFirstMessage={handleFirstMessage}
+          />
+        </ChatLayout>
+      </div>
     </SidebarProvider>
   );
 };

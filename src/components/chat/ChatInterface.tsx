@@ -36,7 +36,7 @@ const ChatInterface = ({
   const [isTyping, setIsTyping] = useState(false);
   
   // Daily usage tracking (mock data - in real app this would come from props/context)
-  const [messagesUsed, setMessagesUsed] = useState(65); // Mock: user has used 65 messages
+  const [messagesUsed, setMessagesUsed] = useState(5); // Mock: user has used 5 messages
   const dailyLimit = 75;
   const messagesRemaining = dailyLimit - messagesUsed;
   const isGuestPass = true; // Mock: user is on Guest Pass
