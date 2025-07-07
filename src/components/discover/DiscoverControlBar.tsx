@@ -67,8 +67,6 @@ export function DiscoverControlBar({
                   <SelectContent className="bg-[#1a1a2e] border-gray-600/50 z-50">
                     <SelectItem value="relevance">Relevance</SelectItem>
                     <SelectItem value="popularity">Popularity (Most Chats)</SelectItem>
-                    <SelectItem value="trending">Trending (Recent Activity)</SelectItem>
-                    <SelectItem value="liked">Most Liked</SelectItem>
                     <SelectItem value="newest">Newest</SelectItem>
                   </SelectContent>
                 </Select>

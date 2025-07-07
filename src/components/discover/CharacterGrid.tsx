@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -6,96 +6,10 @@ import { Button } from '@/components/ui/button';
 import { 
   MessageCircle, 
   Heart,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react';
-
-// Mock data for characters with likes added
-const characters = [
-  {
-    id: 1,
-    name: "Luna Shadowweaver",
-    avatar: "L",
-    image: "/placeholder.svg",
-    category: "Fantasy",
-    description: "A mysterious sorceress with mastery over shadow magic and lunar enchantments.",
-    tagline: "The stars whisper secrets to those who know how to listen.",
-    creator: "@MysticCrafter",
-    rating: 4.9,
-    conversations: 12500,
-    likes: 8900,
-    tags: ["Fantasy", "Magic", "Mysterious"]
-  },
-  {
-    id: 2,
-    name: "Captain Zyx-9",
-    avatar: "Z",
-    image: "/placeholder.svg",
-    category: "Sci-Fi",
-    description: "Time-traveling space captain from the year 3045 with quantum manipulation abilities.",
-    tagline: "Time is just another dimension to navigate, traveler.",
-    creator: "@TimeTraveler",
-    rating: 4.8,
-    conversations: 8900,
-    likes: 6700,
-    tags: ["Sci-Fi", "Time Travel", "Space"]
-  },
-  {
-    id: 3,
-    name: "Sakura Nightblade",
-    avatar: "S",
-    image: "/placeholder.svg",
-    category: "Anime",
-    description: "Elite ninja warrior with cherry blossom techniques and silent assassination skills.",
-    tagline: "In silence, I find strength; in shadow, I find purpose.",
-    creator: "@AnimeArtist",
-    rating: 4.7,
-    conversations: 15200,
-    likes: 12300,
-    tags: ["Anime", "Ninja", "Warrior"]
-  },
-  {
-    id: 4,
-    name: "Dr. Raven Blackwood",
-    avatar: "R",
-    image: "/placeholder.svg",
-    category: "Modern",
-    description: "Brilliant forensic psychologist who specializes in criminal profiling and dark mysteries.",
-    tagline: "Every mind has its secrets, and I know how to unlock them.",
-    creator: "@CrimeMind",
-    rating: 4.9,
-    conversations: 7800,
-    likes: 5400,
-    tags: ["Modern", "Psychology", "Mystery"]
-  },
-  {
-    id: 5,
-    name: "Phoenix Flameborn",
-    avatar: "P",
-    image: "/placeholder.svg",
-    category: "Fantasy",
-    description: "Immortal fire elemental who has witnessed the rise and fall of ancient civilizations.",
-    tagline: "From ashes I rise, with passion I burn eternal.",
-    creator: "@FlameKeeper",
-    rating: 4.6,
-    conversations: 9600,
-    likes: 7200,
-    tags: ["Fantasy", "Fire", "Immortal"]
-  },
-  {
-    id: 6,
-    name: "Nova Stardust",
-    avatar: "N",
-    image: "/placeholder.svg",
-    category: "Sci-Fi",
-    description: "Cosmic entity born from a dying star, possesses knowledge of the universe's secrets.",
-    tagline: "I am the echo of stars, the whisper of infinity.",
-    creator: "@CosmicDreamer",
-    rating: 4.8,
-    conversations: 11300,
-    likes: 9100,
-    tags: ["Sci-Fi", "Cosmic", "Ethereal"]
-  }
-];
+import { getPublicCharacters } from '@/lib/supabase-queries';
 
 interface CharacterGridProps {
   searchQuery: string;
@@ -103,20 +17,57 @@ interface CharacterGridProps {
   filterBy: string;
 }
 
+type PublicCharacter = {
+  id: string;
+  name: string;
+  short_description: string | null;
+  avatar_url: string | null;
+  interaction_count: number;
+  created_at: string;
+  creator: any; // Temporary to handle the query response
+};
+
 export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridProps) {
   const navigate = useNavigate();
+  const [characters, setCharacters] = useState<PublicCharacter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStartChat = (character: typeof characters[0]) => {
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await getPublicCharacters(50, 0);
+        if (error) {
+          console.error('Error fetching characters:', error);
+          setError('Failed to load characters');
+        } else {
+          setCharacters(data);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Failed to load characters');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCharacters();
+  }, []);
+
+  const handleStartChat = (character: PublicCharacter) => {
     navigate('/chat', { state: { selectedCharacter: character } });
   };
 
   // Filter and sort characters based on props
   const filteredCharacters = characters.filter(character => {
     const matchesSearch = character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         character.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         character.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+                         character.short_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         false; // No tags in current schema
     
-    const matchesFilter = filterBy === 'all' || character.category.toLowerCase() === filterBy.toLowerCase();
+    // For now, filterBy will just filter by name until we have proper categories
+    const matchesFilter = filterBy === 'all' || 
+                         character.name.toLowerCase().includes(filterBy.toLowerCase());
     
     return matchesSearch && matchesFilter;
   });
@@ -124,17 +75,32 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
-        return b.id - a.id;
-      case 'rating':
-        return b.rating - a.rating;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'popularity':
       case 'conversations':
-        return b.conversations - a.conversations;
-      case 'liked':
-        return b.likes - a.likes;
-      default: // popular/relevance
-        return b.conversations - a.conversations;
+        return b.interaction_count - a.interaction_count;
+      default: // relevance
+        return b.interaction_count - a.interaction_count;
     }
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF7A00]" />
+        <span className="ml-2 text-white">Loading characters...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-red-400 text-lg mb-2">{error}</div>
+        <div className="text-gray-500 text-sm">Please try again later</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -170,15 +136,15 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
               {/* Character Avatar Section - Top Half */}
               <div className="relative h-48 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
                 <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
-                  <AvatarImage src={character.image} alt={character.name} />
+                  <AvatarImage src={character.avatar_url || "/placeholder.svg"} alt={character.name} />
                   <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
-                    {character.avatar}
+                    {character.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 
-                {/* Category Badge */}
+                {/* AI Badge */}
                 <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full">
-                  {character.category}
+                  AI Character
                 </div>
               </div>
 
@@ -189,26 +155,26 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                   {character.name}
                 </h3>
 
-                {/* Tagline */}
-                <p className="text-gray-400 text-sm italic line-clamp-2 leading-relaxed min-h-[2.5rem]">
-                  "{character.tagline}"
+                {/* Description */}
+                <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed min-h-[2.5rem]">
+                  {character.short_description || "No description available"}
                 </p>
 
                 {/* Stats */}
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-1 text-gray-300">
                     <MessageCircle className="w-4 h-4" />
-                    <span>{character.conversations.toLocaleString()}</span>
+                    <span>{character.interaction_count.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-gray-300">
                     <Heart className="w-4 h-4" />
-                    <span>{character.likes.toLocaleString()}</span>
+                    <span>0</span>
                   </div>
                 </div>
 
                 {/* Creator */}
                 <p className="text-gray-500 text-xs">
-                  by {character.creator}
+                  by @{character.creator?.username || 'Unknown'}
                 </p>
 
                 {/* Hover Action Button */}
