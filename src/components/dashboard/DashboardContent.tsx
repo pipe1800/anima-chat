@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +59,6 @@ export function DashboardContent() {
         const { data: creditsData } = await getUserCredits(user.id);
         console.log('Credits data received:', creditsData);
         
-        // Handle potential null creditsData properly
         if (creditsData && typeof creditsData.balance === 'number') {
           setUserCredits(creditsData.balance);
         } else {
@@ -82,7 +82,7 @@ export function DashboardContent() {
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#121212] ml-64 flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading your dashboard...</div>
       </div>
     );
@@ -90,7 +90,7 @@ export function DashboardContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#121212] ml-64 flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Please sign in to access your dashboard.</div>
       </div>
     );
@@ -110,7 +110,7 @@ export function DashboardContent() {
       avatar: chat.character?.name?.charAt(0) || 'U',
       image: chat.character?.avatar_url || "/placeholder.svg"
     },
-    lastMessage: "Continue your conversation...", // Would come from last message
+    lastMessage: "Continue your conversation...",
     timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString()
   }));
 
@@ -124,7 +124,7 @@ export function DashboardContent() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#121212] ml-64">
+    <div className="min-h-screen bg-[#121212]">
       {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -317,7 +317,7 @@ export function DashboardContent() {
                 </div>
               </TabsContent>
 
-              {/* Favorites Tab - placeholder for now */}
+              {/* Favorites Tab */}
               <TabsContent value="favorites" className="mt-6">
                 <div className="text-center py-8">
                   <Star className="w-12 h-12 text-gray-500 mx-auto mb-4" />
