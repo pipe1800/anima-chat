@@ -9,7 +9,7 @@ const Dashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto ml-64">
           <DashboardContent />
         </main>
       </div>

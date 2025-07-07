@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -88,12 +87,9 @@ export function AppSidebar() {
   // Show sidebar even if auth is loading, but with fallback content
   if (loading) {
     return (
-      <Sidebar 
-        className="border-r border-gray-700/50 bg-[#1b1b1b] w-64 h-screen fixed z-40"
-        collapsible="none"
-      >
+      <div className="fixed left-0 top-0 w-64 h-screen bg-[#1b1b1b] border-r border-gray-700/50 z-40">
         <div className="flex flex-col h-full">
-          <SidebarHeader className="border-b border-gray-700/50 p-4">
+          <div className="border-b border-gray-700/50 p-4">
             <div className="flex items-center justify-start mb-6">
               <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
                 <Zap className="w-6 h-6 text-white" />
@@ -103,19 +99,16 @@ export function AppSidebar() {
               </div>
             </div>
             <div className="text-white text-center">Loading...</div>
-          </SidebarHeader>
+          </div>
         </div>
-      </Sidebar>
+      </div>
     );
   }
 
   return (
-    <Sidebar 
-      className="border-r border-gray-700/50 bg-[#1b1b1b] w-64 h-screen fixed z-40"
-      collapsible="none"
-    >
+    <div className="fixed left-0 top-0 w-64 h-screen bg-[#1b1b1b] border-r border-gray-700/50 z-40">
       <div className="flex flex-col h-full">
-        <SidebarHeader className="border-b border-gray-700/50 p-4">
+        <div className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
           <div className="flex items-center justify-start mb-6">
             <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
@@ -147,31 +140,24 @@ export function AppSidebar() {
               </div>
             </div>
           </div>
-        </SidebarHeader>
+        </div>
 
-        <SidebarContent className="px-2 py-4 flex-1">
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu className="space-y-2">
-                {mainItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        className={getNavClasses(isActive(item.url))}
-                      >
-                        <item.icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-medium text-sm">{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
+        <div className="px-2 py-4 flex-1">
+          <div className="space-y-2">
+            {mainItems.map((item) => (
+              <NavLink 
+                key={item.title}
+                to={item.url} 
+                className={getNavClasses(isActive(item.url))}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="font-medium text-sm">{item.title}</span>
+              </NavLink>
+            ))}
+          </div>
+        </div>
 
-        <SidebarFooter className="border-t border-gray-700/50 p-4">
+        <div className="border-t border-gray-700/50 p-4">
           <Button 
             variant="ghost" 
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
@@ -180,8 +166,8 @@ export function AppSidebar() {
             <PowerOff className="w-4 h-4 flex-shrink-0" />
             <span className="ml-3 font-medium text-sm">Logout</span>
           </Button>
-        </SidebarFooter>
+        </div>
       </div>
-    </Sidebar>
+    </div>
   );
 }
