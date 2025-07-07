@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { DailyUsageWidget } from './DailyUsageWidget';
 import DiscordCTA from '../DiscordCTA';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   getUserChats, 
   getUserCharacters, 
@@ -34,6 +34,7 @@ import {
 
 export function DashboardContent() {
   const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [recentChats, setRecentChats] = useState([]);
   const [myCharacters, setMyCharacters] = useState([]);
   const [userCredits, setUserCredits] = useState(0);
@@ -91,6 +92,19 @@ export function DashboardContent() {
     }
   }, [user, authLoading]);
 
+  const handleStartChat = (character: any) => {
+    navigate('/chat', { state: { selectedCharacter: character } });
+  };
+
+  const handleEditCharacter = (character: any) => {
+    navigate('/character-creator', { 
+      state: { 
+        editingCharacter: character,
+        isEditing: true 
+      } 
+    });
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
@@ -127,7 +141,8 @@ export function DashboardContent() {
     name: character.name,
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
-    totalChats: character.interaction_count || 0
+    totalChats: character.interaction_count || 0,
+    originalCharacter: character
   }));
 
   return (
@@ -218,34 +233,7 @@ export function DashboardContent() {
           <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
         )}
 
-        {/* Daily Quest */}
-        <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white flex items-center space-x-2">
-              <Trophy className="w-5 h-5 text-[#FF7A00]" />
-              <span>Daily Quest</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-white text-lg mb-2">Start a conversation with a character tagged #Sci-Fi</p>
-                <p className="text-[#FF7A00] font-semibold">Reward: 25 Credits</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-32">
-                  <Progress value={0} className="h-2" />
-                  <p className="text-xs text-gray-400 mt-1">0/1 completed</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-gray-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <DiscordCTA />
-
-        {/* Your Dashboard sections */}
+        {/* Your Dashboard sections - moved above Daily Quest */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
@@ -289,7 +277,11 @@ export function DashboardContent() {
                           <CardContent className="p-4">
                             <div className="flex items-center space-x-4">
                               <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-                                <AvatarImage src={chat.character.image} alt={chat.character.name} />
+                                <AvatarImage 
+                                  src={chat.character.image} 
+                                  alt={chat.character.name}
+                                  className="object-cover"
+                                />
                                 <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
                                   {chat.character.avatar}
                                 </AvatarFallback>
@@ -332,7 +324,11 @@ export function DashboardContent() {
                         >
                           <CardContent className="p-4 text-center">
                             <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
-                              <AvatarImage src={character.image} alt={character.name} />
+                              <AvatarImage 
+                                src={character.image} 
+                                alt={character.name}
+                                className="object-cover"
+                              />
                               <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
                                 {character.avatar}
                               </AvatarFallback>
@@ -346,14 +342,25 @@ export function DashboardContent() {
                               {character.totalChats} total chats
                             </p>
                             
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
-                            >
-                              <Edit className="w-3 h-3 mr-1" />
-                              Edit
-                            </Button>
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                size="sm"
+                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                onClick={() => handleStartChat(character.originalCharacter)}
+                              >
+                                <MessageCircle className="w-3 h-3 mr-1" />
+                                Chat
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                                onClick={() => handleEditCharacter(character.originalCharacter)}
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       ))
@@ -380,6 +387,33 @@ export function DashboardContent() {
             )}
           </CardContent>
         </Card>
+
+        {/* Daily Quest - moved below Your Dashboard */}
+        <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white flex items-center space-x-2">
+              <Trophy className="w-5 h-5 text-[#FF7A00]" />
+              <span>Daily Quest</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-white text-lg mb-2">Start a conversation with a character tagged #Sci-Fi</p>
+                <p className="text-[#FF7A00] font-semibold">Reward: 25 Credits</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-32">
+                  <Progress value={0} className="h-2" />
+                  <p className="text-xs text-gray-400 mt-1">0/1 completed</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-gray-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <DiscordCTA />
       </div>
     </div>
   );

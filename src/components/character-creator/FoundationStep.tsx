@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, User, Sparkles, Loader2 } from 'lucide-react';
+import { ImageCropper } from '@/components/ui/image-cropper';
 import { uploadAvatar } from '@/lib/avatar-upload';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +24,8 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
     description: data.description || ''
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -58,15 +61,31 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
       return;
     }
 
+    // Create temporary URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setTempImageUrl(imageUrl);
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = async (croppedImageUrl: string) => {
     try {
       setIsUploading(true);
-      const avatarUrl = await uploadAvatar(file, user.id);
+      setShowCropper(false);
+      
+      // Convert data URL to blob
+      const response = await fetch(croppedImageUrl);
+      const blob = await response.blob();
+      
+      // Create file from blob
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      
+      const avatarUrl = await uploadAvatar(file, user!.id);
       
       if (avatarUrl) {
         handleInputChange('avatar', avatarUrl);
         toast({
           title: "Upload Successful",
-          description: "Avatar uploaded successfully!",
+          description: "Avatar uploaded and cropped successfully!",
         });
       } else {
         throw new Error('Upload failed');
@@ -80,6 +99,11 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
       });
     } finally {
       setIsUploading(false);
+      // Clean up temporary URL
+      if (tempImageUrl) {
+        URL.revokeObjectURL(tempImageUrl);
+        setTempImageUrl('');
+      }
     }
   };
 
@@ -109,7 +133,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                   <img 
                     src={formData.avatar} 
                     alt="Character Avatar" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-[#FF7A00]/60">
@@ -144,7 +168,7 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                 ) : (
                   <Upload className="w-5 h-5 mr-2" />
                 )}
-                {isUploading ? 'Uploading...' : 'Upload Image'}
+                {isUploading ? 'Processing...' : 'Upload & Crop Image'}
               </Button>
               
               <Button 
@@ -252,6 +276,22 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Image Cropper Modal */}
+      {showCropper && (
+        <ImageCropper
+          imageUrl={tempImageUrl}
+          isOpen={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            if (tempImageUrl) {
+              URL.revokeObjectURL(tempImageUrl);
+              setTempImageUrl('');
+            }
+          }}
+          onCrop={handleCropComplete}
+        />
+      )}
     </div>
   );
 };
