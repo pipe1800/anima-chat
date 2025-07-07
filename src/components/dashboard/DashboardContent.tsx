@@ -54,10 +54,17 @@ export function DashboardContent() {
         const { data: charactersData } = await getUserCharacters(user.id);
         setMyCharacters(charactersData || []);
 
-        // Fetch user's credits - handle potential null/undefined response
+        // Fetch user's credits with proper null handling
         const { data: creditsData } = await getUserCredits(user.id);
         console.log('Credits data received:', creditsData);
-        setUserCredits(creditsData?.balance ?? 0);
+        
+        // Handle potential null creditsData properly
+        if (creditsData && typeof creditsData.balance === 'number') {
+          setUserCredits(creditsData.balance);
+        } else {
+          console.warn('Credits data is null or invalid, defaulting to 0');
+          setUserCredits(0);
+        }
 
         // Fetch user's subscription
         const { data: subscriptionData } = await getUserSubscription(user.id);
