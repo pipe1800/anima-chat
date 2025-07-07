@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Profile, Character, Plan, Subscription, Credits, Chat, Message, OnboardingChecklistItem, UserOnboardingProgress } from '@/types/database'
 
@@ -318,4 +317,27 @@ export const getChatMessages = async (chatId: string) => {
     .order('created_at', { ascending: true })
 
   return { data, error }
+}
+
+/**
+ * Get user's daily message count
+ */
+export const getDailyMessageCount = async (userId: string) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact' })
+    .eq('author_id', userId)
+    .eq('is_ai_message', false)
+    .gte('created_at', today.toISOString())
+    .lt('created_at', tomorrow.toISOString())
+
+  return { 
+    data: { count: data?.length || 0 }, 
+    error 
+  }
 }
