@@ -29,7 +29,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
   const refreshProfile = async () => {
     if (!user) {
@@ -74,7 +73,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(null);
             setSession(null);
             setLoading(false);
-            setInitialized(true);
           }
           return;
         }
@@ -84,32 +82,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
 
           if (session?.user) {
-            // Fetch profile non-blocking
-            getPrivateProfile(session.user.id)
-              .then(({ data, error }) => {
-                if (mounted) {
-                  if (error) {
-                    console.error('Profile fetch error:', error);
-                    setProfile(null);
-                  } else {
-                    setProfile(data || null);
-                  }
-                  setLoading(false);
-                  setInitialized(true);
-                }
-              })
-              .catch((error) => {
-                console.error('Profile fetch failed:', error);
-                if (mounted) {
+            // Fetch profile after setting user
+            try {
+              const { data, error: profileError } = await getPrivateProfile(session.user.id);
+              if (mounted) {
+                if (profileError) {
+                  console.error('Profile fetch error:', profileError);
                   setProfile(null);
-                  setLoading(false);
-                  setInitialized(true);
+                } else {
+                  setProfile(data || null);
                 }
-              });
+                setLoading(false);
+              }
+            } catch (error) {
+              console.error('Profile fetch failed:', error);
+              if (mounted) {
+                setProfile(null);
+                setLoading(false);
+              }
+            }
           } else {
             setProfile(null);
             setLoading(false);
-            setInitialized(true);
           }
         }
       } catch (error) {
@@ -119,7 +113,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           setSession(null);
           setLoading(false);
-          setInitialized(true);
         }
       }
     };
@@ -145,43 +138,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               } else {
                 setProfile(data || null);
               }
-              if (!initialized) {
-                setLoading(false);
-                setInitialized(true);
-              }
             }
           } catch (error) {
             console.error('Profile fetch failed:', error);
             if (mounted) {
               setProfile(null);
-              if (!initialized) {
-                setLoading(false);
-                setInitialized(true);
-              }
             }
           }
         } else {
           if (mounted) {
             setProfile(null);
-            if (!initialized) {
-              setLoading(false);
-              setInitialized(true);
-            }
           }
         }
       }
     );
 
     // Initialize auth
-    if (!initialized) {
-      initializeAuth();
-    }
+    initializeAuth();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [initialized]);
+  }, []);
 
   const value = {
     user,
