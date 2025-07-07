@@ -31,9 +31,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const clearAuthState = () => {
+    console.log('Clearing auth state');
     setUser(null);
     setProfile(null);
     setSession(null);
+  };
+
+  const clearAllAuthStorage = () => {
+    console.log('Clearing all auth storage');
+    try {
+      // Clear all localStorage keys that might contain auth data
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('sb-') || 
+          key.includes('supabase') || 
+          key.includes('auth') ||
+          key.includes('session') ||
+          key.includes('token')
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        console.log('Removing storage key:', key);
+        localStorage.removeItem(key);
+      });
+
+      // Also clear sessionStorage
+      const sessionKeysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (
+          key.startsWith('sb-') || 
+          key.includes('supabase') || 
+          key.includes('auth') ||
+          key.includes('session') ||
+          key.includes('token')
+        )) {
+          sessionKeysToRemove.push(key);
+        }
+      }
+      
+      sessionKeysToRemove.forEach(key => {
+        console.log('Removing session storage key:', key);
+        sessionStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
   };
 
   const refreshProfile = async () => {
@@ -43,8 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      console.log('Refreshing profile for user:', user.id);
       const { data } = await getPrivateProfile(user.id);
       setProfile(data || null);
+      console.log('Profile refreshed:', data);
     } catch (error) {
       console.warn('Profile fetch failed:', error);
       setProfile(null);
@@ -53,8 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log('Signing out...');
+      
       // Clear local state first
       clearAuthState();
+      
+      // Clear all storage
+      clearAllAuthStorage();
       
       // Then clear Supabase session
       const { error } = await supabase.auth.signOut();
@@ -63,82 +118,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Sign out error:', error);
         throw error;
       }
+      
+      console.log('Sign out successful');
     } catch (error) {
       console.error('Sign out failed:', error);
       // Even if signOut fails, we should clear local state
       clearAuthState();
+      clearAllAuthStorage();
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    console.log('AuthProvider initializing...');
 
     const initializeAuth = async () => {
       try {
-        // Clear any potentially corrupted auth state first
-        if (typeof window !== 'undefined') {
-          // Check for corrupted auth storage and clear if needed
-          const keys = Object.keys(localStorage);
-          const authKeys = keys.filter(key => key.startsWith('sb-') || key.includes('supabase'));
+        console.log('Starting auth initialization...');
+        
+        // First, try to get session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session retrieval error:', error);
+          // Clear potentially corrupted storage
+          clearAllAuthStorage();
           
-          // If we have auth keys but session retrieval fails, clear storage
-          try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) {
-              console.warn('Session retrieval error, clearing auth storage:', error);
-              authKeys.forEach(key => {
-                try {
-                  localStorage.removeItem(key);
-                } catch (e) {
-                  console.warn('Failed to clear storage key:', key, e);
-                }
-              });
-            } else if (mounted) {
-              setSession(session);
-              setUser(session?.user ?? null);
-              
-              if (session?.user) {
-                try {
-                  const { data } = await getPrivateProfile(session.user.id);
-                  if (mounted) {
-                    setProfile(data || null);
-                  }
-                } catch (error) {
-                  console.warn('Profile fetch failed during init:', error);
-                  if (mounted) {
-                    setProfile(null);
-                  }
-                }
+          if (mounted) {
+            clearAuthState();
+            setLoading(false);
+          }
+          return;
+        }
+
+        console.log('Session retrieved:', session?.user?.email || 'No session');
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            console.log('User found, fetching profile...');
+            try {
+              const { data } = await getPrivateProfile(session.user.id);
+              if (mounted) {
+                setProfile(data || null);
+                console.log('Profile loaded:', data?.username || 'No profile');
+              }
+            } catch (error) {
+              console.warn('Profile fetch failed during init:', error);
+              if (mounted) {
+                setProfile(null);
               }
             }
-          } catch (error) {
-            console.error('Auth initialization failed:', error);
-            // Clear potentially corrupted storage
-            authKeys.forEach(key => {
-              try {
-                localStorage.removeItem(key);
-              } catch (e) {
-                console.warn('Failed to clear storage key:', key, e);
-              }
-            });
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('Auth initialization failed:', error);
+        
+        // If we get here, something is seriously wrong - clear everything
+        clearAllAuthStorage();
+        
+        if (mounted) {
+          clearAuthState();
+        }
       } finally {
         if (mounted) {
           setLoading(false);
+          console.log('Auth initialization complete');
         }
       }
     };
 
     // Set up auth state listener
+    console.log('Setting up auth state listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session?.user?.email || 'No user');
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -148,9 +206,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const { data } = await getPrivateProfile(session.user.id);
             if (mounted) {
               setProfile(data || null);
+              console.log('Profile updated from auth change:', data?.username || 'No profile');
             }
           } catch (error) {
-            console.warn('Profile fetch failed:', error);
+            console.warn('Profile fetch failed on auth change:', error);
             if (mounted) {
               setProfile(null);
             }
@@ -171,6 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     return () => {
+      console.log('Cleaning up auth provider...');
       mounted = false;
       subscription.unsubscribe();
     };
@@ -184,6 +244,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     refreshProfile,
   };
+
+  console.log('AuthProvider render:', { 
+    loading, 
+    hasUser: !!user, 
+    hasProfile: !!profile, 
+    userEmail: user?.email 
+  });
 
   return (
     <AuthContext.Provider value={value}>
