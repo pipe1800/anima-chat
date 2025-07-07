@@ -76,12 +76,15 @@ export const useCurrentUser = () => {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [hasInitialized, setHasInitialized] = useState(false)
 
   useEffect(() => {
     let mounted = true
+    let initialized = false
 
     const initializeAuth = async () => {
+      if (initialized) return
+      initialized = true
+
       try {
         console.log('useCurrentUser: Getting initial session...');
         
@@ -119,15 +122,12 @@ export const useCurrentUser = () => {
         if (mounted) {
           console.log('useCurrentUser: Setting loading to false');
           setLoading(false)
-          setHasInitialized(true)
         }
       }
     }
 
-    // Only initialize if we haven't already
-    if (!hasInitialized) {
-      initializeAuth()
-    }
+    // Initialize auth state
+    initializeAuth()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -162,8 +162,8 @@ export const useCurrentUser = () => {
             }
           }
           
-          // Only update loading state if this is a real auth change (not initial load)
-          if (hasInitialized && mounted) {
+          // Always set loading to false after auth state change
+          if (mounted) {
             setLoading(false)
           }
         } catch (authError) {
@@ -176,9 +176,9 @@ export const useCurrentUser = () => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [hasInitialized])
+  }, []) // Empty dependency array to run only once
 
-  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading, hasInitialized });
+  console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading });
 
   return { user, profile, loading }
 }
