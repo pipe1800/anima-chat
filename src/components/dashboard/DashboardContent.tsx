@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { DailyUsageWidget } from './DailyUsageWidget';
 import { 
   MessageCircle, 
   Trophy, 
@@ -154,6 +155,11 @@ const favorites = [
 ];
 
 export function DashboardContent() {
+  // Mock user data - in real app this would come from props or context
+  const userTier = "Guest Pass"; // or "True Fan", "The Whale"
+  const messagesUsed = 45;
+  const dailyLimit = 75;
+
   return (
     <div className="min-h-screen bg-[#121212] ml-64">
       {/* Header Section */}
@@ -172,23 +178,30 @@ export function DashboardContent() {
           <div className="flex items-center space-x-8">
             <div className="text-right">
               <p className="text-gray-400 text-sm">Subscription Tier:</p>
-              <p className="text-[#FF7A00] font-bold text-lg">True Fan</p>
+              <p className="text-[#FF7A00] font-bold text-lg">{userTier}</p>
             </div>
-            <div className="bg-[#FF7A00]/20 px-4 py-3 rounded-lg border border-[#FF7A00]/30">
-              <div className="flex items-center space-x-2">
-                <Zap className="w-5 h-5 text-[#FF7A00]" />
-                <div className="text-right">
-                  <p className="text-gray-400 text-xs">Credits:</p>
-                  <p className="text-[#FF7A00] font-bold text-lg">1,247</p>
+            {userTier !== "Guest Pass" && (
+              <div className="bg-[#FF7A00]/20 px-4 py-3 rounded-lg border border-[#FF7A00]/30">
+                <div className="flex items-center space-x-2">
+                  <Zap className="w-5 h-5 text-[#FF7A00]" />
+                  <div className="text-right">
+                    <p className="text-gray-400 text-xs">Credits:</p>
+                    <p className="text-[#FF7A00] font-bold text-lg">1,247</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="p-6 space-y-6">
+        {/* Daily Usage Widget - Only for Guest Pass users */}
+        {userTier === "Guest Pass" && (
+          <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
+        )}
+
         {/* Daily Quest Widget */}
         <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
           <CardHeader className="pb-4">
