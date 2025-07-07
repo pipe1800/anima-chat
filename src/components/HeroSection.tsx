@@ -20,9 +20,9 @@ const HeroSection = () => {
               {/* Video container with 4:3 aspect ratio to match 1,660 x 1,244 */}
               <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#121212] rounded-2xl border border-[#FF7A00]/20 overflow-hidden shadow-2xl" style={{ aspectRatio: '1660/1244' }}>
                 <iframe
-                  src="https://drive.google.com/file/d/1RBT8C-1EJaP6CkTcb84XgZ6XjVdTWTiY/preview?autoplay=1"
+                  src="https://drive.google.com/file/d/1RBT8C-1EJaP6CkTcb84XgZ6XjVdTWTiY/preview"
                   className="w-full h-full"
-                  allow="autoplay"
+                  allow="autoplay; fullscreen"
                   allowFullScreen
                 />
                 
