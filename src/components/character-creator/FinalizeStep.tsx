@@ -5,20 +5,21 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { User, MessageCircle, Heart, Sparkles, Globe, Link, Lock } from 'lucide-react';
+import { User, MessageCircle, Heart, Sparkles, Globe, Link, Lock, Loader2 } from 'lucide-react';
 
 interface FinalizeStepProps {
   data: any;
   onUpdate: (data: any) => void;
   onFinalize: () => void;
   onPrevious: () => void;
+  isCreating?: boolean;
 }
 
 type VisibilityType = 'public' | 'unlisted' | 'private';
 
-const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious }: FinalizeStepProps) => {
-  const [visibility, setVisibility] = useState<VisibilityType>('public');
-  const [enableNSFW, setEnableNSFW] = useState(false);
+const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false }: FinalizeStepProps) => {
+  const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
+  const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
 
   const visibilityOptions = [
     {
@@ -88,34 +89,28 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious }: FinalizeStepPr
             </div>
             
             <div className="space-y-4">
-              <div>
-                <Label className="text-gray-400 text-sm mb-2 block">Personality Traits</Label>
-                <div className="flex flex-wrap gap-2">
-                  {data.personality?.traits?.map((trait: string) => (
-                    <Badge key={trait} className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30">
-                      {trait}
-                    </Badge>
-                  ))}
+              {data.personality?.tags?.length > 0 && (
+                <div>
+                  <Label className="text-gray-400 text-sm mb-2 block">Personality Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.personality.tags.map((tag: string) => (
+                      <Badge key={tag} className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div>
-                <Label className="text-gray-400 text-sm mb-2 block">Communication Style</Label>
-                <p className="text-white capitalize">
-                  {data.personality?.communication_style?.replace('_', ' ')}
-                </p>
-              </div>
-              
-              <div>
-                <Label className="text-gray-400 text-sm mb-2 block">Interests</Label>
-                <div className="flex flex-wrap gap-2">
-                  {data.personality?.interests?.map((interest: string) => (
-                    <Badge key={interest} className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                      {interest}
-                    </Badge>
-                  ))}
+              {data.personality?.core_personality && (
+                <div>
+                  <Label className="text-gray-400 text-sm mb-2 block">Core Personality</Label>
+                  <p className="text-white text-sm bg-gray-800/30 rounded-lg p-3">
+                    {data.personality.core_personality.substring(0, 200)}
+                    {data.personality.core_personality.length > 200 && '...'}
+                  </p>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -240,6 +235,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious }: FinalizeStepPr
           onClick={onPrevious}
           variant="outline"
           className="border-gray-600 text-gray-300 hover:bg-gray-800/50 px-8 py-3"
+          disabled={isCreating}
         >
           ← Previous
         </Button>
@@ -247,8 +243,18 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious }: FinalizeStepPr
         <Button
           onClick={handleFinalize}
           className="bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/80 hover:from-[#FF7A00]/90 hover:to-[#FF7A00]/70 text-white px-12 py-3 text-lg font-bold shadow-lg"
+          disabled={isCreating}
         >
-          Save & Launch Character 🚀
+          {isCreating ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Creating Character...
+            </>
+          ) : (
+            <>
+              Save & Launch Character 🚀
+            </>
+          )}
         </Button>
       </div>
     </div>

@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Upload, User, Sparkles } from 'lucide-react';
+import { Upload, User, Sparkles, Loader2 } from 'lucide-react';
+import { uploadAvatar } from '@/lib/avatar-upload';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface FoundationStepProps {
   data: any;
@@ -20,12 +22,65 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
     title: data.title || '',
     description: data.description || ''
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const avatarUrl = await uploadAvatar(file, user.id);
+      
+      if (avatarUrl) {
+        handleInputChange('avatar', avatarUrl);
+        toast({
+          title: "Upload Successful",
+          description: "Avatar uploaded successfully!",
+        });
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleNext = () => {
@@ -38,7 +93,6 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
       <div className="max-w-6xl mx-auto p-6 lg:p-8">
-        {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[calc(100vh-200px)]">
           
           {/* Left Column - Avatar Upload */}
@@ -66,29 +120,41 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                 )}
               </div>
               
-              {/* Glowing border effect */}
               <div className="absolute inset-0 rounded-full border-2 border-[#FF7A00]/50 animate-pulse" />
             </div>
+
+            {/* File input (hidden) */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
 
             {/* Upload Buttons */}
             <div className="flex flex-col space-y-3 w-full max-w-xs">
               <Button 
                 className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
-                onClick={() => {
-                  // TODO: Implement file upload
-                  console.log('Upload image clicked');
-                }}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
               >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Image
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-5 h-5 mr-2" />
+                )}
+                {isUploading ? 'Uploading...' : 'Upload Image'}
               </Button>
               
               <Button 
                 variant="outline"
                 className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 font-semibold py-3 px-6 rounded-xl"
                 onClick={() => {
-                  // TODO: Implement AI generation
-                  console.log('Generate with AI clicked');
+                  toast({
+                    title: "Coming Soon",
+                    description: "AI avatar generation will be available soon!",
+                  });
                 }}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
