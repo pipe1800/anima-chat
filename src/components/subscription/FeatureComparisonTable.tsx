@@ -8,7 +8,7 @@ export const FeatureComparisonTable = () => {
     {
       category: "Core Features",
       items: [
-        { name: "Daily Messages", guest: "50", trueFan: "Unlimited", whale: "Unlimited" },
+        { name: "Messages", guest: "75 per day", trueFan: "Unlimited", whale: "Unlimited" },
         { name: "AI Models", guest: "Standard", trueFan: "Premium", whale: "Premium + Experimental" },
         { name: "Custom Characters", guest: "1", trueFan: "50", whale: "50" },
         { name: "Context Memory", guest: "2k", trueFan: "8k", whale: "16k+" },
@@ -17,7 +17,6 @@ export const FeatureComparisonTable = () => {
     {
       category: "Experience",
       items: [
-        { name: "Ads", guest: false, trueFan: true, whale: true },
         { name: "Priority Queue", guest: false, trueFan: true, whale: true },
         { name: "Longer AI Responses", guest: false, trueFan: true, whale: true },
         { name: "Image Generation", guest: false, trueFan: false, whale: true },
@@ -26,12 +25,22 @@ export const FeatureComparisonTable = () => {
     }
   ];
 
-  const renderFeatureValue = (value: string | boolean, plan: string) => {
+  const renderFeatureValue = (value: string | boolean, plan: string, featureName?: string) => {
     if (typeof value === 'boolean') {
       return value ? (
         <Check className="h-5 w-5 text-[#FF7A00] mx-auto" />
       ) : (
         <X className="h-5 w-5 text-gray-500 mx-auto" />
+      );
+    }
+    
+    // Special handling for Messages row - show checkmark for unlimited
+    if (featureName === 'Messages' && value === 'Unlimited') {
+      return (
+        <div className="flex items-center justify-center space-x-2">
+          <Check className="h-5 w-5 text-[#FF7A00]" />
+          <span className="text-sm font-medium text-white">Unlimited</span>
+        </div>
       );
     }
     
@@ -102,13 +111,13 @@ export const FeatureComparisonTable = () => {
                       {feature.name}
                     </div>
                     <div className="text-center">
-                      {renderFeatureValue(feature.guest, 'guest')}
+                      {renderFeatureValue(feature.guest, 'guest', feature.name)}
                     </div>
                     <div className="text-center">
-                      {renderFeatureValue(feature.trueFan, 'trueFan')}
+                      {renderFeatureValue(feature.trueFan, 'trueFan', feature.name)}
                     </div>
                     <div className="text-center">
-                      {renderFeatureValue(feature.whale, 'whale')}
+                      {renderFeatureValue(feature.whale, 'whale', feature.name)}
                     </div>
                   </div>
                 ))}
