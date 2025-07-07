@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,15 +58,7 @@ export function DashboardContent() {
           getDailyMessageCount(user.id)
         ]);
 
-        console.log('Dashboard data fetched:', {
-          chats: chatsResult.data,
-          characters: charactersResult.data,
-          credits: creditsResult.data,
-          subscription: subscriptionResult.data,
-          messageCount: messageCountResult.data
-        });
-
-        setRecentChats(chatsResult.data?.slice(0, 5) || []);
+        setRecentChats(chatsResult.data || []);
         setMyCharacters(charactersResult.data || []);
         setUserCredits(creditsResult.data?.balance || 0);
         setSubscription(subscriptionResult.data);
@@ -174,6 +165,7 @@ export function DashboardContent() {
           <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
         )}
 
+        
         <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center space-x-2">
@@ -335,6 +327,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
             <CardContent className="p-6">

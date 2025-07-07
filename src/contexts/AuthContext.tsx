@@ -37,14 +37,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data, error } = await getPrivateProfile(user.id);
-      if (error) {
-        console.warn('Profile fetch warning:', error);
-      } else {
-        setProfile(data || null);
-      }
+      const { data } = await getPrivateProfile(user.id);
+      setProfile(data || null);
     } catch (error) {
       console.warn('Profile fetch failed:', error);
+      setProfile(null);
     }
   };
 
@@ -57,95 +54,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    let mounted = true;
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          try {
+            const { data } = await getPrivateProfile(session.user.id);
+            setProfile(data || null);
+          } catch (error) {
+            console.warn('Profile fetch failed:', error);
+            setProfile(null);
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
         
-        if (!mounted) return;
-
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Try to fetch profile
           try {
-            const { data, error } = await getPrivateProfile(session.user.id);
-            if (mounted) {
-              if (error) {
-                console.warn('Profile fetch warning:', error);
-                setProfile(null);
-              } else {
-                setProfile(data || null);
-              }
-            }
+            const { data } = await getPrivateProfile(session.user.id);
+            setProfile(data || null);
           } catch (error) {
             console.warn('Profile fetch failed:', error);
-            if (mounted) {
-              setProfile(null);
-            }
-          }
-        } else {
-          if (mounted) {
             setProfile(null);
           }
+        } else {
+          setProfile(null);
         }
 
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session fetch error:', error);
-        }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            try {
-              const { data, error: profileError } = await getPrivateProfile(session.user.id);
-              if (profileError) {
-                console.warn('Profile fetch warning:', profileError);
-                setProfile(null);
-              } else {
-                setProfile(data || null);
-              }
-            } catch (error) {
-              console.warn('Profile fetch failed:', error);
-              setProfile(null);
-            }
-          } else {
-            setProfile(null);
-          }
-          
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        if (mounted) {
-          setUser(null);
-          setProfile(null);
-          setSession(null);
-          setLoading(false);
-        }
-      }
-    };
-
-    getInitialSession();
-
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
