@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -14,17 +15,6 @@ import {
   Crown,
   PowerOff
 } from 'lucide-react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,10 +36,9 @@ export function AppSidebar() {
   const [userCredits, setUserCredits] = useState(0);
   const currentPath = location.pathname;
 
-  // Fetch user credits
   useEffect(() => {
     const fetchCredits = async () => {
-      if (!user || loading) return;
+      if (!user) return;
       
       try {
         const creditsResult = await getUserCredits(user.id);
@@ -61,10 +50,10 @@ export function AppSidebar() {
       }
     };
 
-    if (user && !loading) {
+    if (user) {
       fetchCredits();
     }
-  }, [user, loading]);
+  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
 
@@ -84,25 +73,18 @@ export function AppSidebar() {
     }
   };
 
-  // Show sidebar even if auth is loading, but with fallback content
   if (loading) {
     return (
       <div className="fixed left-0 top-0 w-64 h-screen bg-[#1b1b1b] border-r border-gray-700/50 z-40">
-        <div className="flex flex-col h-full">
-          <div className="border-b border-gray-700/50 p-4">
-            <div className="flex items-center justify-start mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div className="ml-3">
-                <h2 className="text-white font-bold text-lg">ANIMA</h2>
-              </div>
-            </div>
-            <div className="text-white text-center">Loading...</div>
-          </div>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-white">Loading...</div>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
