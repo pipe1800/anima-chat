@@ -7,7 +7,8 @@ import {
   MessageCircle, 
   Heart,
   TrendingUp,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { getPublicCharacters } from '@/lib/supabase-queries';
 
@@ -59,6 +60,10 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
   const handleStartChat = (character: PublicCharacter) => {
     navigate('/chat', { state: { selectedCharacter: character } });
+  };
+
+  const handleViewCharacter = (character: PublicCharacter) => {
+    navigate(`/character/${character.id}`);
   };
 
   // Filter and sort characters based on props
@@ -175,14 +180,24 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                   by @{character.creator?.username || 'Unknown'}
                 </p>
 
-                {/* Action Button */}
-                <Button
-                  onClick={() => handleStartChat(character)}
-                  className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Start Chat
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleViewCharacter(character)}
+                    variant="outline"
+                    className="flex-1 border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Character
+                  </Button>
+                  <Button
+                    onClick={() => handleStartChat(character)}
+                    className="flex-1 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Start Chat
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

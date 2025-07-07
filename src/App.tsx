@@ -17,6 +17,7 @@ import Subscription from "./pages/Subscription";
 import Settings from "./pages/Settings";
 import Moderation from "./pages/Moderation";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
+import CharacterProfile from "./pages/CharacterProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/moderation" element={<Moderation />} />
             <Route path="/guidelines" element={<CommunityGuidelines />} />
+            <Route path="/character/:characterId" element={<CharacterProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
