@@ -108,6 +108,15 @@ export function DashboardContent() {
     navigate('/chat', { state: { selectedCharacter: character } });
   };
 
+  const handleContinueChat = (chat: any) => {
+    navigate('/chat', { 
+      state: { 
+        selectedCharacter: chat.character, 
+        existingChatId: chat.id 
+      } 
+    });
+  };
+
   const handleEditCharacter = (character: any) => {
     navigate('/character-creator', { 
       state: { 
@@ -140,6 +149,7 @@ export function DashboardContent() {
   const formattedRecentChats = recentChats.map(chat => ({
     id: chat.id,
     character: {
+      id: chat.character?.id,
       name: chat.character?.name || 'Unknown',
       avatar: chat.character?.name?.charAt(0) || 'U',
       image: chat.character?.avatar_url || "/placeholder.svg"
@@ -297,6 +307,7 @@ export function DashboardContent() {
                         <Card
                           key={chat.id}
                           className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 cursor-pointer"
+                          onClick={() => handleContinueChat(chat)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-center space-x-4">

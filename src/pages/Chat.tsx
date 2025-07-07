@@ -18,6 +18,7 @@ const Chat = () => {
   const navigate = useNavigate();
   
   const selectedCharacter = location.state?.selectedCharacter;
+  const existingChatId = location.state?.existingChatId;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -130,6 +131,7 @@ const Chat = () => {
           <ChatInterface
             character={character}
             onFirstMessage={handleFirstMessage}
+            existingChatId={existingChatId}
           />
         </ChatLayout>
       </div>

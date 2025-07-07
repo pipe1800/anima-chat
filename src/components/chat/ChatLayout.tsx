@@ -252,7 +252,7 @@ export const ChatLayout = ({ character, children }: ChatLayoutProps) => {
                               ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30' 
                               : 'hover:bg-[#1a1a2e]'
                           }`}
-                          onClick={() => navigate('/chat', { state: { selectedCharacter: chat.character } })}
+                          onClick={() => navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } })}
                         >
                           <div className="flex items-start space-x-3">
                             <Avatar className="w-10 h-10 flex-shrink-0">

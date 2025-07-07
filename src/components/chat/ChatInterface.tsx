@@ -34,11 +34,13 @@ interface Character {
 interface ChatInterfaceProps {
   character: Character;
   onFirstMessage: () => void;
+  existingChatId?: string;
 }
 
 const ChatInterface = ({
   character,
-  onFirstMessage
+  onFirstMessage,
+  existingChatId
 }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -89,19 +91,53 @@ const ChatInterface = ({
                         `Hello! I'm ${character.name}. It's great to meet you. What would you like to talk about?`;
         setCharacterGreeting(greeting);
 
-        // Add greeting message
-        const greetingMessage: Message = {
-          id: 'greeting',
-          content: greeting,
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages([greetingMessage]);
+        // If we have an existing chat ID, load the messages
+        if (existingChatId) {
+          console.log('Loading existing chat:', existingChatId);
+          setCurrentChatId(existingChatId);
+          
+          const { data: existingMessages, error: messagesError } = await getChatMessages(existingChatId);
+          
+          if (messagesError) {
+            console.error('Error loading existing messages:', messagesError);
+          } else if (existingMessages && existingMessages.length > 0) {
+            // Convert database messages to UI format
+            const formattedMessages: Message[] = existingMessages.map(msg => ({
+              id: msg.id,
+              content: msg.content,
+              isUser: !msg.is_ai_message,
+              timestamp: new Date(msg.created_at)
+            }));
+            
+            setMessages(formattedMessages);
+            setIsFirstMessage(false); // Not first message if we have existing chat
+            console.log('Loaded existing messages:', formattedMessages.length);
+          } else {
+            // Empty existing chat, add greeting
+            const greetingMessage: Message = {
+              id: 'greeting',
+              content: greeting,
+              isUser: false,
+              timestamp: new Date()
+            };
+            setMessages([greetingMessage]);
+          }
+        } else {
+          // New chat, add greeting message
+          const greetingMessage: Message = {
+            id: 'greeting',
+            content: greeting,
+            isUser: false,
+            timestamp: new Date()
+          };
+          setMessages([greetingMessage]);
+        }
 
         console.log('Chat initialized:', { 
           messagesUsed: messageCountResult.data?.count, 
           userTier, 
           isGuest,
+          existingChatId,
           greeting 
         });
 
@@ -116,7 +152,7 @@ const ChatInterface = ({
     };
 
     loadInitialData();
-  }, [user, character]);
+  }, [user, character, existingChatId]);
 
   // Show toast when user has exactly 10 messages remaining
   useEffect(() => {
