@@ -121,7 +121,7 @@ const Auth = () => {
           username: username.trim(),
           onboarding_completed: false // Explicitly set to false for new users
         },
-        emailRedirectTo: `${window.location.origin}/dashboard`
+        emailRedirectTo: `${window.location.origin}/onboarding`
       }
     });
 

@@ -33,8 +33,8 @@ const Onboarding = () => {
           setOnboardingCompleted(true);
           navigate('/dashboard');
         } else {
-          // New user, show welcome modal
-          setShowWelcome(true);
+          // New user, go directly to first onboarding step
+          setCurrentStep(0);
         }
       } else {
         // No user, redirect to auth
@@ -124,13 +124,6 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-[#121212] relative">
-      {/* Welcome Modal */}
-      <WelcomeModal
-        isOpen={showWelcome}
-        onClose={handleWelcomeClose}
-        username={username}
-        onBeginQuest={handleBeginQuest}
-      />
 
       {/* Onboarding Checklist */}
       <OnboardingChecklist
