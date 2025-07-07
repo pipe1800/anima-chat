@@ -106,7 +106,7 @@ export function DashboardContent() {
   // Show loading while auth is initializing
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading your dashboard...</div>
       </div>
     );
@@ -115,7 +115,7 @@ export function DashboardContent() {
   // Show message if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center ml-64">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Please sign in to access your ANIMA dashboard.</div>
       </div>
     );
@@ -148,7 +148,7 @@ export function DashboardContent() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#121212] ml-64">
+    <div className="min-h-screen bg-[#121212]">
       {/* Header Section */}
       <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
