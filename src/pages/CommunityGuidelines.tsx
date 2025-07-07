@@ -1,58 +1,45 @@
 
 import React from 'react';
-import { Shield, Users, MessageSquare, AlertTriangle, Ban, Heart } from 'lucide-react';
+import { Shield, Gavel, Ban, Eye, AlertTriangle, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 const CommunityGuidelines = () => {
-  const guidelineSections = [
+  const coreRules = [
     {
-      id: 'respect',
-      title: 'Respect & Civility',
-      icon: Heart,
-      description: 'Keep it friendly and respectful',
-      rules: [
-        'Treat every member with respect and courtesy',
-        'No harassment, bullying, or personal attacks',
-        'Disagreements are fine—just keep them civil',
-        'Remember there\'s a real person behind every character'
-      ]
+      id: 'no-jerk',
+      title: "Don't Be a Jerk",
+      icon: Ban,
+      description: "No harassment, hate speech, bullying, or personal attacks. We're here to create, not to tear down.",
+      color: 'text-red-400'
     },
     {
-      id: 'content',
-      title: 'Content Standards',
-      icon: MessageSquare,
-      description: 'What you can and cannot share',
-      rules: [
-        'No explicit sexual content or NSFW material',
-        'Keep violent content within reasonable limits',
-        'Respect copyright—don\'t steal characters or content',
-        'No spam, excessive self-promotion, or off-topic content'
-      ]
+      id: 'keep-legal',
+      title: 'Keep It Legal',
+      icon: Gavel,
+      description: "No illegal content. Respect copyright and intellectual property. Don't post stuff that isn't yours.",
+      color: 'text-blue-400'
     },
     {
-      id: 'behavior',
-      title: 'Platform Behavior',
-      icon: Users,
-      description: 'How to be a good community member',
-      rules: [
-        'No impersonation of other users or public figures',
-        'Don\'t share personal information (yours or others\')',
-        'Report issues instead of taking justice into your own hands',
-        'Use features as intended—no system manipulation'
-      ]
+      id: 'no-spam',
+      title: 'No Spam, No Scams',
+      icon: Ban,
+      description: "No unsolicited advertising, phishing links, or spamming. Self-promotion of your characters is cool; shilling crypto isn't.",
+      color: 'text-yellow-400'
     },
     {
-      id: 'safety',
-      title: 'Safety & Security',
+      id: 'protect-privacy',
+      title: 'Protect Privacy',
       icon: Shield,
-      description: 'Keeping everyone safe',
-      rules: [
-        'No doxxing, sharing personal info, or real-world threats',
-        'Don\'t share harmful links or malicious content',
-        'Respect privacy settings and boundaries',
-        'Report suspicious activity immediately'
-      ]
+      description: "Doxxing or sharing anyone's private information without their consent is an instant ban. No exceptions.",
+      color: 'text-green-400'
+    },
+    {
+      id: 'tag-content',
+      title: 'Tag Your Content',
+      icon: Eye,
+      description: "Clearly tag NSFW content. Not everyone wants to see that, so be respectful. Mis-tagging will be treated as a rule violation.",
+      color: 'text-purple-400'
     }
   ];
 
@@ -102,35 +89,34 @@ const CommunityGuidelines = () => {
           </Card>
         </div>
 
-        {/* Guidelines Sections */}
-        <div className="space-y-8 mb-12">
-          {guidelineSections.map((section) => {
-            const Icon = section.icon;
-            return (
-              <Card key={section.id} className="bg-[#1A1D23] border-gray-700/50">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-12 h-12 bg-[#FF7A00]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-6 h-6 text-[#FF7A00]" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-white mb-2">{section.title}</h3>
-                      <p className="text-gray-400 text-lg">{section.description}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {section.rules.map((rule, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full mt-2 flex-shrink-0" />
-                        <p className="text-gray-300 text-lg leading-relaxed">{rule}</p>
+        {/* Core Rules */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold text-white mb-8 text-center">The Core Rules</h2>
+          <div className="space-y-6">
+            {coreRules.map((rule, index) => {
+              const Icon = rule.icon;
+              return (
+                <Card key={rule.id} className="bg-[#1A1D23] border-gray-700/50 hover:border-[#FF7A00]/30 transition-colors">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-6">
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-[#FF7A00]/10 rounded-full flex items-center justify-center">
+                          <Icon className={`w-8 h-8 ${rule.color}`} />
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-2xl font-bold text-[#FF7A00]">Rule {index + 1}:</span>
+                          <h3 className="text-2xl font-bold text-white">{rule.title}</h3>
+                        </div>
+                        <p className="text-gray-300 text-lg leading-relaxed">{rule.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* Consequences Section */}
