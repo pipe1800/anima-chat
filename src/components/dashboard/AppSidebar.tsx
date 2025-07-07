@@ -78,7 +78,7 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/auth');
+      navigate('/'); // Redirect to landing page instead of auth page
     } catch (error) {
       console.error('Error signing out:', error);
     }
