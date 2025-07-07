@@ -30,6 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const clearAuthState = () => {
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+  };
+
   const refreshProfile = async () => {
     if (!user) {
       setProfile(null);
@@ -46,44 +52,92 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Sign out error:', error);
-      throw error;
+    try {
+      // Clear local state first
+      clearAuthState();
+      
+      // Then clear Supabase session
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      // Even if signOut fails, we should clear local state
+      clearAuthState();
     }
   };
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        setSession(session);
-        setUser(session?.user ?? null);
+    let mounted = true;
 
-        if (session?.user) {
+    const initializeAuth = async () => {
+      try {
+        // Clear any potentially corrupted auth state first
+        if (typeof window !== 'undefined') {
+          // Check for corrupted auth storage and clear if needed
+          const keys = Object.keys(localStorage);
+          const authKeys = keys.filter(key => key.startsWith('sb-') || key.includes('supabase'));
+          
+          // If we have auth keys but session retrieval fails, clear storage
           try {
-            const { data } = await getPrivateProfile(session.user.id);
-            setProfile(data || null);
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.warn('Session retrieval error, clearing auth storage:', error);
+              authKeys.forEach(key => {
+                try {
+                  localStorage.removeItem(key);
+                } catch (e) {
+                  console.warn('Failed to clear storage key:', key, e);
+                }
+              });
+            } else if (mounted) {
+              setSession(session);
+              setUser(session?.user ?? null);
+              
+              if (session?.user) {
+                try {
+                  const { data } = await getPrivateProfile(session.user.id);
+                  if (mounted) {
+                    setProfile(data || null);
+                  }
+                } catch (error) {
+                  console.warn('Profile fetch failed during init:', error);
+                  if (mounted) {
+                    setProfile(null);
+                  }
+                }
+              }
+            }
           } catch (error) {
-            console.warn('Profile fetch failed:', error);
-            setProfile(null);
+            console.error('Auth initialization failed:', error);
+            // Clear potentially corrupted storage
+            authKeys.forEach(key => {
+              try {
+                localStorage.removeItem(key);
+              } catch (e) {
+                console.warn('Failed to clear storage key:', key, e);
+              }
+            });
           }
         }
-        
-        setLoading(false);
       } catch (error) {
-        console.error('Auth initialization failed:', error);
-        setLoading(false);
+        console.error('Auth initialization error:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
-
-    getInitialSession();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event);
         
         setSession(session);
@@ -92,20 +146,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           try {
             const { data } = await getPrivateProfile(session.user.id);
-            setProfile(data || null);
+            if (mounted) {
+              setProfile(data || null);
+            }
           } catch (error) {
             console.warn('Profile fetch failed:', error);
-            setProfile(null);
+            if (mounted) {
+              setProfile(null);
+            }
           }
         } else {
-          setProfile(null);
+          if (mounted) {
+            setProfile(null);
+          }
         }
 
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
+    // Initialize auth
+    initializeAuth();
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
