@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,11 +162,63 @@ export function DashboardContent() {
       </header>
 
       <div className="p-6 space-y-6">
+        {/* Stats cards above Daily Message Limit */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Active Chats</p>
+                  <p className="text-white text-2xl font-bold">{recentChats.length}</p>
+                </div>
+                <MessageCircle className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Characters Created</p>
+                  <p className="text-white text-2xl font-bold">{myCharacters.length}</p>
+                </div>
+                <Users className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Credits</p>
+                  <p className="text-white text-2xl font-bold">{userCredits.toLocaleString()}</p>
+                </div>
+                <Sparkles className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Plan</p>
+                  <p className="text-white text-lg font-bold">{userTier}</p>
+                </div>
+                <Crown className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Daily Usage Widget */}
         {isGuestPass && (
           <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
         )}
 
-        
+        {/* Daily Quest */}
         <Card className="bg-gradient-to-r from-[#FF7A00]/20 to-[#FF7A00]/10 border-[#FF7A00]/30">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center space-x-2">
@@ -192,6 +245,7 @@ export function DashboardContent() {
 
         <DiscordCTA />
 
+        {/* Your Dashboard sections */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
@@ -324,86 +378,6 @@ export function DashboardContent() {
                 </TabsContent>
               </Tabs>
             )}
-          </CardContent>
-        </Card>
-
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Active Chats</p>
-                  <p className="text-white text-2xl font-bold">{recentChats.length}</p>
-                </div>
-                <MessageCircle className="w-8 h-8 text-[#FF7A00]" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Characters Created</p>
-                  <p className="text-white text-2xl font-bold">{myCharacters.length}</p>
-                </div>
-                <Users className="w-8 h-8 text-[#FF7A00]" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Credits</p>
-                  <p className="text-white text-2xl font-bold">{userCredits.toLocaleString()}</p>
-                </div>
-                <Sparkles className="w-8 h-8 text-[#FF7A00]" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Plan</p>
-                  <p className="text-white text-lg font-bold">{userTier}</p>
-                </div>
-                <Crown className="w-8 h-8 text-[#FF7A00]" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="bg-[#1a1a2e] border-gray-700/50">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-[#FF7A00]" />
-              <span>Quick Actions</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button className="h-16 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white flex-col">
-                <MessageCircle className="w-6 h-6 mb-1" />
-                <span className="text-sm">New Chat</span>
-              </Button>
-              <Button variant="outline" className="h-16 border-gray-600 text-gray-300 hover:bg-gray-800 flex-col">
-                <Plus className="w-6 h-6 mb-1" />
-                <span className="text-sm">Create Character</span>
-              </Button>
-              <Button variant="outline" className="h-16 border-gray-600 text-gray-300 hover:bg-gray-800 flex-col">
-                <Users className="w-6 h-6 mb-1" />
-                <span className="text-sm">Discover</span>
-              </Button>
-              <Button variant="outline" className="h-16 border-gray-600 text-gray-300 hover:bg-gray-800 flex-col">
-                <CreditCard className="w-6 h-6 mb-1" />
-                <span className="text-sm">Upgrade</span>
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
