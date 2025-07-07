@@ -79,17 +79,24 @@ export const useCurrentUser = () => {
 
   useEffect(() => {
     let mounted = true
-    let initialized = false
 
-    const initializeAuth = async () => {
-      if (initialized) return
-      initialized = true
-
+    // Get initial session synchronously
+    const getInitialSession = async () => {
+      console.log('useCurrentUser: Getting initial session...');
+      
       try {
-        console.log('useCurrentUser: Getting initial session...');
+        const { data: { session }, error } = await supabase.auth.getSession()
         
-        // Get initial session
-        const { data: { session } } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Session fetch error:', error);
+          if (mounted) {
+            setUser(null)
+            setProfile(null)
+            setLoading(false)
+          }
+          return
+        }
+
         console.log('useCurrentUser: Initial session:', session?.user ? 'User found' : 'No user');
         
         if (!mounted) return
@@ -98,85 +105,82 @@ export const useCurrentUser = () => {
         
         if (session?.user) {
           console.log('useCurrentUser: Fetching profile for user:', session.user.id);
-          try {
-            const { data, error } = await getPrivateProfile(session.user.id)
-            console.log('useCurrentUser: Profile fetch result:', { data, error });
-            if (error) {
-              console.error('Profile fetch error:', error);
-            }
-            if (mounted) {
-              setProfile(data || null)
-            }
-          } catch (profileError) {
-            console.error('Profile fetch failed:', profileError);
-            if (mounted) {
-              setProfile(null)
-            }
-          }
+          
+          // Fetch profile without blocking
+          getPrivateProfile(session.user.id)
+            .then(({ data, error }) => {
+              console.log('useCurrentUser: Profile fetch result:', { data, error });
+              if (mounted) {
+                setProfile(data || null)
+                setLoading(false)
+              }
+            })
+            .catch((profileError) => {
+              console.error('Profile fetch failed:', profileError);
+              if (mounted) {
+                setProfile(null)
+                setLoading(false)
+              }
+            })
         } else {
           setProfile(null)
+          setLoading(false)
         }
       } catch (sessionError) {
         console.error('Session fetch failed:', sessionError);
-      } finally {
         if (mounted) {
-          console.log('useCurrentUser: Setting loading to false');
+          setUser(null)
+          setProfile(null)
           setLoading(false)
         }
       }
     }
 
-    // Initialize auth state
-    initializeAuth()
-
-    // Listen for auth changes
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        try {
-          console.log('useCurrentUser: Auth state changed:', event);
-          
-          if (!mounted) return
+      (event, session) => {
+        console.log('useCurrentUser: Auth state changed:', event);
+        
+        if (!mounted) return
 
-          setUser(session?.user ?? null)
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          console.log('useCurrentUser: Fetching profile after auth change for user:', session.user.id);
           
-          if (session?.user) {
-            console.log('useCurrentUser: Fetching profile after auth change for user:', session.user.id);
-            try {
-              const { data, error } = await getPrivateProfile(session.user.id)
+          // Fetch profile without blocking
+          getPrivateProfile(session.user.id)
+            .then(({ data, error }) => {
               console.log('useCurrentUser: Profile fetch after auth change:', { data, error });
-              if (error) {
-                console.error('Profile fetch error after auth change:', error);
-              }
               if (mounted) {
                 setProfile(data || null)
+                setLoading(false)
               }
-            } catch (profileError) {
+            })
+            .catch((profileError) => {
               console.error('Profile fetch failed after auth change:', profileError);
               if (mounted) {
                 setProfile(null)
+                setLoading(false)
               }
-            }
-          } else {
-            if (mounted) {
-              setProfile(null)
-            }
-          }
-          
-          // Always set loading to false after auth state change
+            })
+        } else {
           if (mounted) {
+            setProfile(null)
             setLoading(false)
           }
-        } catch (authError) {
-          console.error('Auth state change error:', authError);
         }
       }
     )
+
+    // Get initial session
+    getInitialSession()
 
     return () => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, []) // Empty dependency array to run only once
+  }, [])
 
   console.log('useCurrentUser hook state:', { user: !!user, profile: !!profile, loading });
 
