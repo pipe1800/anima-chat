@@ -218,6 +218,15 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-[#121212] relative overflow-hidden flex items-center justify-center">
+      {/* Logo */}
+      <div className="absolute top-6 left-6 z-20">
+        <img 
+          src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+          alt="Anima AI Chat" 
+          className="h-16 w-auto"
+        />
+      </div>
+
       {/* Futuristic Background Animation */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/10 via-transparent to-[#1a1a2e]/30"></div>
