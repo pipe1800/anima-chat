@@ -504,11 +504,14 @@ export const getUserFavorites = async (userId: string) => {
   const charactersWithDetails = await Promise.all(
     characters.map(async (character) => {
       // Get creator profile
-      const { data: creatorData } = await supabase
+      console.log('Fetching creator profile for creator_id:', character.creator_id);
+      const { data: creatorData, error: creatorError } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
         .eq('id', character.creator_id)
         .maybeSingle()
+      
+      console.log('Creator profile result:', { creatorData, creatorError });
 
       // Get actual chat count
       const { count: chatCount } = await supabase
