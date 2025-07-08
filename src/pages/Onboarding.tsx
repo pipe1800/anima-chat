@@ -143,7 +143,7 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] relative">
+    <div className="min-h-screen bg-[#121212] flex flex-col">
       {/* Progress Bar */}
       {!showWelcome && (
         <OnboardingProgressBar
@@ -156,7 +156,7 @@ const Onboarding = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="flex-1 flex items-center justify-center p-4">
         {!showWelcome && currentStep === 0 && (
           <VibeSelection 
             selectedVibes={selectedVibes}
