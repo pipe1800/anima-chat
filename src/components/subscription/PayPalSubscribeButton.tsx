@@ -25,10 +25,13 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   planName,
   onSuccess
 }) => {
+  console.log("PayPal Client ID:", import.meta.env.VITE_PAYPAL_CLIENT_ID);
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const paypalRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSdkReady, setIsSdkReady] = useState(false);
 
   // Map database plan IDs to PayPal Plan IDs
   // TODO: Replace these placeholder IDs with actual PayPal Plan IDs from your PayPal Developer Dashboard
@@ -43,27 +46,47 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
     }
   };
 
-  // Check for PayPal SDK with better error handling
-  const checkPayPalSDK = () => {
-    console.log('Checking PayPal SDK...', { paypal: window.paypal });
-    return window.paypal;
-  };
+  useEffect(() => {
+    const addPayPalScript = () => {
+      console.log("Attempting to load PayPal SDK script...");
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=USD&intent=subscription&components=buttons`;
+      script.async = true;
+
+      script.onload = () => {
+        console.log("PayPal SDK script LOADED successfully.");
+        setIsSdkReady(true);
+      };
+
+      script.onerror = () => {
+        console.error("ERROR: Failed to load the PayPal SDK script.");
+      };
+
+      document.body.appendChild(script);
+    };
+
+    if (!window.paypal) {
+      console.log("PayPal SDK not found on window object, loading script...");
+      addPayPalScript();
+    } else {
+      console.log("PayPal SDK already found on window object.");
+      setIsSdkReady(true);
+    }
+  }, []);
 
   useEffect(() => {
-    const paypalSDK = checkPayPalSDK();
-    if (!paypalSDK) {
-      console.error('PayPal SDK not loaded. Please refresh the page.');
+    if (!isSdkReady || !window.paypal || !user || !paypalRef.current) {
+      console.log("Conditions not met for PayPal button rendering:", {
+        isSdkReady,
+        hasPaypal: !!window.paypal,
+        hasUser: !!user,
+        hasRef: !!paypalRef.current
+      });
       return;
     }
 
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
-    if (!paypalRef.current) {
-      return;
-    }
+    console.log("All conditions met, rendering PayPal button...");
 
     // Clear any existing PayPal buttons
     if (paypalRef.current) {
@@ -80,6 +103,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
 
       createSubscription: async function(data: any, actions: any) {
         try {
+          console.log("Creating PayPal subscription...");
           const paypalPlanId = getPayPalPlanId(planId);
           
           return actions.subscription.create({
@@ -104,11 +128,13 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
       },
 
       onApprove: async function(data: any, actions: any) {
+        console.log("PayPal subscription approved:", data);
         setIsLoading(true);
         
         try {
           // Get subscription details from PayPal
           const subscriptionDetails = await actions.subscription.get();
+          console.log("PayPal subscription details:", subscriptionDetails);
           
           // Call our backend function to save the subscription
           const { error } = await supabase.functions.invoke('save-paypal-subscription', {
@@ -123,6 +149,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
             throw error;
           }
 
+          console.log("Subscription saved successfully");
           toast({
             title: "Success!",
             description: `Successfully subscribed to ${planName}`,
@@ -175,7 +202,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
       });
     });
 
-  }, [planId, planName, user, onSuccess, toast]);
+  }, [isSdkReady, planId, planName, user, onSuccess, toast]);
 
   if (!user) {
     return (
@@ -185,7 +212,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
     );
   }
 
-  if (!window.paypal) {
+  if (!isSdkReady) {
     return (
       <div className="text-center text-gray-400">
         Loading PayPal...
