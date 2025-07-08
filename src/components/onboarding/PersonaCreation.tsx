@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Plus, User, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { createPersona, getUserPersonas, deletePersona, type Persona } from '@/lib/persona-operations';
+import { useCurrentUser } from '@/hooks/useProfile';
 
-interface Persona {
-  id: string;
+interface CurrentPersona {
   name: string;
   bio: string;
   lore: string;
-  avatar: string | null;
+  avatar_url: string | null;
 }
 
 interface PersonaCreationProps {
@@ -20,16 +21,37 @@ interface PersonaCreationProps {
 }
 
 const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
+  const { user } = useCurrentUser();
   const [personas, setPersonas] = useState<Persona[]>([]);
-  const [currentPersona, setCurrentPersona] = useState<Persona>({
-    id: '',
+  const [currentPersona, setCurrentPersona] = useState<CurrentPersona>({
     name: '',
     bio: '',
     lore: '',
-    avatar: null
+    avatar_url: null
   });
-  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingPersonas, setLoadingPersonas] = useState(true);
+
+  // Load existing personas on component mount
+  useEffect(() => {
+    const loadPersonas = async () => {
+      try {
+        const userPersonas = await getUserPersonas();
+        setPersonas(userPersonas);
+      } catch (error) {
+        console.error('Error loading personas:', error);
+        toast.error('Failed to load existing personas');
+      } finally {
+        setLoadingPersonas(false);
+      }
+    };
+
+    if (user) {
+      loadPersonas();
+    } else {
+      setLoadingPersonas(false);
+    }
+  }, [user]);
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -38,39 +60,58 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
       reader.onload = (e) => {
         setCurrentPersona(prev => ({
           ...prev,
-          avatar: e.target?.result as string
+          avatar_url: e.target?.result as string
         }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAddPersona = () => {
+  const handleAddPersona = async () => {
     if (!currentPersona.name.trim()) {
       toast.error('Please enter a persona name');
       return;
     }
 
-    const newPersona = {
-      ...currentPersona,
-      id: Date.now().toString()
-    };
+    if (!user) {
+      toast.error('You must be logged in to create personas');
+      return;
+    }
 
-    setPersonas(prev => [...prev, newPersona]);
-    setCurrentPersona({
-      id: '',
-      name: '',
-      bio: '',
-      lore: '',
-      avatar: null
-    });
-    setIsEditing(false);
-    toast.success('Persona added successfully!');
+    setIsLoading(true);
+    try {
+      const newPersona = await createPersona({
+        name: currentPersona.name.trim(),
+        bio: currentPersona.bio.trim() || null,
+        lore: currentPersona.lore.trim() || null,
+        avatar_url: currentPersona.avatar_url
+      });
+
+      setPersonas(prev => [newPersona, ...prev]);
+      setCurrentPersona({
+        name: '',
+        bio: '',
+        lore: '',
+        avatar_url: null
+      });
+      toast.success('Persona created successfully!');
+    } catch (error) {
+      console.error('Error creating persona:', error);
+      toast.error('Failed to create persona');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRemovePersona = (id: string) => {
-    setPersonas(prev => prev.filter(p => p.id !== id));
-    toast.success('Persona removed');
+  const handleRemovePersona = async (id: string) => {
+    try {
+      await deletePersona(id);
+      setPersonas(prev => prev.filter(p => p.id !== id));
+      toast.success('Persona removed');
+    } catch (error) {
+      console.error('Error removing persona:', error);
+      toast.error('Failed to remove persona');
+    }
   };
 
   const handleContinue = async () => {
@@ -79,18 +120,17 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      // TODO: Save personas to database
-      console.log('Saving personas:', personas);
-      onComplete();
-    } catch (error) {
-      console.error('Error saving personas:', error);
-      toast.error('Failed to save personas');
-    } finally {
-      setIsLoading(false);
-    }
+    // Personas are already saved to the database, just continue to next step
+    onComplete();
   };
+
+  if (loadingPersonas) {
+    return (
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-center py-12">
+        <div className="text-white">Loading personas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -112,7 +152,7 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
           {/* Persona Creation Form */}
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-white mb-4">
-              {isEditing ? 'Edit Persona' : 'Create New Persona'}
+              Create New Persona
             </h3>
 
             {/* Avatar Upload */}
@@ -132,9 +172,9 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
                   htmlFor="persona-avatar-upload"
                   className="cursor-pointer block w-20 h-20 mx-auto rounded-full border-2 border-dashed border-gray-600 hover:border-[#FF7A00] transition-colors duration-300 flex items-center justify-center overflow-hidden"
                 >
-                  {currentPersona.avatar ? (
+                  {currentPersona.avatar_url ? (
                     <img 
-                      src={currentPersona.avatar} 
+                      src={currentPersona.avatar_url} 
                       alt="Persona avatar preview" 
                       className="w-full h-full object-cover rounded-full"
                     />
@@ -224,9 +264,9 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
                   <Card key={persona.id} className="bg-[#121212]/80 border border-gray-600 p-4">
                     <div className="flex items-start gap-3">
                       <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-700">
-                        {persona.avatar ? (
+                        {persona.avatar_url ? (
                           <img 
-                            src={persona.avatar} 
+                            src={persona.avatar_url} 
                             alt={persona.name} 
                             className="w-full h-full object-cover"
                           />
