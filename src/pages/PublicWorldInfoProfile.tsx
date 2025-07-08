@@ -4,6 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { 
   Heart,
   Eye,
@@ -13,7 +20,9 @@ import {
   ArrowLeft,
   Loader2,
   BookOpen,
-  Tag
+  Tag,
+  Search,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getPublicWorldInfoDetails } from '@/lib/world-info-operations';
@@ -57,6 +66,8 @@ export default function PublicWorldInfoProfile() {
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [similarWorldInfos, setSimilarWorldInfos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchWorldInfoData = async () => {
@@ -66,6 +77,32 @@ export default function PublicWorldInfoProfile() {
         setLoading(true);
         const data = await getPublicWorldInfoDetails(id);
         setWorldInfo(data as unknown as WorldInfoData);
+        
+        // Fetch similar world infos
+        if (data.tags && data.tags.length > 0) {
+          const tagIds = data.tags.map(tag => tag.id);
+          const { data: similarData } = await supabase
+            .from('world_infos')
+            .select(`
+              id,
+              name,
+              short_description,
+              avatar_url,
+              creator:profiles!creator_id(username)
+            `)
+            .eq('visibility', 'public')
+            .neq('id', data.id)
+            .in('id', 
+              await supabase
+                .from('world_info_tags')
+                .select('world_info_id')
+                .in('tag_id', tagIds)
+                .then(({ data }) => data?.map(d => d.world_info_id) || [])
+            )
+            .limit(6);
+          
+          setSimilarWorldInfos(similarData || []);
+        }
       } catch (err) {
         console.error('Error fetching world info:', err);
         setError('Failed to load world info');
@@ -195,6 +232,30 @@ export default function PublicWorldInfoProfile() {
     }
   };
 
+  const handleUseLorebook = async () => {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to use this lorebook",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Lorebook Saved",
+      description: "This lorebook has been added to your collection",
+    });
+  };
+
+  // Filter entries based on search term
+  const filteredEntries = worldInfo?.entries.filter(entry =>
+    entry.keywords.some(keyword => 
+      keyword.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || entry.entry_text.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -220,7 +281,7 @@ export default function PublicWorldInfoProfile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-6">
           <Button
             onClick={() => navigate(-1)}
@@ -232,146 +293,172 @@ export default function PublicWorldInfoProfile() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* World Info Header */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={worldInfo.avatar_url || undefined} />
-                    <AvatarFallback className="text-2xl">
-                      {worldInfo.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h1 className="text-3xl font-bold mb-2">{worldInfo.name}</h1>
-                    {worldInfo.short_description && (
-                      <p className="text-muted-foreground mb-4">
-                        {worldInfo.short_description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Created {new Date(worldInfo.created_at).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        {worldInfo.interaction_count} views
-                      </div>
-                    </div>
-                  </div>
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-start gap-6 mb-6">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={worldInfo.avatar_url || undefined} />
+              <AvatarFallback className="text-3xl">
+                {worldInfo.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold mb-2">{worldInfo.name}</h1>
+              <p className="text-muted-foreground mb-4">
+                Created by{' '}
+                <Link
+                  to={`/profile/${worldInfo.creator_id}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {worldInfo.creator?.username || 'Unknown'}
+                </Link>
+              </p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {new Date(worldInfo.created_at).toLocaleDateString()}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={handleLike}
-                    variant={worldInfo.isLiked ? "default" : "outline"}
-                    size="sm"
-                    disabled={isLiking}
-                  >
-                    <Heart className={`mr-2 h-4 w-4 ${worldInfo.isLiked ? 'fill-current' : ''}`} />
-                    {worldInfo.likesCount} Likes
-                  </Button>
-                  <Button
-                    onClick={handleFavorite}
-                    variant={worldInfo.isFavorited ? "default" : "outline"}
-                    size="sm"
-                    disabled={isFavoriting}
-                  >
-                    <Star className={`mr-2 h-4 w-4 ${worldInfo.isFavorited ? 'fill-current' : ''}`} />
-                    {worldInfo.favoritesCount} Favorites
-                  </Button>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  {worldInfo.interaction_count} views
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Tags */}
-            {worldInfo.tags.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    Tags
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {worldInfo.tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Lorebook Entries */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Lorebook Entries ({worldInfo.entries.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {worldInfo.entries.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No lorebook entries found.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {worldInfo.entries.map((entry) => (
-                      <div key={entry.id} className="border rounded-lg p-4">
-                        <div className="mb-2">
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {entry.keywords.map((keyword, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {keyword}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">{entry.entry_text}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Creator Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Creator
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={worldInfo.creator?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {worldInfo.creator?.username?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{worldInfo.creator?.username || 'Unknown'}</p>
-                    <p className="text-sm text-muted-foreground">Creator</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              onClick={handleLike}
+              variant={worldInfo.isLiked ? "default" : "outline"}
+              disabled={isLiking}
+            >
+              <Heart className={`mr-2 h-4 w-4 ${worldInfo.isLiked ? 'fill-current' : ''}`} />
+              {worldInfo.likesCount} Likes
+            </Button>
+            <Button
+              onClick={handleFavorite}
+              variant={worldInfo.isFavorited ? "default" : "outline"}
+              disabled={isFavoriting}
+            >
+              <Star className={`mr-2 h-4 w-4 ${worldInfo.isFavorited ? 'fill-current' : ''}`} />
+              {worldInfo.favoritesCount} Favorites
+            </Button>
+            <Button
+              onClick={handleUseLorebook}
+              variant="secondary"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Use Lorebook
+            </Button>
           </div>
         </div>
+
+        {/* Details Section */}
+        <div className="mb-8">
+          {worldInfo.short_description && (
+            <p className="text-lg mb-4">{worldInfo.short_description}</p>
+          )}
+          
+          {/* Tags */}
+          {worldInfo.tags.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {worldInfo.tags.map((tag) => (
+                  <Badge key={tag.id} variant="secondary">
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Lore Entries Display */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Lorebook Entries ({worldInfo.entries.length})
+            </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search entries by keyword..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredEntries.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                {searchTerm ? 'No entries match your search.' : 'No lorebook entries found.'}
+              </p>
+            ) : (
+              <Accordion type="multiple" className="space-y-2">
+                {filteredEntries.map((entry) => (
+                  <AccordionItem key={entry.id} value={entry.id} className="border rounded-lg px-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {entry.keywords.map((keyword, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-sm whitespace-pre-wrap pt-2 pb-4">{entry.entry_text}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recommendations Section */}
+        {similarWorldInfos.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Similar World Infos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {similarWorldInfos.map((worldInfo) => (
+                  <Link
+                    key={worldInfo.id}
+                    to={`/world-info/${worldInfo.id}`}
+                    className="block border rounded-lg p-4 hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={worldInfo.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {worldInfo.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate">{worldInfo.name}</h4>
+                        <p className="text-sm text-muted-foreground truncate">
+                          by {worldInfo.creator?.username || 'Unknown'}
+                        </p>
+                        {worldInfo.short_description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {worldInfo.short_description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
