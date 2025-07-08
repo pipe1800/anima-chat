@@ -420,6 +420,7 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
     // Fetch like and favorite status if user is authenticated
     let isLiked = false;
     let isFavorited = false;
+    let isUsed = false;
     let likesCount = 0;
     let favoritesCount = 0;
 
@@ -443,6 +444,16 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
         .single();
 
       isFavorited = !!favoriteData;
+
+      // Check if user is using this world info
+      const { data: usageData } = await supabase
+        .from('world_info_users')
+        .select('id')
+        .eq('world_info_id', worldInfoId)
+        .eq('user_id', user.user.id)
+        .single();
+
+      isUsed = !!usageData;
     }
 
     // Get total likes and favorites count
@@ -465,6 +476,7 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
       tags,
       isLiked,
       isFavorited,
+      isUsed,
       likesCount,
       favoritesCount,
       creator: worldInfo.creator

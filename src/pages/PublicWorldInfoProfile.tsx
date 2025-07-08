@@ -53,6 +53,7 @@ interface WorldInfoData {
   } | null;
   isLiked: boolean;
   isFavorited: boolean;
+  isUsed: boolean;
   likesCount: number;
   favoritesCount: number;
 }
@@ -66,6 +67,7 @@ export default function PublicWorldInfoProfile() {
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [isUsingLorebook, setIsUsingLorebook] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [similarWorldInfos, setSimilarWorldInfos] = useState<any[]>([]);
 
@@ -233,6 +235,8 @@ export default function PublicWorldInfoProfile() {
   };
 
   const handleUseLorebook = async () => {
+    if (!worldInfo || isUsingLorebook) return;
+
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
       toast({
@@ -243,10 +247,58 @@ export default function PublicWorldInfoProfile() {
       return;
     }
 
-    toast({
-      title: "Lorebook Saved",
-      description: "This lorebook has been added to your collection",
-    });
+    setIsUsingLorebook(true);
+    try {
+      if (worldInfo.isUsed) {
+        // Remove from collection
+        const { error } = await supabase
+          .from('world_info_users')
+          .delete()
+          .eq('world_info_id', worldInfo.id)
+          .eq('user_id', user.user.id);
+
+        if (error) throw error;
+
+        setWorldInfo(prev => prev ? {
+          ...prev,
+          isUsed: false
+        } : null);
+
+        toast({
+          title: "Lorebook Removed",
+          description: "This lorebook has been removed from your collection",
+        });
+      } else {
+        // Add to collection
+        const { error } = await supabase
+          .from('world_info_users')
+          .insert({
+            world_info_id: worldInfo.id,
+            user_id: user.user.id
+          });
+
+        if (error) throw error;
+
+        setWorldInfo(prev => prev ? {
+          ...prev,
+          isUsed: true
+        } : null);
+
+        toast({
+          title: "Lorebook Added",
+          description: "This lorebook has been added to your collection",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling lorebook usage:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lorebook collection",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUsingLorebook(false);
+    }
   };
 
   // Filter entries based on search term
@@ -346,10 +398,11 @@ export default function PublicWorldInfoProfile() {
             </Button>
             <Button
               onClick={handleUseLorebook}
-              variant="secondary"
+              variant={worldInfo.isUsed ? "outline" : "secondary"}
+              disabled={isUsingLorebook}
             >
               <Download className="mr-2 h-4 w-4" />
-              Use Lorebook
+              {worldInfo.isUsed ? "Remove from Collection" : "Add to Collection"}
             </Button>
           </div>
         </div>

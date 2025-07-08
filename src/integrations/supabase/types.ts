@@ -631,6 +631,35 @@ export type Database = {
           },
         ]
       }
+      world_info_users: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          world_info_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          world_info_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_info_users_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_infos: {
         Row: {
           avatar_url: string | null
