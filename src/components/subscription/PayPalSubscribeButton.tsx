@@ -43,9 +43,16 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
     }
   };
 
+  // Check for PayPal SDK with better error handling
+  const checkPayPalSDK = () => {
+    console.log('Checking PayPal SDK...', { paypal: window.paypal });
+    return window.paypal;
+  };
+
   useEffect(() => {
-    if (!window.paypal) {
-      console.error('PayPal SDK not loaded');
+    const paypalSDK = checkPayPalSDK();
+    if (!paypalSDK) {
+      console.error('PayPal SDK not loaded. Please refresh the page.');
       return;
     }
 
