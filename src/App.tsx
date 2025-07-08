@@ -25,6 +25,7 @@ import CommunityGuidelines from "./pages/CommunityGuidelines";
 import CharacterProfile from "./pages/CharacterProfile";
 import PublicDiscover from "./pages/PublicDiscover";
 import PublicCharacterProfile from "./pages/PublicCharacterProfile";
+import PublicWorldInfoProfile from "./pages/PublicWorldInfoProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/characters" element={<PublicDiscover />} />
             <Route path="/characters/:characterId" element={<PublicCharacterProfile />} />
+            <Route path="/world-info/:id" element={<PublicWorldInfoProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/email-confirmation" element={<EmailConfirmation />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

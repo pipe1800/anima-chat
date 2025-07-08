@@ -364,3 +364,113 @@ export const removeWorldInfoTag = async (worldInfoId: string, tagId: number) => 
     throw error;
   }
 };
+
+// =============================================================================
+// PUBLIC WORLD INFO OPERATIONS
+// =============================================================================
+
+export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    const isAuthenticated = !!user.user;
+
+    // Fetch the world info with creator profile
+    const { data: worldInfo, error: worldInfoError } = await supabase
+      .from('world_infos')
+      .select(`
+        *,
+        creator:profiles!creator_id(username, avatar_url)
+      `)
+      .eq('id', worldInfoId)
+      .eq('visibility', 'public')
+      .single();
+
+    if (worldInfoError || !worldInfo) {
+      console.error('Error fetching world info:', worldInfoError);
+      throw new Error('World info not found or not public');
+    }
+
+    // Fetch entries
+    const { data: entries, error: entriesError } = await supabase
+      .from('world_info_entries')
+      .select('*')
+      .eq('world_info_id', worldInfoId)
+      .order('created_at', { ascending: false });
+
+    if (entriesError) {
+      console.error('Error fetching entries:', entriesError);
+      throw new Error('Failed to fetch entries');
+    }
+
+    // Fetch tags
+    const { data: worldInfoTags, error: tagsError } = await supabase
+      .from('world_info_tags')
+      .select(`
+        tag:tags(id, name)
+      `)
+      .eq('world_info_id', worldInfoId);
+
+    if (tagsError) {
+      console.error('Error fetching tags:', tagsError);
+      throw new Error('Failed to fetch tags');
+    }
+
+    const tags = worldInfoTags?.map(wt => wt.tag) || [];
+
+    // Fetch like and favorite status if user is authenticated
+    let isLiked = false;
+    let isFavorited = false;
+    let likesCount = 0;
+    let favoritesCount = 0;
+
+    if (isAuthenticated) {
+      // Check if user has liked this world info
+      const { data: likeData } = await supabase
+        .from('world_info_likes')
+        .select('id')
+        .eq('world_info_id', worldInfoId)
+        .eq('user_id', user.user.id)
+        .single();
+
+      isLiked = !!likeData;
+
+      // Check if user has favorited this world info
+      const { data: favoriteData } = await supabase
+        .from('world_info_favorites')
+        .select('id')
+        .eq('world_info_id', worldInfoId)
+        .eq('user_id', user.user.id)
+        .single();
+
+      isFavorited = !!favoriteData;
+    }
+
+    // Get total likes and favorites count
+    const { count: likesCountData } = await supabase
+      .from('world_info_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('world_info_id', worldInfoId);
+
+    const { count: favoritesCountData } = await supabase
+      .from('world_info_favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('world_info_id', worldInfoId);
+
+    likesCount = likesCountData || 0;
+    favoritesCount = favoritesCountData || 0;
+
+    return {
+      ...worldInfo,
+      entries: entries || [],
+      tags,
+      isLiked,
+      isFavorited,
+      likesCount,
+      favoritesCount,
+      creator: worldInfo.creator
+    };
+  } catch (error) {
+    console.error('Error in getPublicWorldInfoDetails:', error);
+    throw error;
+  }
+};
