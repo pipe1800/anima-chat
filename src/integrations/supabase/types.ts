@@ -254,8 +254,8 @@ export type Database = {
           credit_pack_id: string
           credits_granted: number
           id: string
+          paypal_order_id: string | null
           status: string
-          stripe_payment_intent_id: string | null
           user_id: string
         }
         Insert: {
@@ -264,8 +264,8 @@ export type Database = {
           credit_pack_id: string
           credits_granted: number
           id?: string
+          paypal_order_id?: string | null
           status?: string
-          stripe_payment_intent_id?: string | null
           user_id: string
         }
         Update: {
@@ -274,8 +274,8 @@ export type Database = {
           credit_pack_id?: string
           credits_granted?: number
           id?: string
+          paypal_order_id?: string | null
           status?: string
-          stripe_payment_intent_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -546,27 +546,27 @@ export type Database = {
           created_at: string
           current_period_end: string
           id: string
+          paypal_subscription_id: string | null
           plan_id: string
           status: string
-          stripe_subscription_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           current_period_end: string
           id?: string
+          paypal_subscription_id?: string | null
           plan_id: string
           status: string
-          stripe_subscription_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           current_period_end?: string
           id?: string
+          paypal_subscription_id?: string | null
           plan_id?: string
           status?: string
-          stripe_subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
