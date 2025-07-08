@@ -3,6 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import PayPalSubscribeButton from '@/components/subscription/PayPalSubscribeButton';
 import { 
   getActivePlans, 
   getActiveModels, 
@@ -208,20 +209,34 @@ const Subscription = () => {
                         </div>
                         
                         <div className="mt-6">
-                          <Button 
-                            onClick={() => handleSubscribe(plan.name)}
-                            className={`w-full py-3 ${
-                              isCurrentPlan
-                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600'
-                                : isPopular || isPremium
-                                  ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white' 
-                                  : 'bg-gray-700 hover:bg-gray-600 text-white'
-                            }`}
-                            disabled={isCurrentPlan}
-                          >
-                            {isCurrentPlan ? 'Current Plan' : 
-                             isFree ? 'Get Started' : 'Subscribe'}
-                          </Button>
+                          {isCurrentPlan ? (
+                            <Button 
+                              className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
+                              disabled={true}
+                            >
+                              Current Plan
+                            </Button>
+                          ) : isFree ? (
+                            <Button 
+                              onClick={() => handleSubscribe(plan.name)}
+                              className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white"
+                            >
+                              Get Started
+                            </Button>
+                          ) : (
+                            <PayPalSubscribeButton 
+                              planId={plan.id} 
+                              planName={plan.name}
+                              onSuccess={() => {
+                                toast({
+                                  title: "Success!",
+                                  description: `Successfully subscribed to ${plan.name}`,
+                                });
+                                // Refresh data to update UI
+                                window.location.reload();
+                              }}
+                            />
+                          )}
                         </div>
                       </CardContent>
                     </Card>
