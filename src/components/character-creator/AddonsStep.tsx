@@ -116,14 +116,14 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
 
   const calculateTotalCost = () => {
     let total = 0;
-    if (addons.dynamicWorldInfo) total += 30;
-    if (addons.enhancedMemory) total += 40;
-    if (addons.moodTracking) total += 5;
-    if (addons.clothingInventory) total += 5;
-    if (addons.locationTracking) total += 5;
-    if (addons.timeWeather) total += 5;
-    if (addons.relationshipStatus) total += 5;
-    if (addons.chainOfThought) total += 15;
+    if (addons.dynamicWorldInfo) total += 15;
+    if (addons.enhancedMemory) total += 25;
+    if (addons.moodTracking) total += 3;
+    if (addons.clothingInventory) total += 3;
+    if (addons.locationTracking) total += 3;
+    if (addons.timeWeather) total += 3;
+    if (addons.relationshipStatus) total += 3;
+    if (addons.chainOfThought) total += 10;
     if (addons.fewShotExamples) total += 20;
     return total;
   };
@@ -150,22 +150,22 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AddonCard
-                icon={BookOpen}
-                title="Dynamic World Info"
-                description="Build a 'lorebook' for your character. When you mention keywords in chat, relevant lore is automatically added to the AI's context, ensuring consistency."
-                creditCost="+30% credit cost"
-                enabled={addons.dynamicWorldInfo}
-                onToggle={(enabled) => handleToggle('dynamicWorldInfo', enabled)}
-              />
-              <AddonCard
-                icon={BrainCircuit}
-                title="Enhanced Memory"
-                description="Gives your character a long-term memory by creating a running summary of your conversation, preventing them from forgetting important details."
-                creditCost="+40% credit cost"
-                enabled={addons.enhancedMemory}
-                onToggle={(enabled) => handleToggle('enhancedMemory', enabled)}
-              />
+                <AddonCard
+                  icon={BookOpen}
+                  title="Dynamic World Info"
+                  description="Build a 'lorebook' for your character. When you mention keywords in chat, relevant lore is automatically added to the AI's context, ensuring consistency."
+                  creditCost="+15% credit cost"
+                  enabled={addons.dynamicWorldInfo}
+                  onToggle={(enabled) => handleToggle('dynamicWorldInfo', enabled)}
+                />
+                <AddonCard
+                  icon={BrainCircuit}
+                  title="Enhanced Memory"
+                  description="Gives your character a long-term memory by creating a running summary of your conversation, preventing them from forgetting important details."
+                  creditCost="+25% credit cost"
+                  enabled={addons.enhancedMemory}
+                  onToggle={(enabled) => handleToggle('enhancedMemory', enabled)}
+                />
             </CardContent>
           </Card>
 
@@ -183,7 +183,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Smile}
                 title="Mood Tracking"
                 description="Character's emotional state will evolve and be remembered."
-                creditCost="+5% credit cost"
+                creditCost="+3% credit cost"
                 enabled={addons.moodTracking}
                 onToggle={(enabled) => handleToggle('moodTracking', enabled)}
               />
@@ -191,7 +191,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Shirt}
                 title="Clothing & Inventory"
                 description="Keeps track of what the character is wearing and carrying."
-                creditCost="+5% credit cost"
+                creditCost="+3% credit cost"
                 enabled={addons.clothingInventory}
                 onToggle={(enabled) => handleToggle('clothingInventory', enabled)}
               />
@@ -199,7 +199,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={MapPin}
                 title="Location Tracking"
                 description="Remembers the character's current location and environment."
-                creditCost="+5% credit cost"
+                creditCost="+3% credit cost"
                 enabled={addons.locationTracking}
                 onToggle={(enabled) => handleToggle('locationTracking', enabled)}
               />
@@ -207,7 +207,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Cloud}
                 title="Time & Weather"
                 description="The character will be aware of the in-story time and weather."
-                creditCost="+5% credit cost"
+                creditCost="+3% credit cost"
                 enabled={addons.timeWeather}
                 onToggle={(enabled) => handleToggle('timeWeather', enabled)}
               />
@@ -215,7 +215,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Heart}
                 title="Relationship Status"
                 description="Tracks the evolving relationship between you and the character."
-                creditCost="+5% credit cost"
+                creditCost="+3% credit cost"
                 enabled={addons.relationshipStatus}
                 onToggle={(enabled) => handleToggle('relationshipStatus', enabled)}
               />
@@ -236,7 +236,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Lightbulb}
                 title="Chain-of-Thought"
                 description="Prompts the AI to 'think step-by-step', improving logic and reasoning for complex scenarios."
-                creditCost="+15% credit cost"
+                creditCost="+10% credit cost"
                 enabled={addons.chainOfThought}
                 onToggle={(enabled) => handleToggle('chainOfThought', enabled)}
               />
