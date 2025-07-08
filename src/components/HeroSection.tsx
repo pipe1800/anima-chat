@@ -8,29 +8,59 @@ const HeroSection = () => {
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-radial from-[#FF7A00]/5 to-transparent opacity-50"></div>
       
-      {/* Logo */}
-      <div className="absolute top-6 left-6 z-20">
-        <img 
-          src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-          alt="Anima AI Chat" 
-          className="h-16 w-auto"
-        />
-      </div>
+      {/* Sticky Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-[#1a1a2e]/95 backdrop-blur-sm border-b border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img 
+                src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+                alt="Anima AI Chat" 
+                className="h-12 w-auto"
+              />
+            </div>
 
-      {/* Login Button */}
-      <div className="absolute top-6 right-6 z-20">
-        <Link to="/auth">
-          <Button 
-            variant="outline" 
-            className="bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
-          >
-            Login
-          </Button>
-        </Link>
-      </div>
+            {/* Navigation Links */}
+            <div className="flex items-center space-x-4">
+              <Link to="/">
+                <Button 
+                  variant="ghost" 
+                  className="text-[#FF7A00] hover:text-white hover:bg-[#FF7A00]/10 font-medium"
+                >
+                  Home
+                </Button>
+              </Link>
+              <Link to="/characters">
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
+                >
+                  Characters
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button 
+                  variant="outline" 
+                  className="bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
+                >
+                  Login
+                </Button>
+              </Link>
+              <Link to="/auth?mode=signup">
+                <Button 
+                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-medium transition-colors"
+                >
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
       
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen pt-2 px-4 sm:px-6">
+      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] pt-2 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
           {/* Left Column - Video */}
           <div className="relative flex justify-center lg:justify-start">
