@@ -117,9 +117,6 @@ const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
 
           {/* Bio */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Bio
-            </label>
             <Textarea
               placeholder="Tell us a bit about yourself..."
               value={bio}

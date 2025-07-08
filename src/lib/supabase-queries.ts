@@ -501,6 +501,141 @@ export const getDailyMessageCount = async (userId: string) => {
   }
 }
 
+// =============================================================================
+// CHARACTER FAVORITES QUERIES
+// =============================================================================
+
+/**
+ * Toggle character favorite
+ */
+export const toggleCharacterFavorite = async (userId: string, characterId: string) => {
+  // Check if already favorited
+  const { data: existing } = await supabase
+    .from('character_favorites')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('character_id', characterId)
+    .maybeSingle()
+
+  if (existing) {
+    // Remove favorite
+    const { error } = await supabase
+      .from('character_favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('character_id', characterId)
+    
+    return { data: { favorited: false }, error }
+  } else {
+    // Add favorite
+    const { error } = await supabase
+      .from('character_favorites')
+      .insert({ user_id: userId, character_id: characterId })
+    
+    return { data: { favorited: true }, error }
+  }
+}
+
+/**
+ * Check if character is favorited by user
+ */
+export const isCharacterFavorited = async (userId: string, characterId: string) => {
+  const { data, error } = await supabase
+    .from('character_favorites')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('character_id', characterId)
+    .maybeSingle()
+
+  return { data: !!data, error }
+}
+
+/**
+ * Get recommended characters based on tags and popularity
+ */
+export const getRecommendedCharacters = async (tags: string[], limit = 4) => {
+  try {
+    let charactersQuery = supabase
+      .from('characters')
+      .select(`
+        id,
+        name,
+        short_description,
+        avatar_url,
+        interaction_count,
+        created_at,
+        character_definitions!inner(greeting)
+      `)
+      .eq('visibility', 'public')
+
+    // If we have tags, try to filter by them first
+    if (tags.length > 0) {
+      const { data: tagIds } = await supabase
+        .from('tags')
+        .select('id')
+        .in('name', tags)
+
+      if (tagIds && tagIds.length > 0) {
+        const { data: characterIds } = await supabase
+          .from('character_tags')
+          .select('character_id')
+          .in('tag_id', tagIds.map(tag => tag.id))
+
+        if (characterIds && characterIds.length > 0) {
+          charactersQuery = charactersQuery.in('id', characterIds.map(ct => ct.character_id))
+        }
+      }
+    }
+
+    const { data: characters, error } = await charactersQuery
+      .order('interaction_count', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+
+    // If we don't have enough characters from tags, fallback to most popular
+    if (!characters || characters.length < limit) {
+      const { data: popularCharacters, error: popularError } = await supabase
+        .from('characters')
+        .select(`
+          id,
+          name,
+          short_description,
+          avatar_url,
+          interaction_count,
+          created_at,
+          character_definitions!inner(greeting)
+        `)
+        .eq('visibility', 'public')
+        .order('interaction_count', { ascending: false })
+        .limit(limit)
+
+      if (popularError) throw popularError
+      
+      // Combine and deduplicate
+      const allCharacters = characters || []
+      const existingIds = new Set(allCharacters.map(c => c.id))
+      
+      popularCharacters?.forEach(char => {
+        if (!existingIds.has(char.id) && allCharacters.length < limit) {
+          allCharacters.push(char)
+        }
+      })
+
+      return { data: allCharacters.slice(0, limit), error: null }
+    }
+
+    return { data: characters, error: null }
+  } catch (error) {
+    console.error('Error getting recommended characters:', error)
+    return { data: [], error }
+  }
+}
+
+/**
+ * Get user's favorite characters
+ */
+
 /**
  * Get user's favorite characters
  */
