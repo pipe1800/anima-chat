@@ -66,11 +66,17 @@ const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
     <div className="w-full max-w-md mx-auto">
       <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-8">
         <h2 className="text-3xl font-bold text-white mb-2 text-center">
-          Step 2: Forge Your Identity
+          Step 2: Your Account Profile
         </h2>
-        <p className="text-gray-400 text-center mb-6">
+        <p className="text-gray-400 text-center mb-4">
           Personalize your profile (optional)
         </p>
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-6">
+          <p className="text-orange-200 text-sm text-center">
+            <strong>Note:</strong> This profile information is for your account only and won't be shared with AI characters. 
+            In the next step, you'll create personas that the AI will interact with during conversations.
+          </p>
+        </div>
 
         <div className="space-y-6">
           {/* Avatar Upload */}

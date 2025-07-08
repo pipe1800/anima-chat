@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import VibeSelection from '@/components/onboarding/VibeSelection';
 import ProfileSetup from '@/components/onboarding/ProfileSetup';
+import PersonaCreation from '@/components/onboarding/PersonaCreation';
 import WelcomeModal from '@/components/WelcomeModal';
 import CharacterSelection from '@/components/onboarding/CharacterSelection';
 import OnboardingProgressBar from '@/components/onboarding/OnboardingProgressBar';
@@ -93,6 +94,14 @@ const Onboarding = () => {
     setCurrentStep(2);
   };
 
+  const handlePersonaComplete = () => {
+    setCurrentStep(3);
+  };
+
+  const handleSkipPersona = () => {
+    setCurrentStep(3);
+  };
+
   const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
     
@@ -139,7 +148,7 @@ const Onboarding = () => {
       {!showWelcome && (
         <OnboardingProgressBar
           currentStep={currentStep}
-          totalSteps={3}
+          totalSteps={4}
           onNext={handleNext}
           onBack={handleBack}
           canGoNext={getCanGoNext()}
@@ -163,6 +172,13 @@ const Onboarding = () => {
         )}
 
         {!showWelcome && currentStep === 2 && (
+          <PersonaCreation
+            onComplete={handlePersonaComplete}
+            onSkip={handleSkipPersona}
+          />
+        )}
+
+        {!showWelcome && currentStep === 3 && (
           <CharacterSelection
             selectedVibes={selectedVibes}
             onCharacterSelect={handleCharacterSelect}
