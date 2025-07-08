@@ -1,0 +1,275 @@
+import { supabase } from '@/integrations/supabase/client';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+
+export interface WorldInfoCreationData {
+  name: string;
+  short_description?: string;
+  avatar_url?: string;
+  visibility: 'public' | 'unlisted' | 'private';
+}
+
+export interface WorldInfoEntryData {
+  keywords: string[];
+  entry_text: string;
+}
+
+export const createWorldInfo = async (worldInfoData: WorldInfoCreationData) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const worldInfoInsert: TablesInsert<'world_infos'> = {
+      creator_id: user.user.id,
+      name: worldInfoData.name,
+      short_description: worldInfoData.short_description,
+      avatar_url: worldInfoData.avatar_url,
+      visibility: worldInfoData.visibility
+    };
+
+    const { data: worldInfo, error } = await supabase
+      .from('world_infos')
+      .insert(worldInfoInsert)
+      .select()
+      .single();
+
+    if (error || !worldInfo) {
+      console.error('Error creating world info:', error);
+      throw new Error('Failed to create world info');
+    }
+
+    return worldInfo;
+  } catch (error) {
+    console.error('Error in createWorldInfo:', error);
+    throw error;
+  }
+};
+
+export const getWorldInfosByUser = async () => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const { data: worldInfos, error } = await supabase
+      .from('world_infos')
+      .select('*')
+      .eq('creator_id', user.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching world infos:', error);
+      throw new Error('Failed to fetch world infos');
+    }
+
+    return worldInfos || [];
+  } catch (error) {
+    console.error('Error in getWorldInfosByUser:', error);
+    throw error;
+  }
+};
+
+export const getWorldInfoWithEntries = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // Get world info
+    const { data: worldInfo, error: worldInfoError } = await supabase
+      .from('world_infos')
+      .select('*')
+      .eq('id', worldInfoId)
+      .single();
+
+    if (worldInfoError || !worldInfo) {
+      console.error('Error fetching world info:', worldInfoError);
+      throw new Error('Failed to fetch world info');
+    }
+
+    // Get entries
+    const { data: entries, error: entriesError } = await supabase
+      .from('world_info_entries')
+      .select('*')
+      .eq('world_info_id', worldInfoId)
+      .order('created_at', { ascending: false });
+
+    if (entriesError) {
+      console.error('Error fetching world info entries:', entriesError);
+      throw new Error('Failed to fetch world info entries');
+    }
+
+    return {
+      ...worldInfo,
+      entries: entries || []
+    };
+  } catch (error) {
+    console.error('Error in getWorldInfoWithEntries:', error);
+    throw error;
+  }
+};
+
+export const updateWorldInfo = async (worldInfoId: string, worldInfoData: WorldInfoCreationData) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const worldInfoUpdate: TablesUpdate<'world_infos'> = {
+      name: worldInfoData.name,
+      short_description: worldInfoData.short_description,
+      avatar_url: worldInfoData.avatar_url,
+      visibility: worldInfoData.visibility
+    };
+
+    const { data: worldInfo, error } = await supabase
+      .from('world_infos')
+      .update(worldInfoUpdate)
+      .eq('id', worldInfoId)
+      .eq('creator_id', user.user.id) // Ensure user owns the world info
+      .select()
+      .single();
+
+    if (error || !worldInfo) {
+      console.error('Error updating world info:', error);
+      throw new Error('Failed to update world info');
+    }
+
+    return worldInfo;
+  } catch (error) {
+    console.error('Error in updateWorldInfo:', error);
+    throw error;
+  }
+};
+
+export const deleteWorldInfo = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('world_infos')
+      .delete()
+      .eq('id', worldInfoId)
+      .eq('creator_id', user.user.id); // Ensure user owns the world info
+
+    if (error) {
+      console.error('Error deleting world info:', error);
+      throw new Error('Failed to delete world info');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteWorldInfo:', error);
+    throw error;
+  }
+};
+
+export const addWorldInfoEntry = async (worldInfoId: string, entryData: WorldInfoEntryData) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // First verify the user owns the world info
+    const { data: worldInfo } = await supabase
+      .from('world_infos')
+      .select('creator_id')
+      .eq('id', worldInfoId)
+      .single();
+
+    if (!worldInfo || worldInfo.creator_id !== user.user.id) {
+      throw new Error('Unauthorized to add entries to this world info');
+    }
+
+    const entryInsert: TablesInsert<'world_info_entries'> = {
+      world_info_id: worldInfoId,
+      keywords: entryData.keywords,
+      entry_text: entryData.entry_text
+    };
+
+    const { data: entry, error } = await supabase
+      .from('world_info_entries')
+      .insert(entryInsert)
+      .select()
+      .single();
+
+    if (error || !entry) {
+      console.error('Error adding world info entry:', error);
+      throw new Error('Failed to add world info entry');
+    }
+
+    return entry;
+  } catch (error) {
+    console.error('Error in addWorldInfoEntry:', error);
+    throw error;
+  }
+};
+
+export const updateWorldInfoEntry = async (entryId: string, entryData: WorldInfoEntryData) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // First verify the user owns the world info that contains this entry
+    const { data: entry } = await supabase
+      .from('world_info_entries')
+      .select('world_info_id, world_infos!inner(creator_id)')
+      .eq('id', entryId)
+      .single();
+
+    if (!entry || entry.world_infos.creator_id !== user.user.id) {
+      throw new Error('Unauthorized to update this entry');
+    }
+
+    const entryUpdate: TablesUpdate<'world_info_entries'> = {
+      keywords: entryData.keywords,
+      entry_text: entryData.entry_text
+    };
+
+    const { data: updatedEntry, error } = await supabase
+      .from('world_info_entries')
+      .update(entryUpdate)
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error || !updatedEntry) {
+      console.error('Error updating world info entry:', error);
+      throw new Error('Failed to update world info entry');
+    }
+
+    return updatedEntry;
+  } catch (error) {
+    console.error('Error in updateWorldInfoEntry:', error);
+    throw error;
+  }
+};
+
+export const deleteWorldInfoEntry = async (entryId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // First verify the user owns the world info that contains this entry
+    const { data: entry } = await supabase
+      .from('world_info_entries')
+      .select('world_info_id, world_infos!inner(creator_id)')
+      .eq('id', entryId)
+      .single();
+
+    if (!entry || entry.world_infos.creator_id !== user.user.id) {
+      throw new Error('Unauthorized to delete this entry');
+    }
+
+    const { error } = await supabase
+      .from('world_info_entries')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) {
+      console.error('Error deleting world info entry:', error);
+      throw new Error('Failed to delete world info entry');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteWorldInfoEntry:', error);
+    throw error;
+  }
+};
