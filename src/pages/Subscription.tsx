@@ -149,7 +149,8 @@ const Subscription = () => {
                   const isPopular = plan.name === 'True Fan';
                   const isPremium = plan.name === 'The Whale';
                   const isFree = plan.price_monthly === 0;
-                  const isCurrentPlan = userSubscription?.plan?.name === plan.name;
+                  // If user has no subscription and this is Guest Pass, or if their subscription matches this plan
+                  const isCurrentPlan = (!userSubscription && isFree) || userSubscription?.plan?.name === plan.name;
                   
                   return (
                     <Card 
