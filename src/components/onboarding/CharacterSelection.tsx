@@ -15,6 +15,7 @@ interface Character {
   avatar_url: string;
   interaction_count: number;
   character_definitions: Array<{ greeting: string }>;
+  likes_count?: number;
   favorited?: boolean;
 }
 
@@ -162,8 +163,6 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelec
                     {character.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                {/* Pulse animation */}
-                <div className="absolute inset-0 w-24 h-24 mx-auto rounded-full bg-[#FF7A00]/20 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
 
               {/* Character Info */}
@@ -174,10 +173,13 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelec
                 {character.short_description || character.character_definitions?.[0]?.greeting || 'A mysterious character waiting to chat with you.'}
               </p>
 
-              {/* Interaction count */}
-              <div className="mt-4 flex justify-center">
+              {/* Likes and Messages */}
+              <div className="mt-4 flex justify-center gap-3">
                 <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full">
-                  {character.interaction_count} interactions
+                  {character.likes_count || 0} likes
+                </span>
+                <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full">
+                  {character.interaction_count} messages
                 </span>
               </div>
             </div>

@@ -622,10 +622,40 @@ export const getRecommendedCharacters = async (tags: string[], limit = 4) => {
         }
       })
 
-      return { data: allCharacters.slice(0, limit), error: null }
+      // Get likes count for all characters
+      const charactersWithCounts = await Promise.all(
+        allCharacters.map(async (character) => {
+          const { count: likesCount } = await supabase
+            .from('character_likes')
+            .select('id', { count: 'exact' })
+            .eq('character_id', character.id)
+
+          return {
+            ...character,
+            likes_count: likesCount || 0
+          }
+        })
+      )
+
+      return { data: charactersWithCounts.slice(0, limit), error: null }
     }
 
-    return { data: characters, error: null }
+    // Get likes count for tag-filtered characters
+    const charactersWithCounts = await Promise.all(
+      characters.map(async (character) => {
+        const { count: likesCount } = await supabase
+          .from('character_likes')
+          .select('id', { count: 'exact' })
+          .eq('character_id', character.id)
+
+        return {
+          ...character,
+          likes_count: likesCount || 0
+        }
+      })
+    )
+
+    return { data: charactersWithCounts, error: null }
   } catch (error) {
     console.error('Error getting recommended characters:', error)
     return { data: [], error }
