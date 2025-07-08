@@ -31,6 +31,15 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    // Load saved email if remember me was previously checked
+    const savedEmail = localStorage.getItem('supabase.auth.remember.email');
+    const rememberFlag = localStorage.getItem('supabase.auth.remember');
+    
+    if (savedEmail && rememberFlag === 'true') {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+
     // Check if user is already logged in
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -151,12 +160,15 @@ const Auth = () => {
     if (error) {
       console.log('Login error:', error.message);
       setError(`Login failed: ${error.message}`);
-    } else if (rememberMe) {
-      // Set session to persist for 30 days if remember me is checked
-      localStorage.setItem('supabase.auth.remember', 'true');
     } else {
-      // Clear remember flag if not checked
-      localStorage.removeItem('supabase.auth.remember');
+      // Handle remember me functionality
+      if (rememberMe) {
+        localStorage.setItem('supabase.auth.remember', 'true');
+        localStorage.setItem('supabase.auth.remember.email', email);
+      } else {
+        localStorage.removeItem('supabase.auth.remember');
+        localStorage.removeItem('supabase.auth.remember.email');
+      }
     }
     setLoading(false);
   };
