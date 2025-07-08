@@ -249,7 +249,7 @@
                 </p>
                 
                 <div class="button-container">
-                    <a href="{{VERIFICATION_LINK}}" class="verification-button">
+                    <a href="{{ .ConfirmationURL }}" class="verification-button">
                         Verify My Email Address
                     </a>
                 </div>
@@ -285,9 +285,9 @@
             </div>
             
             <div class="footer-links">
-                <a href="{{SUPPORT_URL}}" class="footer-link">Support</a>
-                <a href="{{PRIVACY_URL}}" class="footer-link">Privacy Policy</a>
-                <a href="{{TERMS_URL}}" class="footer-link">Terms of Service</a>
+                <a href="{{ .SiteURL }}/support" class="footer-link">Support</a>
+                <a href="{{ .SiteURL }}/privacy" class="footer-link">Privacy Policy</a>
+                <a href="{{ .SiteURL }}/terms" class="footer-link">Terms of Service</a>
             </div>
             
             <div style="margin-top: 20px; font-size: 12px; color: #666;">
