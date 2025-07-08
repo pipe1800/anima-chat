@@ -67,6 +67,8 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
         // Log current domain for debugging
         console.log("Current domain:", window.location.hostname);
         console.log("Current origin:", window.location.origin);
+        console.log("Client ID being used:", clientId);
+        console.log("Client ID length:", clientId.length);
         
         // Try basic SDK load first to test if client ID is the issue
         script.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons&debug=true`;
