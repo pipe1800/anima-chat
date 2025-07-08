@@ -108,10 +108,48 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
     ...data.addons
   });
 
+  // Calculate if any add-ons are currently enabled
+  const hasActiveAddons = () => {
+    return Object.values(addons).some(value => value === true);
+  };
+
+  const [addonsEnabled, setAddonsEnabled] = useState<boolean>(hasActiveAddons());
+
+  // Keep master switch in sync when component loads or addons change
+  useEffect(() => {
+    setAddonsEnabled(hasActiveAddons());
+  }, []);
+
   const handleToggle = (key: keyof AddonData, value: boolean) => {
     const updatedAddons = { ...addons, [key]: value };
     setAddons(updatedAddons);
     onUpdate({ addons: updatedAddons });
+
+    // Auto-enable master switch if any addon is enabled
+    if (value && !addonsEnabled) {
+      setAddonsEnabled(true);
+    }
+
+    // Auto-disable master switch if all addons are disabled
+    const hasAnyEnabled = Object.values(updatedAddons).some(val => val === true);
+    if (!hasAnyEnabled && addonsEnabled) {
+      setAddonsEnabled(false);
+    }
+  };
+
+  const handleMasterToggle = (value: boolean) => {
+    setAddonsEnabled(value);
+    
+    // If turning off master switch, disable all addons
+    if (!value) {
+      const allDisabledAddons = Object.keys(addons).reduce((acc, key) => {
+        acc[key as keyof AddonData] = false;
+        return acc;
+      }, {} as AddonData);
+      
+      setAddons(allDisabledAddons);
+      onUpdate({ addons: allDisabledAddons });
+    }
   };
 
   const calculateTotalCost = () => {
@@ -141,6 +179,27 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
         </div>
 
         <div className="space-y-6 mb-20">
+          {/* Master Switch */}
+          <Card className="bg-[#1a1a1a] border-gray-700">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-white mb-1">Enable Character Add-ons</h3>
+                  <p className="text-sm text-gray-400">
+                    Master control for all character enhancement features
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  <Switch
+                    checked={addonsEnabled}
+                    onCheckedChange={handleMasterToggle}
+                    className="scale-125"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Main Add-ons */}
           <Card className="bg-[#1a1a1a] border-gray-700">
             <CardHeader>
@@ -157,6 +216,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   creditCost="+15% credit cost"
                   enabled={addons.dynamicWorldInfo}
                   onToggle={(enabled) => handleToggle('dynamicWorldInfo', enabled)}
+                  disabled={!addonsEnabled}
                 />
                 <AddonCard
                   icon={BrainCircuit}
@@ -165,6 +225,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   creditCost="+25% credit cost"
                   enabled={addons.enhancedMemory}
                   onToggle={(enabled) => handleToggle('enhancedMemory', enabled)}
+                  disabled={!addonsEnabled}
                 />
             </CardContent>
           </Card>
@@ -186,6 +247,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.moodTracking}
                 onToggle={(enabled) => handleToggle('moodTracking', enabled)}
+                disabled={!addonsEnabled}
               />
               <AddonCard
                 icon={Shirt}
@@ -194,6 +256,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.clothingInventory}
                 onToggle={(enabled) => handleToggle('clothingInventory', enabled)}
+                disabled={!addonsEnabled}
               />
               <AddonCard
                 icon={MapPin}
@@ -202,6 +265,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.locationTracking}
                 onToggle={(enabled) => handleToggle('locationTracking', enabled)}
+                disabled={!addonsEnabled}
               />
               <AddonCard
                 icon={Cloud}
@@ -210,6 +274,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.timeWeather}
                 onToggle={(enabled) => handleToggle('timeWeather', enabled)}
+                disabled={!addonsEnabled}
               />
               <AddonCard
                 icon={Heart}
@@ -218,6 +283,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.relationshipStatus}
                 onToggle={(enabled) => handleToggle('relationshipStatus', enabled)}
+                disabled={!addonsEnabled}
               />
             </CardContent>
           </Card>
@@ -239,6 +305,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+10% credit cost"
                 enabled={addons.chainOfThought}
                 onToggle={(enabled) => handleToggle('chainOfThought', enabled)}
+                disabled={!addonsEnabled}
               />
               <AddonCard
                 icon={BookOpen}
@@ -247,6 +314,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+20% credit cost"
                 enabled={addons.fewShotExamples}
                 onToggle={(enabled) => handleToggle('fewShotExamples', enabled)}
+                disabled={!addonsEnabled}
               />
             </CardContent>
           </Card>
