@@ -149,19 +149,28 @@ const Subscription = () => {
                   const isPopular = plan.name === 'True Fan';
                   const isPremium = plan.name === 'The Whale';
                   const isFree = plan.price_monthly === 0;
+                  const isCurrentPlan = userSubscription?.plan?.name === plan.name;
                   
                   return (
                     <Card 
                       key={plan.id} 
-                      className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
+                      className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col ${
                         isPopular ? 'ring-2 ring-[#FF7A00]' : ''
-                      }`}
+                      } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
                     >
-                      {isPopular && (
+                      {isPopular && !isCurrentPlan && (
                         <div className="absolute top-4 right-4">
                           <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Crown className="w-3 h-3" />
                             Popular
+                          </div>
+                        </div>
+                      )}
+                      
+                      {isCurrentPlan && (
+                        <div className="absolute top-4 right-4">
+                          <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+                            Current Plan
                           </div>
                         </div>
                       )}
@@ -182,31 +191,37 @@ const Subscription = () => {
                         </div>
                       </CardHeader>
                       
-                      <CardContent className="space-y-4">
+                      <CardContent className="flex-1 flex flex-col">
                         {/* Features List */}
-                        {plan.features?.features && Array.isArray(plan.features.features) && (
-                          <div className="space-y-2">
-                            {plan.features.features.map((feature: string, idx: number) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
-                                <span className="text-gray-300 text-sm">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex-1">
+                          {plan.features?.features && Array.isArray(plan.features.features) && (
+                            <div className="space-y-2">
+                              {plan.features.features.map((feature: string, idx: number) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                                  <span className="text-gray-300 text-sm">{feature}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         
-                        <Button 
-                          onClick={() => handleSubscribe(plan.name)}
-                          className={`w-full ${
-                            isPopular || isPremium
-                              ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
-                              : 'bg-gray-700 hover:bg-gray-600'
-                          } text-white py-3`}
-                          disabled={userSubscription?.plan?.name === plan.name}
-                        >
-                          {userSubscription?.plan?.name === plan.name ? 'Current Plan' : 
-                           isFree ? 'Get Started' : 'Subscribe'}
-                        </Button>
+                        <div className="mt-6">
+                          <Button 
+                            onClick={() => handleSubscribe(plan.name)}
+                            className={`w-full py-3 ${
+                              isCurrentPlan
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600'
+                                : isPopular || isPremium
+                                  ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white' 
+                                  : 'bg-gray-700 hover:bg-gray-600 text-white'
+                            }`}
+                            disabled={isCurrentPlan}
+                          >
+                            {isCurrentPlan ? 'Current Plan' : 
+                             isFree ? 'Get Started' : 'Subscribe'}
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   );
