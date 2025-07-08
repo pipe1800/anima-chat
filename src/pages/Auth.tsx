@@ -249,15 +249,23 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-[#121212] relative overflow-hidden flex items-center justify-center">
-      {/* Logo */}
+      {/* Back Button */}
       <div className="absolute top-6 left-6 z-20">
-        <Link to="/" className="cursor-pointer">
-          <img 
-            src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-            alt="Anima AI Chat" 
-            className="h-16 w-auto hover:opacity-80 transition-opacity"
-          />
+        <Link to="/" className="flex items-center text-white hover:text-[#FF7A00] transition-colors">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
         </Link>
+      </div>
+      
+      {/* Logo */}
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
+        <img 
+          src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+          alt="Anima AI Chat" 
+          className="h-16 w-auto"
+        />
       </div>
 
       {/* Futuristic Background Animation */}
