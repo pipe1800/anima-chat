@@ -28,7 +28,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
   const { toast } = useToast();
 
   useEffect(() => {
-    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    const clientId = process.env.VITE_PAYPAL_CLIENT_ID;
     console.log("Attempting to use PayPal Client ID:", clientId);
 
     if (!clientId) {
