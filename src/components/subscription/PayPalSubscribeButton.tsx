@@ -63,19 +63,27 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
 
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons`;
+        // Try basic SDK load first to test if client ID is the issue
+        script.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons&debug=true`;
         script.async = true;
         
         console.log("Loading PayPal SDK from:", script.src);
         
         script.onload = () => {
           console.log("PayPal SDK script has loaded successfully.");
-          setSdkState({ loading: false, ready: true });
+          if (window.paypal) {
+            console.log("PayPal object is available:", typeof window.paypal);
+            setSdkState({ loading: false, ready: true });
+          } else {
+            console.error("PayPal object not available after script load");
+            setSdkState({ loading: false, ready: false });
+          }
         };
         
         script.onerror = (error) => {
           console.error("Failed to load the PayPal SDK script:", error);
           console.error("Script src was:", script.src);
+          console.error("This usually means the PayPal Client ID is invalid or the app doesn't have proper permissions");
           setSdkState({ loading: false, ready: false });
         };
         
