@@ -205,6 +205,7 @@ const ForgotPassword = () => {
                     src="/lovable-uploads/da9041fd-b61d-48b0-b0c3-f1d319746d61.png"
                     alt="Reset Password Character"
                     className="w-full h-auto"
+                    loading="eager"
                   />
                   
                   {/* Subtle overlay for theme integration */}
