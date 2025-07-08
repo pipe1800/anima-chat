@@ -247,6 +247,77 @@ export type Database = {
           },
         ]
       }
+      credit_pack_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          credit_pack_id: string
+          credits_granted: number
+          id: string
+          status: string
+          stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          credit_pack_id: string
+          credits_granted: number
+          id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          credit_pack_id?: string
+          credits_granted?: number
+          id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_pack_purchases_credit_pack_id_fkey"
+            columns: ["credit_pack_id"]
+            isOneToOne: false
+            referencedRelation: "credit_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_packs: {
+        Row: {
+          created_at: string
+          credits_granted: number
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          credits_granted: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          credits_granted?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
       credits: {
         Row: {
           balance: number
@@ -299,6 +370,47 @@ export type Database = {
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      models: {
+        Row: {
+          created_at: string
+          credit_multiplier: number
+          description: string | null
+          id: string
+          is_active: boolean
+          is_nsfw_compatible: boolean
+          min_plan_id: string | null
+          tier_name: string
+        }
+        Insert: {
+          created_at?: string
+          credit_multiplier?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_nsfw_compatible?: boolean
+          min_plan_id?: string | null
+          tier_name: string
+        }
+        Update: {
+          created_at?: string
+          credit_multiplier?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_nsfw_compatible?: boolean
+          min_plan_id?: string | null
+          tier_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "models_min_plan_id_fkey"
+            columns: ["min_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
