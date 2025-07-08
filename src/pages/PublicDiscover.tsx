@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { DiscoverControlBar } from '@/components/discover/DiscoverControlBar';
-import { CharacterGrid } from '@/components/discover/CharacterGrid';
+import { PublicCharacterGrid } from '@/components/discover/PublicCharacterGrid';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 
@@ -143,7 +143,7 @@ const PublicDiscover = () => {
         )}
 
         {/* Character Grid */}
-        <CharacterGrid 
+        <PublicCharacterGrid 
           searchQuery={searchQuery} 
           sortBy={sortBy} 
           filterBy={filterBy} 

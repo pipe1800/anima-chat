@@ -60,7 +60,7 @@ const HeroSection = () => {
       </nav>
       
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] pt-2 px-4 sm:px-6">
+      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] pt-2 px-4 sm:px-6 mt-12">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
           {/* Left Column - Video */}
           <div className="relative flex justify-center lg:justify-start">
