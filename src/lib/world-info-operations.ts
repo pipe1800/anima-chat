@@ -377,10 +377,7 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
     // Fetch the world info with creator profile
     const { data: worldInfo, error: worldInfoError } = await supabase
       .from('world_infos')
-      .select(`
-        *,
-        creator:profiles!creator_id(username, avatar_url)
-      `)
+      .select('*')
       .eq('id', worldInfoId)
       .eq('visibility', 'public')
       .single();
@@ -389,6 +386,13 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
       console.error('Error fetching world info:', worldInfoError);
       throw new Error('World info not found or not public');
     }
+
+    // Fetch creator profile separately
+    const { data: creatorData, error: creatorError } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', worldInfo.creator_id)
+      .single();
 
     // Fetch entries
     const { data: entries, error: entriesError } = await supabase
@@ -479,7 +483,7 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
       isUsed,
       likesCount,
       favoritesCount,
-      creator: worldInfo.creator
+      creator: creatorData
     };
   } catch (error) {
     console.error('Error in getPublicWorldInfoDetails:', error);
