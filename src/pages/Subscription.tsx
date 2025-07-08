@@ -70,6 +70,10 @@ const Subscription = () => {
         if (modelsRes.error) throw modelsRes.error;
         if (creditPacksRes.error) throw creditPacksRes.error;
 
+        console.log('Fetched plans:', plansRes.data);
+        console.log('Fetched models:', modelsRes.data);
+        console.log('Fetched credit packs:', creditPacksRes.data);
+
         setPlans(plansRes.data || []);
         setModels(modelsRes.data || []);
         setCreditPacks(creditPacksRes.data || []);
@@ -120,10 +124,9 @@ const Subscription = () => {
     );
   }
 
-  // Filter for Premium and Pro plans only
-  const targetPlans = plans.filter(plan => 
-    plan.name === 'Premium' || plan.name === 'Pro'
-  );
+  // Show all available plans, or specific ones if they exist
+  const targetPlans = plans.length > 0 ? plans : [];
+  console.log('Target plans to render:', targetPlans);
 
   return (
     <SidebarProvider>
@@ -142,55 +145,67 @@ const Subscription = () => {
               </p>
             </div>
 
+            {/* Debug Info - Remove this after fixing */}
+            <div className="mb-8 p-4 bg-gray-800 rounded">
+              <p className="text-white">Debug: Found {plans.length} plans</p>
+              <p className="text-white">Plans: {plans.map(p => p.name).join(', ')}</p>
+            </div>
+
             {/* Subscription Tier Cards */}
             <div className="grid md:grid-cols-2 gap-8">
-              {targetPlans.map((plan) => (
-                <Card 
-                  key={plan.id} 
-                  className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
-                    plan.name === 'Pro' ? 'ring-2 ring-[#FF7A00]' : ''
-                  }`}
-                >
-                  {plan.name === 'Pro' && (
-                    <div className="absolute top-4 right-4">
-                      <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        Popular
+              {targetPlans.length === 0 ? (
+                <div className="col-span-2 text-center text-white">
+                  <p>No subscription plans available at the moment.</p>
+                </div>
+              ) : (
+                targetPlans.map((plan) => (
+                  <Card 
+                    key={plan.id} 
+                    className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
+                      plan.name === 'Pro' ? 'ring-2 ring-[#FF7A00]' : ''
+                    }`}
+                  >
+                    {plan.name === 'Pro' && (
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                          <Crown className="w-3 h-3" />
+                          Popular
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl text-white flex items-center gap-2">
-                      {plan.name === 'Premium' ? <Zap className="w-6 h-6 text-[#FF7A00]" /> : <Crown className="w-6 h-6 text-[#FF7A00]" />}
-                      {plan.name}
-                    </CardTitle>
-                    <div className="space-y-2">
-                      <div className="text-3xl font-bold text-[#FF7A00]">
-                        ${plan.price_monthly}
-                        <span className="text-lg text-gray-400 font-normal">/month</span>
+                    )}
+                    
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-2xl text-white flex items-center gap-2">
+                        {plan.name === 'Premium' ? <Zap className="w-6 h-6 text-[#FF7A00]" /> : <Crown className="w-6 h-6 text-[#FF7A00]" />}
+                        {plan.name}
+                      </CardTitle>
+                      <div className="space-y-2">
+                        <div className="text-3xl font-bold text-[#FF7A00]">
+                          ${plan.price_monthly}
+                          <span className="text-lg text-gray-400 font-normal">/month</span>
+                        </div>
+                        <div className="text-lg text-gray-300">
+                          {plan.monthly_credits_allowance.toLocaleString()} Credits
+                        </div>
                       </div>
-                      <div className="text-lg text-gray-300">
-                        {plan.monthly_credits_allowance.toLocaleString()} Credits
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <Button 
-                      onClick={() => handleSubscribe(plan.name)}
-                      className={`w-full ${
-                        plan.name === 'Pro' 
-                          ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
-                          : 'bg-gray-700 hover:bg-gray-600'
-                      } text-white py-3`}
-                      disabled={userSubscription?.plan?.name === plan.name}
-                    >
-                      {userSubscription?.plan?.name === plan.name ? 'Current Plan' : 'Subscribe'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <Button 
+                        onClick={() => handleSubscribe(plan.name)}
+                        className={`w-full ${
+                          plan.name === 'Pro' 
+                            ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
+                            : 'bg-gray-700 hover:bg-gray-600'
+                        } text-white py-3`}
+                        disabled={userSubscription?.plan?.name === plan.name}
+                      >
+                        {userSubscription?.plan?.name === plan.name ? 'Current Plan' : 'Subscribe'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         </main>
