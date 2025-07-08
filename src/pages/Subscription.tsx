@@ -70,9 +70,6 @@ const Subscription = () => {
         if (modelsRes.error) throw modelsRes.error;
         if (creditPacksRes.error) throw creditPacksRes.error;
 
-        console.log('Fetched plans:', plansRes.data);
-        console.log('Fetched models:', modelsRes.data);
-        console.log('Fetched credit packs:', creditPacksRes.data);
 
         setPlans(plansRes.data || []);
         setModels(modelsRes.data || []);
@@ -124,10 +121,6 @@ const Subscription = () => {
     );
   }
 
-  // Show all available plans, or specific ones if they exist
-  const targetPlans = plans.length > 0 ? plans : [];
-  console.log('Target plans to render:', targetPlans);
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#121212]">
@@ -145,27 +138,21 @@ const Subscription = () => {
               </p>
             </div>
 
-            {/* Debug Info - Remove this after fixing */}
-            <div className="mb-8 p-4 bg-gray-800 rounded">
-              <p className="text-white">Debug: Found {plans.length} plans</p>
-              <p className="text-white">Plans: {plans.map(p => p.name).join(', ')}</p>
-            </div>
-
             {/* Subscription Tier Cards */}
             <div className="grid md:grid-cols-2 gap-8">
-              {targetPlans.length === 0 ? (
+              {plans.length === 0 ? (
                 <div className="col-span-2 text-center text-white">
                   <p>No subscription plans available at the moment.</p>
                 </div>
               ) : (
-                targetPlans.map((plan) => (
+                plans.map((plan, index) => (
                   <Card 
                     key={plan.id} 
                     className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
-                      plan.name === 'Pro' ? 'ring-2 ring-[#FF7A00]' : ''
+                      index === 0 ? 'ring-2 ring-[#FF7A00]' : ''
                     }`}
                   >
-                    {plan.name === 'Pro' && (
+                    {index === 0 && (
                       <div className="absolute top-4 right-4">
                         <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                           <Crown className="w-3 h-3" />
@@ -176,7 +163,7 @@ const Subscription = () => {
                     
                     <CardHeader className="pb-4">
                       <CardTitle className="text-2xl text-white flex items-center gap-2">
-                        {plan.name === 'Premium' ? <Zap className="w-6 h-6 text-[#FF7A00]" /> : <Crown className="w-6 h-6 text-[#FF7A00]" />}
+                        {index === 0 ? <Crown className="w-6 h-6 text-[#FF7A00]" /> : <Zap className="w-6 h-6 text-[#FF7A00]" />}
                         {plan.name}
                       </CardTitle>
                       <div className="space-y-2">
@@ -190,11 +177,23 @@ const Subscription = () => {
                       </div>
                     </CardHeader>
                     
-                    <CardContent>
+                    <CardContent className="space-y-4">
+                      {/* Features List */}
+                      {plan.features?.features && Array.isArray(plan.features.features) && (
+                        <div className="space-y-2">
+                          {plan.features.features.map((feature: string, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                              <span className="text-gray-300 text-sm">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
                       <Button 
                         onClick={() => handleSubscribe(plan.name)}
                         className={`w-full ${
-                          plan.name === 'Pro' 
+                          index === 0 
                             ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
                             : 'bg-gray-700 hover:bg-gray-600'
                         } text-white py-3`}
