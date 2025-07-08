@@ -109,6 +109,9 @@ const CharacterCreator = () => {
         }
       }
 
+      // Determine if addons are enabled based on whether addons object exists and has enabled addons
+      const hasAddonsData = definitionData.addons && Object.values(definitionData.addons).some(value => value === true);
+
       setCharacterData({
         name: character.name,
         avatar: character.avatar_url || '',
@@ -124,7 +127,7 @@ const CharacterCreator = () => {
           greeting: character.definition?.[0]?.greeting || '',
           example_dialogues: definitionData.dialogue?.example_dialogues || []
         },
-        addons: {
+        addons: hasAddonsData ? {
           dynamicWorldInfo: definitionData.addons?.dynamicWorldInfo || false,
           enhancedMemory: definitionData.addons?.enhancedMemory || false,
           moodTracking: definitionData.addons?.moodTracking || false,
@@ -134,6 +137,17 @@ const CharacterCreator = () => {
           relationshipStatus: definitionData.addons?.relationshipStatus || false,
           chainOfThought: definitionData.addons?.chainOfThought || false,
           fewShotExamples: definitionData.addons?.fewShotExamples || false
+        } : {
+          // If no addons data exists, initialize all to false
+          dynamicWorldInfo: false,
+          enhancedMemory: false,
+          moodTracking: false,
+          clothingInventory: false,
+          locationTracking: false,
+          timeWeather: false,
+          relationshipStatus: false,
+          chainOfThought: false,
+          fewShotExamples: false
         },
         visibility: character.visibility as 'public' | 'unlisted' | 'private',
         nsfw_enabled: false // This would need to be stored in the database if needed

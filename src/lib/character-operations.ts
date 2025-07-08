@@ -20,6 +20,17 @@ export interface CharacterCreationData {
       character: string;
     }>;
   };
+  addons?: {
+    dynamicWorldInfo: boolean;
+    enhancedMemory: boolean;
+    moodTracking: boolean;
+    clothingInventory: boolean;
+    locationTracking: boolean;
+    timeWeather: boolean;
+    relationshipStatus: boolean;
+    chainOfThought: boolean;
+    fewShotExamples: boolean;
+  };
   visibility: 'public' | 'unlisted' | 'private';
   nsfw_enabled?: boolean;
 }
@@ -50,11 +61,17 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
     }
 
     // Create character definition
-    const definition = {
+    const definition: any = {
       personality: characterData.personality,
       dialogue: characterData.dialogue,
       title: characterData.title
     };
+
+    // Only include addons if any are enabled (master switch is ON)
+    const hasEnabledAddons = characterData.addons && Object.values(characterData.addons).some(value => value === true);
+    if (hasEnabledAddons) {
+      definition.addons = characterData.addons;
+    }
 
     const { error: definitionError } = await supabase
       .from('character_definitions')
@@ -106,11 +123,17 @@ export const updateCharacter = async (characterId: string, characterData: Charac
     }
 
     // Update character definition
-    const definition = {
+    const definition: any = {
       personality: characterData.personality,
       dialogue: characterData.dialogue,
       title: characterData.title
     };
+
+    // Only include addons if any are enabled (master switch is ON)
+    const hasEnabledAddons = characterData.addons && Object.values(characterData.addons).some(value => value === true);
+    if (hasEnabledAddons) {
+      definition.addons = characterData.addons;
+    }
 
     const { error: definitionError } = await supabase
       .from('character_definitions')
