@@ -117,15 +117,20 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
           },
           createSubscription: (data: any, actions: any) => {
             let paypalPlanId = '';
-            // IMPORTANT: Replace these with your REAL PayPal Plan IDs from your PayPal Dashboard
+
+            // --- Use the REAL PayPal Plan IDs Here ---
             if (planName === 'True Fan') {
+              // Replace this with the real ID for your "True Fan" plan
               paypalPlanId = 'P-YOUR-TRUE-FAN-PLAN-ID'; 
             } else if (planName === 'The Whale') {
-              paypalPlanId = 'P-YOUR-THE-WHALE-PLAN-ID';
+              // This is the real ID for "The Whale" plan
+              paypalPlanId = 'P-3K907001WR094711RNBW2YCY';
             }
+            // -----------------------------------------
 
-            if (!paypalPlanId) {
-              toast({ title: "Configuration Error", description: "Could not find a matching PayPal plan.", variant: "destructive" });
+            if (!paypalPlanId || paypalPlanId.includes('P-YOUR-')) {
+              console.error("PayPal Plan ID is not configured for:", planName);
+              toast({ title: "Configuration Error", description: "This plan is not yet available for purchase.", variant: "destructive" });
               return Promise.reject(new Error("PayPal Plan ID not configured."));
             }
             
