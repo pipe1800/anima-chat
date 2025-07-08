@@ -541,6 +541,21 @@ export type Database = {
         }
         Relationships: []
       }
+      public_app_settings: {
+        Row: {
+          setting_key: string
+          setting_value: string
+        }
+        Insert: {
+          setting_key: string
+          setting_value: string
+        }
+        Update: {
+          setting_key?: string
+          setting_value?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
