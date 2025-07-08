@@ -105,9 +105,8 @@ const Onboarding = () => {
   const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
     
-    // Navigate to chat with selected character - DON'T mark onboarding as completed here
-    // Let the chat component handle completion when first message is sent
-    navigate('/chat', { state: { selectedCharacter: character } });
+    // Navigate to chat with selected character and replace history to prevent back navigation
+    navigate('/chat', { state: { selectedCharacter: character }, replace: true });
   };
 
   if (loading) {
@@ -139,6 +138,7 @@ const Onboarding = () => {
 
   const getCanGoNext = () => {
     if (currentStep === 0) return selectedVibes.length > 0;
+    if (currentStep === 3) return false; // Disable next button on character selection step
     return true;
   };
 
