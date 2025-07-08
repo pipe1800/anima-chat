@@ -9,38 +9,37 @@ import {
 } from 'lucide-react';
 
 interface VibeSelectionProps {
-  onNext: (vibes: string[]) => void;
   selectedVibes: string[];
   setSelectedVibes: (vibes: string[]) => void;
 }
 
-const VibeSelection = ({ onNext, selectedVibes, setSelectedVibes }: VibeSelectionProps) => {
+const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) => {
   const vibes = [
     { id: 'action', name: 'Action', icon: Sword, color: 'from-red-500 to-orange-500' },
     { id: 'adventure', name: 'Adventure', icon: Mountain, color: 'from-green-500 to-teal-500' },
+    { id: 'animals', name: 'Animals', icon: Rabbit, color: 'from-green-400 to-emerald-500' },
     { id: 'anime', name: 'Anime', icon: Sparkles, color: 'from-pink-500 to-rose-500' },
+    { id: 'assistant', name: 'Assistant', icon: Bot, color: 'from-blue-400 to-indigo-500' },
     { id: 'comedy', name: 'Comedy', icon: Laugh, color: 'from-yellow-500 to-orange-500' },
     { id: 'drama', name: 'Drama', icon: Theater, color: 'from-purple-600 to-indigo-600' },
     { id: 'fantasy', name: 'Fantasy', icon: Wand2, color: 'from-purple-500 to-pink-500' },
-    { id: 'horror', name: 'Horror', icon: Skull, color: 'from-gray-700 to-red-900' },
-    { id: 'mystery', name: 'Mystery', icon: Search, color: 'from-gray-600 to-gray-800' },
-    { id: 'romance', name: 'Romance', icon: Heart, color: 'from-red-500 to-pink-500' },
-    { id: 'sci-fi', name: 'Sci-Fi', icon: Zap, color: 'from-blue-500 to-cyan-500' },
-    { id: 'slice-of-life', name: 'Slice of Life', icon: Coffee, color: 'from-yellow-500 to-orange-500' },
-    { id: 'thriller', name: 'Thriller', icon: Clock, color: 'from-red-600 to-gray-800' },
-    { id: 'animals', name: 'Animals', icon: Rabbit, color: 'from-green-400 to-emerald-500' },
-    { id: 'assistant', name: 'Assistant', icon: Bot, color: 'from-blue-400 to-indigo-500' },
-    { id: 'historical', name: 'Historical', icon: BookOpen, color: 'from-amber-600 to-yellow-700' },
-    { id: 'oc', name: 'OC', icon: Code, color: 'from-cyan-500 to-blue-600' },
-    { id: 'games', name: 'Games', icon: Gamepad2, color: 'from-green-500 to-teal-500' },
-    { id: 'rpg', name: 'RPG', icon: Dice6, color: 'from-purple-500 to-violet-600' },
-    { id: 'storytelling', name: 'Storytelling', icon: BookMarked, color: 'from-indigo-500 to-purple-600' },
     { id: 'female', name: 'Female', icon: User, color: 'from-pink-400 to-rose-500' },
     { id: 'furry', name: 'Furry', icon: Rabbit, color: 'from-orange-400 to-amber-500' },
+    { id: 'games', name: 'Games', icon: Gamepad2, color: 'from-green-500 to-teal-500' },
+    { id: 'historical', name: 'Historical', icon: BookOpen, color: 'from-amber-600 to-yellow-700' },
+    { id: 'horror', name: 'Horror', icon: Skull, color: 'from-gray-700 to-red-900' },
     { id: 'male', name: 'Male', icon: User, color: 'from-blue-400 to-cyan-500' },
+    { id: 'multiple-character', name: 'Multiple Character', icon: Users, color: 'from-violet-500 to-purple-600' },
+    { id: 'mystery', name: 'Mystery', icon: Search, color: 'from-gray-600 to-gray-800' },
     { id: 'non-binary', name: 'Non-binary', icon: User, color: 'from-yellow-400 to-green-500' },
     { id: 'nsfw', name: 'NSFW', icon: EyeOff, color: 'from-red-500 to-pink-600' },
-    { id: 'multiple-character', name: 'Multiple Character', icon: Users, color: 'from-violet-500 to-purple-600' }
+    { id: 'oc', name: 'OC', icon: Code, color: 'from-cyan-500 to-blue-600' },
+    { id: 'romance', name: 'Romance', icon: Heart, color: 'from-red-500 to-pink-500' },
+    { id: 'rpg', name: 'RPG', icon: Dice6, color: 'from-purple-500 to-violet-600' },
+    { id: 'sci-fi', name: 'Sci-Fi', icon: Zap, color: 'from-blue-500 to-cyan-500' },
+    { id: 'slice-of-life', name: 'Slice of Life', icon: Coffee, color: 'from-yellow-500 to-orange-500' },
+    { id: 'storytelling', name: 'Storytelling', icon: BookMarked, color: 'from-indigo-500 to-purple-600' },
+    { id: 'thriller', name: 'Thriller', icon: Clock, color: 'from-red-600 to-gray-800' }
   ];
 
   const toggleVibe = (vibeId: string) => {
@@ -51,14 +50,10 @@ const VibeSelection = ({ onNext, selectedVibes, setSelectedVibes }: VibeSelectio
     }
   };
 
-  const handleNext = () => {
-    onNext(selectedVibes);
-  };
-
   return (
-    <div className="w-full max-w-6xl mx-auto text-center">
+    <div className="w-full max-w-6xl mx-auto text-center pt-20">
       <h1 className="text-4xl font-bold text-white mb-4">
-        Step 1: Choose Your Vibe
+        Choose Your Vibe
       </h1>
       <p className="text-gray-400 text-lg mb-8">
         What are you in the mood for? Pick a few tags so we can recommend the perfect companions.
@@ -96,14 +91,6 @@ const VibeSelection = ({ onNext, selectedVibes, setSelectedVibes }: VibeSelectio
           );
         })}
       </div>
-
-      <Button
-        onClick={handleNext}
-        disabled={selectedVibes.length === 0}
-        className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 px-8 text-lg rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Next Step
-      </Button>
     </div>
   );
 };
