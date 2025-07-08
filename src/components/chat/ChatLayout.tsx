@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Menu, Search, Heart, Star, MessageCircle, Info, Edit } from 'lucide-react';
+import { ChevronRight, Menu, Search, Heart, Star, MessageCircle, Info, Edit, User, Plus, Upload, X, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserChats, getCharacterDetails } from '@/lib/supabase-queries';
+import { getUserPersonas, createPersona, deletePersona, type Persona } from '@/lib/persona-operations';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { toast } from 'sonner';
 
 interface Character {
   id: string;
@@ -33,6 +39,19 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
+  
+  // Persona state
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [currentPersona, setCurrentPersona] = useState({
+    name: '',
+    bio: '',
+    lore: '',
+    avatar_url: null as string | null
+  });
+  const [isCreatingPersona, setIsCreatingPersona] = useState(false);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +63,13 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
         if (user) {
           const { data: chats } = await getUserChats(user.id);
           setChatHistory(chats || []);
+          
+          // Load user personas
+          const userPersonas = await getUserPersonas();
+          setPersonas(userPersonas);
+          if (userPersonas.length > 0) {
+            setSelectedPersona(userPersonas[0]);
+          }
           
           // Check if character is liked
           const { data: likes } = await supabase
@@ -134,6 +160,73 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     }
   };
 
+  // Persona handlers
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCurrentPersona(prev => ({
+          ...prev,
+          avatar_url: e.target?.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddPersona = async () => {
+    if (!currentPersona.name.trim()) {
+      toast.error('Please enter a persona name');
+      return;
+    }
+
+    if (!currentUser) {
+      toast.error('You must be logged in to create personas');
+      return;
+    }
+
+    setIsCreatingPersona(true);
+    try {
+      const newPersona = await createPersona({
+        name: currentPersona.name.trim(),
+        bio: currentPersona.bio.trim() || null,
+        lore: currentPersona.lore.trim() || null,
+        avatar_url: currentPersona.avatar_url
+      });
+
+      setPersonas(prev => [newPersona, ...prev]);
+      setCurrentPersona({
+        name: '',
+        bio: '',
+        lore: '',
+        avatar_url: null
+      });
+      setShowPersonaModal(false);
+      setSelectedPersona(newPersona);
+      toast.success('Persona created successfully!');
+    } catch (error) {
+      console.error('Error creating persona:', error);
+      toast.error('Failed to create persona');
+    } finally {
+      setIsCreatingPersona(false);
+    }
+  };
+
+  const handleRemovePersona = async (id: string) => {
+    try {
+      await deletePersona(id);
+      setPersonas(prev => prev.filter(p => p.id !== id));
+      if (selectedPersona?.id === id) {
+        setSelectedPersona(personas.find(p => p.id !== id) || null);
+      }
+      toast.success('Persona removed');
+    } catch (error) {
+      console.error('Error removing persona:', error);
+      toast.error('Failed to remove persona');
+    }
+  };
+
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
@@ -159,14 +252,68 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
             </div>
           </div>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setRightPanelOpen(!rightPanelOpen)}
-            className="text-gray-400 hover:text-white hover:bg-gray-800"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center space-x-3">
+            {/* Persona Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 px-3">
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage src={selectedPersona?.avatar_url || undefined} alt={selectedPersona?.name} />
+                      <AvatarFallback className="bg-[#FF7A00] text-white text-xs">
+                        {selectedPersona?.name?.split(' ').map(n => n[0]).join('') || 'P'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{selectedPersona?.name || 'Select Persona'}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 bg-[#1a1a2e] border-gray-700/50 z-50">
+                {personas.map((persona) => (
+                  <DropdownMenuItem
+                    key={persona.id}
+                    onClick={() => setSelectedPersona(persona)}
+                    className="flex items-center space-x-2 p-3 hover:bg-[#FF7A00]/20 cursor-pointer"
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={persona.avatar_url || undefined} alt={persona.name} />
+                      <AvatarFallback className="bg-[#FF7A00] text-white text-xs">
+                        {persona.name?.split(' ').map(n => n[0]).join('') || 'P'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-medium truncate">{persona.name}</div>
+                      {persona.bio && (
+                        <div className="text-gray-400 text-sm truncate">{persona.bio}</div>
+                      )}
+                    </div>
+                    {selectedPersona?.id === persona.id && (
+                      <div className="w-2 h-2 bg-[#FF7A00] rounded-full" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                {personas.length > 0 && <DropdownMenuSeparator className="bg-gray-700/50" />}
+                <DropdownMenuItem
+                  onClick={() => setShowPersonaModal(true)}
+                  className="flex items-center space-x-2 p-3 hover:bg-[#FF7A00]/20 cursor-pointer text-[#FF7A00]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create New Persona</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Hamburger Menu (bigger) */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
+          </div>
         </header>
 
         {/* Chat Content */}
@@ -399,6 +546,126 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           </div>
         </>
       )}
+
+      {/* Persona Creation Modal */}
+      <Dialog open={showPersonaModal} onOpenChange={setShowPersonaModal}>
+        <DialogContent className="bg-[#1a1a2e] border-gray-700/50 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create New Persona</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <p className="text-blue-200 text-sm text-center">
+                <strong>Personas</strong> are the identities you roleplay as when chatting with AI characters. 
+                You can create multiple personas and switch between them during conversations.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Avatar Upload */}
+              <div className="text-center">
+                <label className="block text-sm font-medium text-gray-300 mb-3">
+                  Persona Avatar
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    id="persona-avatar-upload-modal"
+                  />
+                  <label
+                    htmlFor="persona-avatar-upload-modal"
+                    className="cursor-pointer block w-20 h-20 mx-auto rounded-full border-2 border-dashed border-gray-600 hover:border-[#FF7A00] transition-colors duration-300 flex items-center justify-center overflow-hidden"
+                  >
+                    {currentPersona.avatar_url ? (
+                      <img 
+                        src={currentPersona.avatar_url} 
+                        alt="Persona avatar preview" 
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                        <span className="text-xs text-gray-400">Upload</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Persona Name *
+                </label>
+                <Input
+                  placeholder="e.g., Alex the Explorer, Sarah the Scholar..."
+                  value={currentPersona.name}
+                  onChange={(e) => setCurrentPersona(prev => ({ ...prev, name: e.target.value }))}
+                  className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20"
+                />
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Bio
+              </label>
+              <Textarea
+                placeholder="Brief description of this persona..."
+                value={currentPersona.bio}
+                onChange={(e) => setCurrentPersona(prev => ({ ...prev, bio: e.target.value }))}
+                maxLength={200}
+                className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20 resize-none"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1 text-right">
+                {currentPersona.bio.length}/200 characters
+              </p>
+            </div>
+
+            {/* Lore */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Background & Lore
+              </label>
+              <Textarea
+                placeholder="Detailed background, personality traits, history..."
+                value={currentPersona.lore}
+                onChange={(e) => setCurrentPersona(prev => ({ ...prev, lore: e.target.value }))}
+                maxLength={500}
+                className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20 resize-none"
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 mt-1 text-right">
+                {currentPersona.lore.length}/500 characters
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => setShowPersonaModal(false)}
+                variant="outline"
+                className="flex-1 bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] hover:text-white text-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddPersona}
+                disabled={isCreatingPersona || !currentPersona.name.trim()}
+                className="flex-1 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {isCreatingPersona ? 'Creating...' : 'Create Persona'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
