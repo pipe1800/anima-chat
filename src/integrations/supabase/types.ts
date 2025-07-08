@@ -137,6 +137,42 @@ export type Database = {
           },
         ]
       }
+      character_world_info_link: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          world_info_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          world_info_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_world_info_link_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_world_info_link_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           avatar_url: string | null
@@ -471,6 +507,135 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      world_info_entries: {
+        Row: {
+          created_at: string
+          entry_text: string
+          id: string
+          keywords: string[]
+          updated_at: string
+          world_info_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_text: string
+          id?: string
+          keywords: string[]
+          updated_at?: string
+          world_info_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_text?: string
+          id?: string
+          keywords?: string[]
+          updated_at?: string
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_info_entries_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_info_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          world_info_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          world_info_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_info_favorites_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_info_likes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          world_info_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          world_info_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_info_likes_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      world_infos: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          interaction_count: number
+          name: string
+          short_description: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          interaction_count?: number
+          name: string
+          short_description?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          interaction_count?: number
+          name?: string
+          short_description?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
       }
     }
     Views: {
