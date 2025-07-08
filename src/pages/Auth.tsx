@@ -13,10 +13,12 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successUsername, setSuccessUsername] = useState('');
@@ -118,6 +120,12 @@ const Auth = () => {
 
     if (!username.trim()) {
       setError('Username is required');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -348,7 +356,7 @@ const Auth = () => {
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Choose Your Handle
+                  Username
                 </label>
                 <Input
                   type="text"
@@ -418,6 +426,40 @@ const Auth = () => {
               )}
             </div>
 
+            {/* Confirm Password field (Sign-up only) */}
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-[#121212] border-gray-600 text-white placeholder:text-gray-500 focus:border-[#FF7A00] focus:ring-[#FF7A00]/20 pr-10"
+                    required={!isLogin}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                
+                {/* Password match indicator */}
+                {confirmPassword && (
+                  <div className={`mt-2 text-sm flex items-center ${password === confirmPassword ? 'text-green-400' : 'text-red-400'}`}>
+                    {password === confirmPassword ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                    {password === confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Login-specific elements */}
             {isLogin && (
               <div className="flex items-center justify-between">
@@ -466,6 +508,7 @@ const Auth = () => {
                 setUsername('');
                 setEmail('');
                 setPassword('');
+                setConfirmPassword('');
                 setPasswordValidation({ length: false, number: false, special: false, touched: false });
               }}
               className="text-gray-400 hover:text-[#FF7A00] transition-colors underline-offset-4 hover:underline"
