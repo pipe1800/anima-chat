@@ -9,7 +9,7 @@ interface PayPalSubscribeButtonProps {
   onSuccess?: () => void;
 }
 
-// Extend Window interface to include PayPal SDK
+// Extend Window interface to include PayPal SDK and client ID
 declare global {
   interface Window {
     paypal?: {
@@ -17,6 +17,7 @@ declare global {
         render: (element: string | HTMLElement) => Promise<void>;
       };
     };
+    paypalClientId?: string;
   }
 }
 
@@ -30,11 +31,6 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   const paypalRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSdkReady, setIsSdkReady] = useState(false);
-
-  console.log("PayPal SDK check:", {
-    hasPaypal: !!window.paypal,
-    paypalObject: window.paypal
-  });
 
   // Map database plan IDs to PayPal Plan IDs
   // TODO: Replace these placeholder IDs with actual PayPal Plan IDs from your PayPal Developer Dashboard
@@ -50,45 +46,32 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   };
 
   useEffect(() => {
-    console.log("Checking for PayPal SDK...");
-    
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const checkPayPalSDK = () => {
-      console.log(`PayPal SDK check attempt ${retryCount + 1}`, {
-        hasPaypal: !!window.paypal,
-        paypalType: typeof window.paypal,
-        windowKeys: Object.keys(window).filter(key => key.toLowerCase().includes('paypal'))
-      });
-      
-      if (window.paypal && typeof window.paypal.Buttons === 'function') {
-        console.log("PayPal SDK found and functional!");
+    const addPayPalScript = () => {
+      console.log("Loading PayPal SDK with client ID:", window.paypalClientId);
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${window.paypalClientId}&currency=USD&intent=subscription&components=buttons`;
+      script.async = true;
+
+      script.onload = () => {
+        console.log("PayPal SDK script loaded successfully.");
         setIsSdkReady(true);
-        return;
-      }
-      
-      retryCount++;
-      if (retryCount < maxRetries) {
-        console.log(`PayPal SDK not ready, retrying... (${retryCount}/${maxRetries})`);
-        setTimeout(checkPayPalSDK, 500);
-      } else {
-        console.error("PayPal SDK failed to load after maximum retries");
-        // Try to manually load the script as fallback
-        const script = document.createElement('script');
-        script.src = 'https://www.paypal.com/sdk/js?client-id=Ae1k_GWddCY79FRV4OWluA_7XyNl0uGN9dgwtmK8uXZdZaE8iNG9iLlY_iUUxUHr2OeblEeiGpBCezDN&currency=USD&intent=subscription&components=buttons';
-        script.onload = () => {
-          console.log("PayPal SDK loaded via fallback");
-          setIsSdkReady(true);
-        };
-        script.onerror = () => {
-          console.error("Failed to load PayPal SDK via fallback");
-        };
-        document.head.appendChild(script);
-      }
+      };
+
+      script.onerror = () => {
+        console.error("Failed to load PayPal SDK script.");
+      };
+
+      document.body.appendChild(script);
     };
 
-    checkPayPalSDK();
+    if (!window.paypal) {
+      console.log("PayPal SDK not found, loading script...");
+      addPayPalScript();
+    } else {
+      console.log("PayPal SDK already found.");
+      setIsSdkReady(true);
+    }
   }, []);
 
   useEffect(() => {
