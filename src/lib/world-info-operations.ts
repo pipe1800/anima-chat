@@ -273,3 +273,94 @@ export const deleteWorldInfoEntry = async (entryId: string) => {
     throw error;
   }
 };
+
+// =============================================================================
+// TAG MANAGEMENT
+// =============================================================================
+
+export const getAllTags = async () => {
+  try {
+    const { data: tags, error } = await supabase
+      .from('tags')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching tags:', error);
+      throw new Error('Failed to fetch tags');
+    }
+
+    return tags || [];
+  } catch (error) {
+    console.error('Error in getAllTags:', error);
+    throw error;
+  }
+};
+
+export const getWorldInfoTags = async (worldInfoId: string) => {
+  try {
+    const { data: worldInfoTags, error } = await supabase
+      .from('world_info_tags')
+      .select(`
+        tag:tags(id, name)
+      `)
+      .eq('world_info_id', worldInfoId);
+
+    if (error) {
+      console.error('Error fetching world info tags:', error);
+      throw new Error('Failed to fetch world info tags');
+    }
+
+    return worldInfoTags?.map(wt => wt.tag) || [];
+  } catch (error) {
+    console.error('Error in getWorldInfoTags:', error);
+    throw error;
+  }
+};
+
+export const addWorldInfoTag = async (worldInfoId: string, tagId: number) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('world_info_tags')
+      .insert({
+        world_info_id: worldInfoId,
+        tag_id: tagId
+      });
+
+    if (error) {
+      console.error('Error adding world info tag:', error);
+      throw new Error('Failed to add tag to world info');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in addWorldInfoTag:', error);
+    throw error;
+  }
+};
+
+export const removeWorldInfoTag = async (worldInfoId: string, tagId: number) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('world_info_tags')
+      .delete()
+      .eq('world_info_id', worldInfoId)
+      .eq('tag_id', tagId);
+
+    if (error) {
+      console.error('Error removing world info tag:', error);
+      throw new Error('Failed to remove tag from world info');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in removeWorldInfoTag:', error);
+    throw error;
+  }
+};
