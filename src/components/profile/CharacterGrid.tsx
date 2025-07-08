@@ -78,6 +78,14 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
             Create Your First Character
           </Button>
         )}
+        {type === 'favorites' && (
+          <Button 
+            onClick={() => navigate('/discover')}
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+          >
+            Discover Characters
+          </Button>
+        )}
       </div>
     );
   }

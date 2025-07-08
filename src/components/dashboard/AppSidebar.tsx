@@ -24,7 +24,7 @@ import { useState, useEffect } from 'react';
 const mainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Discover", url: "/discover", icon: Compass },
+  { title: "Discover Characters", url: "/discover", icon: Compass },
   { title: "Profile", url: "/profile", icon: User },
   { title: "Subscription", url: "/subscription", icon: Crown },
 ];
