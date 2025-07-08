@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
+import AddonsStep from '@/components/character-creator/AddonsStep';
 import FinalizeStep from '@/components/character-creator/FinalizeStep';
 import CreationStepsHeader from '@/components/character-creator/CreationStepsHeader';
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
@@ -14,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const CharacterCreator = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [characterData, setCharacterData] = useState<Partial<CharacterCreationData>>({
+  const [characterData, setCharacterData] = useState<any>({
     name: '',
     avatar: '',
     title: '',
@@ -28,6 +29,17 @@ const CharacterCreator = () => {
     dialogue: {
       greeting: '',
       example_dialogues: []
+    },
+    addons: {
+      dynamicWorldInfo: false,
+      enhancedMemory: false,
+      moodTracking: false,
+      clothingInventory: false,
+      locationTracking: false,
+      timeWeather: false,
+      relationshipStatus: false,
+      chainOfThought: false,
+      fewShotExamples: false
     },
     visibility: 'public',
     nsfw_enabled: false
@@ -76,6 +88,17 @@ const CharacterCreator = () => {
             character: string;
           }>;
         };
+        addons?: {
+          dynamicWorldInfo?: boolean;
+          enhancedMemory?: boolean;
+          moodTracking?: boolean;
+          clothingInventory?: boolean;
+          locationTracking?: boolean;
+          timeWeather?: boolean;
+          relationshipStatus?: boolean;
+          chainOfThought?: boolean;
+          fewShotExamples?: boolean;
+        };
       } = {};
 
       if (character.definition?.[0]?.definition) {
@@ -101,6 +124,17 @@ const CharacterCreator = () => {
           greeting: character.definition?.[0]?.greeting || '',
           example_dialogues: definitionData.dialogue?.example_dialogues || []
         },
+        addons: {
+          dynamicWorldInfo: definitionData.addons?.dynamicWorldInfo || false,
+          enhancedMemory: definitionData.addons?.enhancedMemory || false,
+          moodTracking: definitionData.addons?.moodTracking || false,
+          clothingInventory: definitionData.addons?.clothingInventory || false,
+          locationTracking: definitionData.addons?.locationTracking || false,
+          timeWeather: definitionData.addons?.timeWeather || false,
+          relationshipStatus: definitionData.addons?.relationshipStatus || false,
+          chainOfThought: definitionData.addons?.chainOfThought || false,
+          fewShotExamples: definitionData.addons?.fewShotExamples || false
+        },
         visibility: character.visibility as 'public' | 'unlisted' | 'private',
         nsfw_enabled: false // This would need to be stored in the database if needed
       });
@@ -118,7 +152,8 @@ const CharacterCreator = () => {
     { id: 1, title: 'Foundation', description: 'Basic character info' },
     { id: 2, title: 'Personality', description: 'Traits and behavior' },
     { id: 3, title: 'Dialogue', description: 'Voice and responses' },
-    { id: 4, title: 'Finalize', description: isEditing ? 'Review and update' : 'Review and create' }
+    { id: 4, title: 'Addons', description: 'Enhanced features' },
+    { id: 5, title: 'Finalize', description: isEditing ? 'Review and update' : 'Review and create' }
   ];
 
   const handleStepChange = (stepId: number) => {
@@ -224,6 +259,15 @@ const CharacterCreator = () => {
           />
         );
       case 4:
+        return (
+          <AddonsStep
+            data={characterData}
+            onUpdate={handleDataUpdate}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
+      case 5:
         return (
           <FinalizeStep
             data={characterData}
