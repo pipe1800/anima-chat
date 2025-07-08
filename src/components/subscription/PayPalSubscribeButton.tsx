@@ -25,13 +25,16 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   planName,
   onSuccess
 }) => {
-  console.log("PayPal Client ID:", import.meta.env.VITE_PAYPAL_CLIENT_ID);
-  
   const { user } = useAuth();
   const { toast } = useToast();
   const paypalRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSdkReady, setIsSdkReady] = useState(false);
+
+  console.log("PayPal SDK check:", {
+    hasPaypal: !!window.paypal,
+    paypalObject: window.paypal
+  });
 
   // Map database plan IDs to PayPal Plan IDs
   // TODO: Replace these placeholder IDs with actual PayPal Plan IDs from your PayPal Developer Dashboard
@@ -47,32 +50,28 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   };
 
   useEffect(() => {
-    const addPayPalScript = () => {
-      console.log("Attempting to load PayPal SDK script...");
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=USD&intent=subscription&components=buttons`;
-      script.async = true;
-
-      script.onload = () => {
-        console.log("PayPal SDK script LOADED successfully.");
+    console.log("Checking for PayPal SDK...");
+    
+    // Check if PayPal SDK is available (it should be loaded from index.html)
+    const checkPayPalSDK = () => {
+      if (window.paypal) {
+        console.log("PayPal SDK found on window object!");
         setIsSdkReady(true);
-      };
-
-      script.onerror = () => {
-        console.error("ERROR: Failed to load the PayPal SDK script.");
-      };
-
-      document.body.appendChild(script);
+        return;
+      }
+      
+      // If not found, wait a bit and check again
+      setTimeout(() => {
+        if (window.paypal) {
+          console.log("PayPal SDK found after delay!");
+          setIsSdkReady(true);
+        } else {
+          console.error("PayPal SDK still not found after delay");
+        }
+      }, 1000);
     };
 
-    if (!window.paypal) {
-      console.log("PayPal SDK not found on window object, loading script...");
-      addPayPalScript();
-    } else {
-      console.log("PayPal SDK already found on window object.");
-      setIsSdkReady(true);
-    }
+    checkPayPalSDK();
   }, []);
 
   useEffect(() => {
