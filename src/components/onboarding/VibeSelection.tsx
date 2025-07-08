@@ -15,8 +15,8 @@ const VibeSelection = ({ onNext, selectedVibes, setSelectedVibes }: VibeSelectio
     { id: 'fantasy', name: 'Fantasy', icon: Wand2, color: 'from-purple-500 to-pink-500' },
     { id: 'sci-fi', name: 'Sci-Fi', icon: Zap, color: 'from-blue-500 to-cyan-500' },
     { id: 'anime', name: 'Anime', icon: Sparkles, color: 'from-pink-500 to-rose-500' },
-    { id: 'spicy', name: 'Spicy', icon: Heart, color: 'from-red-500 to-orange-500' },
-    { id: 'gaming', name: 'Gaming', icon: Gamepad2, color: 'from-green-500 to-teal-500' },
+    { id: 'romance', name: 'Romance', icon: Heart, color: 'from-red-500 to-orange-500' },
+    { id: 'games', name: 'Games', icon: Gamepad2, color: 'from-green-500 to-teal-500' },
     { id: 'horror', name: 'Horror', icon: Skull, color: 'from-gray-700 to-red-900' },
     { id: 'slice-of-life', name: 'Slice of Life', icon: Coffee, color: 'from-yellow-500 to-orange-500' },
   ];

@@ -28,9 +28,11 @@ export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy }: FilterPa
   const [creatorSearch, setCreatorSearch] = useState('');
 
   const availableTags = [
-    'Fantasy', 'Sci-Fi', 'Anime', 'Romance', 'Horror', 'Comedy',
-    'Adventure', 'Mystery', 'Historical', 'Modern', 'Spicy', 'Wholesome',
-    'Dark', 'Slice of Life', 'Action', 'Drama', 'Supernatural', 'Gaming'
+    'Action', 'Adventure', 'Anime', 'Comedy', 'Drama', 'Fantasy',
+    'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller',
+    'Animals', 'Assistant', 'Historical', 'OC', 'Games', 'RPG',
+    'Storytelling', 'Female', 'Furry', 'Male', 'Non-binary', 'NSFW',
+    'Multiple Character'
   ];
 
   const filteredTags = availableTags.filter(tag =>
