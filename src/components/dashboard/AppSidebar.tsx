@@ -14,7 +14,7 @@ import {
   LogOut,
   Crown,
   PowerOff,
-  Globe
+  BookOpen
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import { useState, useEffect } from 'react';
 
 const mainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
-  { title: "World Info Creator", url: "/world-info-creator", icon: Globe },
+  { title: "World Infos", url: "/world-info-creator", icon: BookOpen },
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Discover Characters", url: "/discover", icon: Compass },
   { title: "Profile", url: "/profile", icon: User },
