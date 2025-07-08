@@ -2,6 +2,69 @@ import { supabase } from '@/integrations/supabase/client'
 import type { Profile, Character, Plan, Subscription, Credits, Chat, Message, OnboardingChecklistItem, UserOnboardingProgress } from '@/types/database'
 
 // =============================================================================
+// MONETIZATION QUERIES - Plans, Models, Credit Packs
+// =============================================================================
+
+/**
+ * Get all active subscription plans
+ */
+export const getActivePlans = async () => {
+  const { data, error } = await supabase
+    .from('plans')
+    .select('*')
+    .eq('is_active', true)
+    .order('price_monthly', { ascending: true })
+
+  return { data, error }
+}
+
+/**
+ * Get all active AI models
+ */
+export const getActiveModels = async () => {
+  const { data, error } = await supabase
+    .from('models')
+    .select(`
+      *,
+      min_plan:plans(name, price_monthly)
+    `)
+    .eq('is_active', true)
+    .order('credit_multiplier', { ascending: true })
+
+  return { data, error }
+}
+
+/**
+ * Get all active credit packs
+ */
+export const getActiveCreditPacks = async () => {
+  const { data, error } = await supabase
+    .from('credit_packs')
+    .select('*')
+    .eq('is_active', true)
+    .order('price', { ascending: true })
+
+  return { data, error }
+}
+
+/**
+ * Get user's current active subscription
+ */
+export const getUserActiveSubscription = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select(`
+      *,
+      plan:plans(*)
+    `)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  return { data, error }
+}
+
+// =============================================================================
 // PROFILE QUERIES - Safe public/private data handling
 // =============================================================================
 
