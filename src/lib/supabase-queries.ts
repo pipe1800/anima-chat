@@ -502,6 +502,74 @@ export const getDailyMessageCount = async (userId: string) => {
 }
 
 // =============================================================================
+// WORLD INFO QUERIES
+// =============================================================================
+
+/**
+ * Get public world infos (for discovery page)
+ */
+export const getPublicWorldInfos = async (limit = 20, offset = 0) => {
+  const { data, error } = await supabase
+    .from('world_infos')
+    .select(`
+      id,
+      name,
+      short_description,
+      avatar_url,
+      interaction_count,
+      created_at,
+      creator_id
+    `)
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error || !data) {
+    return { data: [], error }
+  }
+
+  // Fetch creator profiles and counts separately for each world info
+  const worldInfosWithCreators = await Promise.all(
+    data.map(async (worldInfo) => {
+      // Get creator profile
+      const { data: creatorData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', worldInfo.creator_id)
+        .maybeSingle()
+
+      // Get likes count
+      const { count: likesCount } = await supabase
+        .from('world_info_likes')
+        .select('id', { count: 'exact' })
+        .eq('world_info_id', worldInfo.id)
+
+      // Get favorites count
+      const { count: favoritesCount } = await supabase
+        .from('world_info_favorites')
+        .select('id', { count: 'exact' })
+        .eq('world_info_id', worldInfo.id)
+
+      // Get usage count (how many users are using this world info)
+      const { count: usageCount } = await supabase
+        .from('world_info_users')
+        .select('id', { count: 'exact' })
+        .eq('world_info_id', worldInfo.id)
+
+      return {
+        ...worldInfo,
+        creator: creatorData,
+        likes_count: likesCount || 0,
+        favorites_count: favoritesCount || 0,
+        usage_count: usageCount || 0
+      }
+    })
+  )
+
+  return { data: worldInfosWithCreators, error: null }
+}
+
+// =============================================================================
 // CHARACTER FAVORITES QUERIES
 // =============================================================================
 
