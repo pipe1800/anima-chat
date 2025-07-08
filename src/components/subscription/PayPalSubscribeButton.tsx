@@ -30,7 +30,6 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
   useEffect(() => {
     const fetchClientIdAndLoadSdk = async () => {
       try {
-        console.log("Fetching PayPal Client ID from database...");
         const { data: setting, error: fetchError } = await supabase
           .from('public_app_settings')
           .select('setting_value')
@@ -44,57 +43,24 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
         }
         
         const clientId = setting.setting_value;
-        console.log("Successfully fetched PayPal Client ID.");
 
-        // Check if PayPal is already loaded
         if (window.paypal) {
-          console.log("PayPal SDK already loaded, skipping script injection.");
           setSdkState({ loading: false, ready: true });
           return;
         }
 
-        // Remove any existing PayPal scripts to avoid conflicts
-        const existingScripts = document.querySelectorAll('script[src*="paypal.com/sdk/js"]');
-        existingScripts.forEach(script => {
-          const scriptElement = script as HTMLScriptElement;
-          console.log("Removing existing PayPal script:", scriptElement.src);
-          script.remove();
-        });
-
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        
-        // Log current domain for debugging
-        console.log("Current domain:", window.location.hostname);
-        console.log("Current origin:", window.location.origin);
-        console.log("Client ID being used:", clientId);
-        console.log("Client ID length:", clientId.length);
-        
-        // Try basic SDK load first to test if client ID is the issue
-        script.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons&debug=true`;
+        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons&vault=true`;
         script.async = true;
-        
-        console.log("Loading PayPal SDK from:", script.src);
-        
         script.onload = () => {
-          console.log("PayPal SDK script has loaded successfully.");
-          if (window.paypal) {
-            console.log("PayPal object is available:", typeof window.paypal);
-            setSdkState({ loading: false, ready: true });
-          } else {
-            console.error("PayPal object not available after script load");
-            setSdkState({ loading: false, ready: false });
-          }
+          setSdkState({ loading: false, ready: true });
         };
-        
-        script.onerror = (error) => {
-          console.error("Failed to load the PayPal SDK script:", error);
-          console.error("Script src was:", script.src);
-          console.error("This usually means the PayPal Client ID is invalid or the app doesn't have proper permissions");
+        script.onerror = () => {
+          console.error("Failed to load the PayPal SDK script.");
           setSdkState({ loading: false, ready: false });
         };
-        
-        document.head.appendChild(script);
+        document.body.appendChild(script);
 
       } catch (error) {
         console.error("An error occurred during SDK setup:", error);
@@ -108,6 +74,9 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
   useEffect(() => {
     if (sdkState.ready && paypalRef.current && user) {
       try {
+        // Clear the container before rendering new buttons
+        paypalRef.current.innerHTML = '';
+        
         window.paypal!.Buttons({
           style: {
             shape: 'rect',
@@ -164,7 +133,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
         console.error("Failed to render PayPal buttons:", error);
       }
     }
-  }, [sdkState.ready, user, planId, planName, onSuccess, toast]);
+  }, [sdkState.ready, user, planId, planName]);
 
   if (!user) {
     return null;
