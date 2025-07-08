@@ -601,6 +601,36 @@ export type Database = {
           },
         ]
       }
+      world_info_tags: {
+        Row: {
+          tag_id: number
+          world_info_id: string
+        }
+        Insert: {
+          tag_id: number
+          world_info_id: string
+        }
+        Update: {
+          tag_id?: number
+          world_info_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_info_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "world_info_tags_world_info_id_fkey"
+            columns: ["world_info_id"]
+            isOneToOne: false
+            referencedRelation: "world_infos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       world_infos: {
         Row: {
           avatar_url: string | null
