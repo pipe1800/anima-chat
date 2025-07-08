@@ -105,6 +105,19 @@ const Onboarding = () => {
   const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
     
+    // Mark onboarding as completed
+    if (user) {
+      await supabase.auth.updateUser({
+        data: { onboarding_completed: true }
+      });
+      
+      // Also update the profiles table
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+    }
+    
     // Navigate to chat with selected character and replace history to prevent back navigation
     navigate('/chat', { state: { selectedCharacter: character }, replace: true });
   };

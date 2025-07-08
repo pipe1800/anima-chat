@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import OnboardingGuard from "@/components/auth/OnboardingGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -38,17 +39,61 @@ const App = () => (
             <Route path="/email-confirmation" element={<EmailConfirmation />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/character-creator" element={<CharacterCreator />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/moderation" element={<Moderation />} />
-            <Route path="/guidelines" element={<CommunityGuidelines />} />
-            <Route path="/character/:characterId" element={<CharacterProfile />} />
+            <Route path="/onboarding" element={
+              <OnboardingGuard>
+                <Onboarding />
+              </OnboardingGuard>
+            } />
+            <Route path="/dashboard" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Dashboard />
+              </OnboardingGuard>
+            } />
+            <Route path="/discover" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Discover />
+              </OnboardingGuard>
+            } />
+            <Route path="/chat" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Chat />
+              </OnboardingGuard>
+            } />
+            <Route path="/character-creator" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <CharacterCreator />
+              </OnboardingGuard>
+            } />
+            <Route path="/profile" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <UserProfile />
+              </OnboardingGuard>
+            } />
+            <Route path="/subscription" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Subscription />
+              </OnboardingGuard>
+            } />
+            <Route path="/settings" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Settings />
+              </OnboardingGuard>
+            } />
+            <Route path="/moderation" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <Moderation />
+              </OnboardingGuard>
+            } />
+            <Route path="/guidelines" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <CommunityGuidelines />
+              </OnboardingGuard>
+            } />
+            <Route path="/character/:characterId" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <CharacterProfile />
+              </OnboardingGuard>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
