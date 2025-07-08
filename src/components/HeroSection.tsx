@@ -47,6 +47,7 @@ const HeroSection = () => {
                   muted
                   loop
                   playsInline
+                  preload="auto"
                 />
                 
                 {/* Subtle overlay for theme integration */}
