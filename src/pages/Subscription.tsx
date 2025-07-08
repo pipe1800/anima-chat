@@ -139,71 +139,78 @@ const Subscription = () => {
             </div>
 
             {/* Subscription Tier Cards */}
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
               {plans.length === 0 ? (
-                <div className="col-span-2 text-center text-white">
+                <div className="col-span-3 text-center text-white">
                   <p>No subscription plans available at the moment.</p>
                 </div>
               ) : (
-                plans.map((plan, index) => (
-                  <Card 
-                    key={plan.id} 
-                    className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
-                      index === 0 ? 'ring-2 ring-[#FF7A00]' : ''
-                    }`}
-                  >
-                    {index === 0 && (
-                      <div className="absolute top-4 right-4">
-                        <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                          <Crown className="w-3 h-3" />
-                          Popular
-                        </div>
-                      </div>
-                    )}
-                    
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-2xl text-white flex items-center gap-2">
-                        {index === 0 ? <Crown className="w-6 h-6 text-[#FF7A00]" /> : <Zap className="w-6 h-6 text-[#FF7A00]" />}
-                        {plan.name}
-                      </CardTitle>
-                      <div className="space-y-2">
-                        <div className="text-3xl font-bold text-[#FF7A00]">
-                          ${plan.price_monthly}
-                          <span className="text-lg text-gray-400 font-normal">/month</span>
-                        </div>
-                        <div className="text-lg text-gray-300">
-                          {plan.monthly_credits_allowance.toLocaleString()} Credits
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      {/* Features List */}
-                      {plan.features?.features && Array.isArray(plan.features.features) && (
-                        <div className="space-y-2">
-                          {plan.features.features.map((feature: string, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
-                              <span className="text-gray-300 text-sm">{feature}</span>
-                            </div>
-                          ))}
+                plans.map((plan) => {
+                  const isPopular = plan.name === 'True Fan';
+                  const isPremium = plan.name === 'The Whale';
+                  const isFree = plan.price_monthly === 0;
+                  
+                  return (
+                    <Card 
+                      key={plan.id} 
+                      className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden ${
+                        isPopular ? 'ring-2 ring-[#FF7A00]' : ''
+                      }`}
+                    >
+                      {isPopular && (
+                        <div className="absolute top-4 right-4">
+                          <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                            <Crown className="w-3 h-3" />
+                            Popular
+                          </div>
                         </div>
                       )}
                       
-                      <Button 
-                        onClick={() => handleSubscribe(plan.name)}
-                        className={`w-full ${
-                          index === 0 
-                            ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
-                            : 'bg-gray-700 hover:bg-gray-600'
-                        } text-white py-3`}
-                        disabled={userSubscription?.plan?.name === plan.name}
-                      >
-                        {userSubscription?.plan?.name === plan.name ? 'Current Plan' : 'Subscribe'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-2xl text-white flex items-center gap-2">
+                          {isPremium ? <Crown className="w-6 h-6 text-[#FF7A00]" /> : <Zap className="w-6 h-6 text-[#FF7A00]" />}
+                          {plan.name}
+                        </CardTitle>
+                        <div className="space-y-2">
+                          <div className="text-3xl font-bold text-[#FF7A00]">
+                            {isFree ? 'Free' : `$${plan.price_monthly}`}
+                            {!isFree && <span className="text-lg text-gray-400 font-normal">/month</span>}
+                          </div>
+                          <div className="text-lg text-gray-300">
+                            {plan.monthly_credits_allowance.toLocaleString()} Credits
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        {/* Features List */}
+                        {plan.features?.features && Array.isArray(plan.features.features) && (
+                          <div className="space-y-2">
+                            {plan.features.features.map((feature: string, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                                <span className="text-gray-300 text-sm">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <Button 
+                          onClick={() => handleSubscribe(plan.name)}
+                          className={`w-full ${
+                            isPopular || isPremium
+                              ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90' 
+                              : 'bg-gray-700 hover:bg-gray-600'
+                          } text-white py-3`}
+                          disabled={userSubscription?.plan?.name === plan.name}
+                        >
+                          {userSubscription?.plan?.name === plan.name ? 'Current Plan' : 
+                           isFree ? 'Get Started' : 'Subscribe'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </div>
