@@ -53,7 +53,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
 
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons`;
+        script.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons`;
         script.async = true;
         script.onload = () => {
           console.log("PayPal SDK script has loaded successfully.");
