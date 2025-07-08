@@ -2,6 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CharacterGrid } from './CharacterGrid';
+import { PersonasTab } from './PersonasTab';
 import { getUserCharacters } from '@/lib/supabase-queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -21,12 +22,18 @@ export const ProfileTabs = () => {
 
   return (
     <Tabs defaultValue="created" className="w-full">
-      <TabsList className="grid w-full max-w-md grid-cols-2 bg-[#1a1a1a] border-[#333]">
+      <TabsList className="grid w-full max-w-lg grid-cols-3 bg-[#1a1a1a] border-[#333]">
         <TabsTrigger 
           value="created" 
           className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white"
         >
           Creations
+        </TabsTrigger>
+        <TabsTrigger 
+          value="personas"
+          className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white"
+        >
+          Personas
         </TabsTrigger>
         <TabsTrigger 
           value="favorites"
@@ -44,6 +51,10 @@ export const ProfileTabs = () => {
           </div>
           <CharacterGrid type="created" />
         </div>
+      </TabsContent>
+      
+      <TabsContent value="personas" className="mt-6">
+        <PersonasTab />
       </TabsContent>
       
       <TabsContent value="favorites" className="mt-6">
