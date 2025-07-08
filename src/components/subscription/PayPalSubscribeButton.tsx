@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ interface PayPalSubscribeButtonProps {
   onSuccess?: () => void;
 }
 
-// Extend Window interface to include PayPal SDK and client ID
+// Extend Window interface to include PayPal SDK
 declare global {
   interface Window {
     paypal?: {
@@ -17,218 +17,115 @@ declare global {
         render: (element: string | HTMLElement) => Promise<void>;
       };
     };
-    paypalClientId?: string;
   }
 }
 
-const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
-  planId,
-  planName,
-  onSuccess
-}) => {
+const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, planName, onSuccess }) => {
+  const [isSdkReady, setIsSdkReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const paypalRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const paypalRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSdkReady, setIsSdkReady] = useState(false);
-
-  // Map database plan IDs to PayPal Plan IDs
-  // TODO: Replace these placeholder IDs with actual PayPal Plan IDs from your PayPal Developer Dashboard
-  const getPayPalPlanId = (databasePlanId: string): string => {
-    switch (databasePlanId) {
-      case 'true-fan-plan-id': // Replace with your actual database plan ID
-        return 'P-PAYPAL-TRUE-FAN-PLAN-ID'; // Replace with actual PayPal Plan ID
-      case 'whale-plan-id': // Replace with your actual database plan ID
-        return 'P-PAYPAL-WHALE-PLAN-ID'; // Replace with actual PayPal Plan ID
-      default:
-        throw new Error(`Unknown plan ID: ${databasePlanId}`);
-    }
-  };
 
   useEffect(() => {
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    console.log("Attempting to use PayPal Client ID:", clientId);
+
+    if (!clientId) {
+      console.error("VITE_PAYPAL_CLIENT_ID is not defined. Make sure it is set in your environment variables.");
+      return;
+    }
+
     const addPayPalScript = () => {
-      console.log("Loading PayPal SDK with client ID:", window.paypalClientId);
       const script = document.createElement('script');
       script.type = 'text/javascript';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${window.paypalClientId}&currency=USD&intent=subscription&components=buttons`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=subscription&components=buttons`;
       script.async = true;
 
       script.onload = () => {
-        console.log("PayPal SDK script loaded successfully.");
+        console.log("PayPal SDK script has loaded successfully.");
         setIsSdkReady(true);
       };
-
       script.onerror = () => {
-        console.error("Failed to load PayPal SDK script.");
+        console.error("Failed to load the PayPal SDK script.");
       };
-
       document.body.appendChild(script);
     };
 
-    if (!window.paypal) {
-      console.log("PayPal SDK not found, loading script...");
-      addPayPalScript();
-    } else {
-      console.log("PayPal SDK already found.");
+    if (window.paypal) {
       setIsSdkReady(true);
+    } else {
+      addPayPalScript();
     }
   }, []);
 
   useEffect(() => {
-    if (!isSdkReady || !window.paypal || !user || !paypalRef.current) {
-      console.log("Conditions not met for PayPal button rendering:", {
-        isSdkReady,
-        hasPaypal: !!window.paypal,
-        hasUser: !!user,
-        hasRef: !!paypalRef.current
-      });
-      return;
-    }
-
-    console.log("All conditions met, rendering PayPal button...");
-
-    // Clear any existing PayPal buttons
-    if (paypalRef.current) {
-      paypalRef.current.innerHTML = '';
-    }
-
-    const paypalButtons = window.paypal.Buttons({
-      style: {
-        shape: 'rect',
-        color: 'blue',
-        layout: 'vertical',
-        label: 'subscribe'
-      },
-
-      createSubscription: async function(data: any, actions: any) {
-        try {
-          console.log("Creating PayPal subscription...");
-          const paypalPlanId = getPayPalPlanId(planId);
-          
-          return actions.subscription.create({
-            plan_id: paypalPlanId,
-            subscriber: {
-              name: {
-                given_name: user.user_metadata?.first_name || '',
-                surname: user.user_metadata?.last_name || ''
-              },
-              email_address: user.email
+    if (isSdkReady && paypalRef.current && user) {
+      try {
+        window.paypal.Buttons({
+          style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+          },
+          createSubscription: (data: any, actions: any) => {
+            // This needs to map your internal planId to the plan_id from your PayPal dashboard
+            let paypalPlanId = '';
+            // IMPORTANT: Replace these with your REAL PayPal Plan IDs
+            if (planName === 'True Fan') {
+              paypalPlanId = 'P-YOUR-TRUE-FAN-PLAN-ID'; 
+            } else if (planName === 'The Whale') {
+              paypalPlanId = 'P-YOUR-THE-WHALE-PLAN-ID';
             }
-          });
-        } catch (error) {
-          console.error('Error creating subscription:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create subscription. Please try again.",
-            variant: "destructive"
-          });
-          throw error;
-        }
-      },
 
-      onApprove: async function(data: any, actions: any) {
-        console.log("PayPal subscription approved:", data);
-        setIsLoading(true);
-        
-        try {
-          // Get subscription details from PayPal
-          const subscriptionDetails = await actions.subscription.get();
-          console.log("PayPal subscription details:", subscriptionDetails);
-          
-          // Call our backend function to save the subscription
-          const { error } = await supabase.functions.invoke('save-paypal-subscription', {
-            body: {
-              subscriptionId: data.subscriptionID,
-              planId: planId,
-              paypalSubscriptionDetails: subscriptionDetails
+            if (!paypalPlanId) {
+              console.error("Could not find a PayPal Plan ID for the selected plan:", planName);
+              toast({ title: "Configuration Error", description: "Could not find a matching PayPal plan.", variant: "destructive" });
+              return;
             }
-          });
+            
+            return actions.subscription.create({
+              plan_id: paypalPlanId
+            });
+          },
+          onApprove: async (data: any) => {
+            setIsLoading(true);
+            toast({ title: "Processing Subscription...", description: "Please wait while we confirm your subscription." });
 
-          if (error) {
-            throw error;
+            const { subscriptionID } = data;
+            const { data: responseData, error } = await supabase.functions.invoke('save-paypal-subscription', {
+              body: { subscriptionID, planId },
+            });
+
+            if (error) {
+              toast({ title: "Subscription Failed", description: error.message, variant: "destructive" });
+            } else {
+              toast({ title: "Subscription Successful!", description: "Your account has been upgraded." });
+              if (onSuccess) onSuccess();
+            }
+            setIsLoading(false);
+          },
+          onError: (err: any) => {
+            console.error("PayPal button error:", err);
+            toast({ title: "PayPal Error", description: "An error occurred with the PayPal button.", variant: "destructive" });
           }
-
-          console.log("Subscription saved successfully");
-          toast({
-            title: "Success!",
-            description: `Successfully subscribed to ${planName}`,
-          });
-
-          // Call success callback if provided
-          if (onSuccess) {
-            onSuccess();
-          }
-
-        } catch (error) {
-          console.error('Error saving subscription:', error);
-          toast({
-            title: "Error",
-            description: "Subscription created but failed to save. Please contact support.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      },
-
-      onError: function(err: any) {
-        console.error('PayPal error:', err);
-        toast({
-          title: "Error",
-          description: "An error occurred with PayPal. Please try again.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-      },
-
-      onCancel: function(data: any) {
-        console.log('PayPal subscription cancelled:', data);
-        toast({
-          title: "Cancelled",
-          description: "Subscription was cancelled.",
-        });
-        setIsLoading(false);
+        }).render(paypalRef.current);
+      } catch (error) {
+        console.error("Failed to render PayPal buttons:", error);
       }
-    });
-
-    // Render the PayPal button
-    paypalButtons.render(paypalRef.current).catch((error: any) => {
-      console.error('Failed to render PayPal button:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load PayPal button. Please refresh the page.",
-        variant: "destructive"
-      });
-    });
-
-  }, [isSdkReady, planId, planName, user, onSuccess, toast]);
+    }
+  }, [isSdkReady, user, planId, planName, onSuccess, toast]);
 
   if (!user) {
-    return (
-      <div className="text-center text-gray-400">
-        Please log in to subscribe
-      </div>
-    );
+    return null; // Or a login button
   }
 
-  if (!isSdkReady) {
-    return (
-      <div className="text-center text-gray-400">
-        Loading PayPal...
-      </div>
-    );
+  if (isLoading || !isSdkReady) {
+    return <div>Loading PayPal...</div>;
   }
 
-  return (
-    <div className="relative">
-      <div ref={paypalRef} className="min-h-[45px]" />
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-        </div>
-      )}
-    </div>
-  );
+  return <div ref={paypalRef}></div>;
 };
 
 export default PayPalSubscribeButton;
