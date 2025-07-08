@@ -52,23 +52,40 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({
   useEffect(() => {
     console.log("Checking for PayPal SDK...");
     
-    // Check if PayPal SDK is available (it should be loaded from index.html)
+    let retryCount = 0;
+    const maxRetries = 10;
+    
     const checkPayPalSDK = () => {
-      if (window.paypal) {
-        console.log("PayPal SDK found on window object!");
+      console.log(`PayPal SDK check attempt ${retryCount + 1}`, {
+        hasPaypal: !!window.paypal,
+        paypalType: typeof window.paypal,
+        windowKeys: Object.keys(window).filter(key => key.toLowerCase().includes('paypal'))
+      });
+      
+      if (window.paypal && typeof window.paypal.Buttons === 'function') {
+        console.log("PayPal SDK found and functional!");
         setIsSdkReady(true);
         return;
       }
       
-      // If not found, wait a bit and check again
-      setTimeout(() => {
-        if (window.paypal) {
-          console.log("PayPal SDK found after delay!");
+      retryCount++;
+      if (retryCount < maxRetries) {
+        console.log(`PayPal SDK not ready, retrying... (${retryCount}/${maxRetries})`);
+        setTimeout(checkPayPalSDK, 500);
+      } else {
+        console.error("PayPal SDK failed to load after maximum retries");
+        // Try to manually load the script as fallback
+        const script = document.createElement('script');
+        script.src = 'https://www.paypal.com/sdk/js?client-id=Ae1k_GWddCY79FRV4OWluA_7XyNl0uGN9dgwtmK8uXZdZaE8iNG9iLlY_iUUxUHr2OeblEeiGpBCezDN&currency=USD&intent=subscription&components=buttons';
+        script.onload = () => {
+          console.log("PayPal SDK loaded via fallback");
           setIsSdkReady(true);
-        } else {
-          console.error("PayPal SDK still not found after delay");
-        }
-      }, 1000);
+        };
+        script.onerror = () => {
+          console.error("Failed to load PayPal SDK via fallback");
+        };
+        document.head.appendChild(script);
+      }
     };
 
     checkPayPalSDK();
