@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 
@@ -231,11 +231,13 @@ const Auth = () => {
     <div className="min-h-screen bg-[#121212] relative overflow-hidden flex items-center justify-center">
       {/* Logo */}
       <div className="absolute top-6 left-6 z-20">
-        <img 
-          src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-          alt="Anima AI Chat" 
-          className="h-16 w-auto"
-        />
+        <Link to="/" className="cursor-pointer">
+          <img 
+            src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+            alt="Anima AI Chat" 
+            className="h-16 w-auto hover:opacity-80 transition-opacity"
+          />
+        </Link>
       </div>
 
       {/* Futuristic Background Animation */}
