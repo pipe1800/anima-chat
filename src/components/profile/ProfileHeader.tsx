@@ -121,7 +121,7 @@ export const ProfileHeader = () => {
               <Button 
                 variant="secondary" 
                 className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate('/profile/settings')}
               >
                 Settings
               </Button>

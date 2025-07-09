@@ -76,7 +76,7 @@ const App = () => (
                 <WorldInfoCreator />
               </OnboardingGuard>
             } />
-            <Route path="/profile" element={
+            <Route path="/profile/*" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <UserProfile />
               </OnboardingGuard>
