@@ -1,19 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-// Extend Window interface to include PayPal SDK
-declare global {
-  interface Window {
-    paypal?: {
-      Buttons: (config: any) => {
-        render: (element: string | HTMLElement) => Promise<void>;
-        close: () => void;
-      };
-    };
-  }
-}
 
 interface StaticPayPalButtonProps {
   paypalPlanId: string;
@@ -23,67 +11,30 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
   const { user } = useAuth();
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [sdkReady, setSdkReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const scriptsLoadedRef = useRef(false);
 
-  // Load PayPal SDK
   useEffect(() => {
-    const loadPayPalSDK = async () => {
-      if (window.paypal) {
-        setSdkReady(true);
-        return;
-      }
+    if (!user) return;
 
+    const containerId = `paypal-button-container-${paypalPlanId}`;
+    
+    // Check if PayPal SDK is already loaded
+    if (window.paypal) {
+      // SDK already loaded, render button directly
       try {
-        // Get PayPal client ID from database
-        const { data: setting, error } = await supabase
-          .from('public_app_settings')
-          .select('setting_value')
-          .eq('setting_key', 'PAYPAL_CLIENT_ID')
-          .single();
-
-        if (error || !setting?.setting_value) {
-          console.error('Failed to fetch PayPal Client ID:', error);
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = `https://www.paypal.com/sdk/js?client-id=${setting.setting_value}&vault=true&intent=subscription&currency=USD&components=buttons`;
-        script.async = true;
-        script.onload = () => setSdkReady(true);
-        script.onerror = () => console.error('Failed to load PayPal SDK');
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading PayPal SDK:', error);
-      }
-    };
-
-    loadPayPalSDK();
-  }, []);
-
-  // Render PayPal buttons
-  useEffect(() => {
-    let paypalButtonsInstance: any;
-
-    if (sdkReady && containerRef.current && user && paypalPlanId) {
-      try {
-        // Clear container before rendering
-        containerRef.current.innerHTML = '';
-
-        paypalButtonsInstance = window.paypal!.Buttons({
+        window.paypal.Buttons({
           style: {
             shape: 'rect',
             color: 'gold',
             layout: 'vertical',
             label: 'subscribe'
           },
-          createSubscription: (data: any, actions: any) => {
+          createSubscription: function(data: any, actions: any) {
             return actions.subscription.create({
-              plan_id: paypalPlanId
+              'plan_id': paypalPlanId
             });
           },
-          onApprove: async (data: any) => {
-            setIsLoading(true);
+          onApprove: async function(data: any, actions: any) {
             try {
               const { error } = await supabase.functions.invoke('save-paypal-subscription', {
                 body: { 
@@ -93,52 +44,109 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
               });
               
               if (error) {
-                toast({ 
-                  title: "Subscription Failed", 
-                  description: error.message, 
-                  variant: "destructive" 
-                });
+                window.dispatchEvent(new CustomEvent('paypal-error', { 
+                  detail: error.message 
+                }));
               } else {
-                toast({ 
-                  title: "Subscription Successful!", 
-                  description: "Your account has been upgraded." 
-                });
-                window.location.reload();
+                window.dispatchEvent(new CustomEvent('paypal-success'));
               }
             } catch (error: any) {
-              toast({ 
-                title: "Subscription Failed", 
-                description: error.message || "An error occurred during subscription.", 
-                variant: "destructive" 
-              });
-            } finally {
-              setIsLoading(false);
+              window.dispatchEvent(new CustomEvent('paypal-error', { 
+                detail: error.message 
+              }));
             }
-          },
-          onError: (err: any) => {
-            console.error('PayPal button error:', err);
-            toast({ 
-              title: "PayPal Error", 
-              description: "An error occurred with PayPal.", 
-              variant: "destructive" 
-            });
-            setIsLoading(false);
           }
-        });
-
-        paypalButtonsInstance.render(containerRef.current);
+        }).render(`#${containerId}`);
       } catch (error) {
         console.error('Error rendering PayPal button:', error);
       }
+    } else if (!scriptsLoadedRef.current) {
+      // Load SDK first time only
+      const sdkScript = document.createElement('script');
+      sdkScript.src = 'https://www.paypal.com/sdk/js?client-id=AWale7howzdXmRvzPeTAgtC9fbKwPrXnURz85Rk6omnBs7xJevAF75B45WAKF287bYZHQV_a8r6EYtwJ&vault=true&intent=subscription';
+      sdkScript.async = true;
+      
+      sdkScript.onload = () => {
+        scriptsLoadedRef.current = true;
+        // Re-trigger the effect to render buttons for all instances
+        window.dispatchEvent(new CustomEvent('paypal-sdk-loaded'));
+      };
+      
+      document.head.appendChild(sdkScript);
     }
 
-    // Cleanup function
-    return () => {
-      if (paypalButtonsInstance) {
-        paypalButtonsInstance.close();
+    // Event listeners for PayPal responses
+    const handleSuccess = () => {
+      toast({ 
+        title: "Subscription Successful!", 
+        description: "Your account has been upgraded." 
+      });
+      window.location.reload();
+    };
+
+    const handleError = (event: any) => {
+      toast({ 
+        title: "Subscription Failed", 
+        description: event.detail || "An error occurred during subscription.", 
+        variant: "destructive" 
+      });
+    };
+
+    const handleSdkLoaded = () => {
+      // Re-run this effect when SDK loads
+      if (window.paypal) {
+        try {
+          window.paypal.Buttons({
+            style: {
+              shape: 'rect',
+              color: 'gold',
+              layout: 'vertical',
+              label: 'subscribe'
+            },
+            createSubscription: function(data: any, actions: any) {
+              return actions.subscription.create({
+                'plan_id': paypalPlanId
+              });
+            },
+            onApprove: async function(data: any, actions: any) {
+              try {
+                const { error } = await supabase.functions.invoke('save-paypal-subscription', {
+                  body: { 
+                    subscriptionID: data.subscriptionID, 
+                    planId: paypalPlanId 
+                  }
+                });
+                
+                if (error) {
+                  window.dispatchEvent(new CustomEvent('paypal-error', { 
+                    detail: error.message 
+                  }));
+                } else {
+                  window.dispatchEvent(new CustomEvent('paypal-success'));
+                }
+              } catch (error: any) {
+                window.dispatchEvent(new CustomEvent('paypal-error', { 
+                  detail: error.message 
+                }));
+              }
+            }
+          }).render(`#${containerId}`);
+        } catch (error) {
+          console.error('Error rendering PayPal button:', error);
+        }
       }
     };
-  }, [sdkReady, user, paypalPlanId, toast]);
+
+    window.addEventListener('paypal-success', handleSuccess);
+    window.addEventListener('paypal-error', handleError);
+    window.addEventListener('paypal-sdk-loaded', handleSdkLoaded);
+
+    return () => {
+      window.removeEventListener('paypal-success', handleSuccess);
+      window.removeEventListener('paypal-error', handleError);
+      window.removeEventListener('paypal-sdk-loaded', handleSdkLoaded);
+    };
+  }, [user, paypalPlanId, toast]);
 
   if (!user) {
     return null;
@@ -147,7 +155,8 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
   return (
     <div 
       ref={containerRef}
-      className={`w-full ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
+      id={`paypal-button-container-${paypalPlanId}`}
+      className="w-full"
     />
   );
 };

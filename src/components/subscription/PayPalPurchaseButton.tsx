@@ -14,7 +14,6 @@ declare global {
     paypal?: {
       Buttons: (config: any) => {
         render: (element: string | HTMLElement) => Promise<void>;
-        close: () => void;
       };
     };
   }
@@ -82,15 +81,12 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
 
   // Render PayPal buttons when SDK is ready
   useEffect(() => {
-    // This variable will hold the button instance
-    let paypalButtonsInstance: any;
-
     if (sdkState.ready && window.paypal && paypalRef.current && user) {
       try {
         // Clear the container before rendering new buttons
         paypalRef.current.innerHTML = '';
         
-        paypalButtonsInstance = window.paypal!.Buttons({
+        window.paypal!.Buttons({
           style: {
             shape: 'rect',
             color: 'gold',
@@ -189,10 +185,7 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
             });
             setIsLoading(false);
           }
-        });
-
-        // Render the buttons
-        paypalButtonsInstance.render(paypalRef.current);
+        }).render(paypalRef.current);
       } catch (error) {
         console.error("Failed to render PayPal buttons:", error);
         toast({
@@ -202,14 +195,6 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
         });
       }
     }
-
-    // *** THIS IS THE CLEANUP FUNCTION ***
-    return () => {
-      if (paypalButtonsInstance) {
-        // This will remove the buttons from the DOM when the component unmounts
-        paypalButtonsInstance.close();
-      }
-    };
   }, [sdkState.ready, user, creditPackId, onSuccess]);
 
   if (sdkState.loading) {
