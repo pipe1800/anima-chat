@@ -13,9 +13,17 @@ export const PayPalVerification = () => {
   const { toast } = useToast();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Verifying your subscription...');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     const verifySubscription = async () => {
+      // Prevent duplicate calls
+      if (isVerifying) {
+        console.log('Verification already in progress, skipping...');
+        return;
+      }
+      
+      setIsVerifying(true);
       // Get all URL parameters to debug what PayPal is sending
       const allParams = Object.fromEntries(searchParams.entries());
       console.log('All PayPal return parameters:', allParams);
@@ -84,6 +92,8 @@ export const PayPalVerification = () => {
         console.error('Verification error:', error);
         setStatus('error');
         setMessage('An error occurred during verification. Please contact support.');
+      } finally {
+        setIsVerifying(false);
       }
     };
 
