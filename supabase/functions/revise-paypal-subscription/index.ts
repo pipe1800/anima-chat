@@ -152,7 +152,7 @@ serve(async (req) => {
     logStep("Fetching new plan details", { newPlanId });
     const { data: newPlan, error: newPlanError } = await supabase
       .from('plans')
-      .select('id, name, monthly_credits_allowance')
+      .select('id, name, monthly_credits_allowance, price_monthly')
       .eq('id', newPlanId)
       .maybeSingle();
 
@@ -208,7 +208,26 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           plan_id: paypalPlanId,
-          plan_change_effective_time: "IMMEDIATE"
+          plan: {
+            billing_cycles: [{
+              frequency: {
+                interval_unit: "MONTH",
+                interval_count: 1
+              },
+              tenure_type: "REGULAR",
+              sequence: 1,
+              total_cycles: 0,
+              pricing_scheme: {
+                fixed_price: {
+                  value: newPlan.price_monthly,
+                  currency_code: "USD"
+                }
+              }
+            }],
+            payment_preferences: {
+              auto_bill_outstanding: true
+            }
+          }
         }),
       }
     );
