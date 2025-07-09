@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import StaticPayPalButton from '@/components/subscription/StaticPayPalButton';
+import PayPalButton from '@/components/subscription/PayPalButton';
 import { 
   getActivePlans, 
   getActiveModels, 
@@ -263,14 +263,15 @@ const Subscription = () => {
                         </Button>
                       ) : (
                         // User has no active subscription, show PayPal button for paid plans
-                        <StaticPayPalButton 
-                          paypalPlanId={
+                        <PayPalButton 
+                          planId={
                             plan.name === 'True Fan' 
                               ? 'P-6FV20741XD451732ENBXH6WY' 
                               : plan.name === 'The Whale' 
                                 ? 'P-70K46447GU478721BNBXH5PA'
                                 : ''
                           }
+                          planName={plan.name}
                         />
                       )}
                     </div>

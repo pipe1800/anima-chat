@@ -3,11 +3,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface StaticPayPalButtonProps {
-  paypalPlanId: string;
+interface PayPalButtonProps {
+  planId: string;
+  planName: string;
 }
 
-const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId }) => {
+// Extend Window interface to include PayPal SDK
+declare global {
+  interface Window {
+    paypal?: {
+      Buttons: (config: any) => {
+        render: (element: string | HTMLElement) => Promise<void>;
+      };
+    };
+  }
+}
+
+const PayPalButton: React.FC<PayPalButtonProps> = ({ planId, planName }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,7 +29,6 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
   useEffect(() => {
     if (!user || !containerRef.current || isRenderingRef.current || isRenderedRef.current) return;
 
-    const containerId = `paypal-button-container-${paypalPlanId}`;
     const container = containerRef.current;
     
     // Clear any existing content and prevent duplicate renders
@@ -37,7 +48,7 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
           },
           createSubscription: function(data: any, actions: any) {
             return actions.subscription.create({
-              'plan_id': paypalPlanId
+              'plan_id': planId
             });
           },
           onApprove: async function(data: any, actions: any) {
@@ -45,7 +56,7 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
               const { error } = await supabase.functions.invoke('save-paypal-subscription', {
                 body: { 
                   subscriptionId: data.subscriptionID, 
-                  planId: paypalPlanId 
+                  planId: planId 
                 }
               });
               
@@ -58,7 +69,7 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
               } else {
                 toast({ 
                   title: "Subscription Successful!", 
-                  description: "Your account has been upgraded." 
+                  description: `Your account has been upgraded to ${planName}.` 
                 });
                 window.location.reload();
               }
@@ -121,7 +132,7 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
       isRenderingRef.current = false;
       isRenderedRef.current = false;
     };
-  }, [user, paypalPlanId, toast]);
+  }, [user, planId, planName, toast]);
 
   if (!user) {
     return null;
@@ -130,10 +141,9 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
   return (
     <div 
       ref={containerRef}
-      id={`paypal-button-container-${paypalPlanId}`}
       className="w-full"
     />
   );
 };
 
-export default StaticPayPalButton;
+export default PayPalButton;
