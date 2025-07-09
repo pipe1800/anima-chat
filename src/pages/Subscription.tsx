@@ -3,7 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import PayPalSubscribeButton from '@/components/subscription/PayPalSubscribeButton';
+import StaticPayPalButton from '@/components/subscription/StaticPayPalButton';
 import { 
   getActivePlans, 
   getActiveModels, 
@@ -224,17 +224,14 @@ const Subscription = () => {
                               Get Started
                             </Button>
                           ) : (
-                            <PayPalSubscribeButton 
-                              planId={plan.id} 
-                              planName={plan.name}
-                              onSuccess={() => {
-                                toast({
-                                  title: "Success!",
-                                  description: `Successfully subscribed to ${plan.name}`,
-                                });
-                                // Refresh data to update UI
-                                window.location.reload();
-                              }}
+                            <StaticPayPalButton 
+                              paypalPlanId={
+                                plan.name === 'True Fan' 
+                                  ? 'P-YOUR-TRUE-FAN-PLAN-ID' 
+                                  : plan.name === 'The Whale' 
+                                    ? 'P-3K907001WR094711RNBW2YCY'
+                                    : ''
+                              }
                             />
                           )}
                         </div>
