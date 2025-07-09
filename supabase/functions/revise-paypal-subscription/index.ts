@@ -191,10 +191,13 @@ serve(async (req) => {
 
     logStep("PayPal plan ID mapped", { paypalPlanId });
 
-    // Call PayPal's revise subscription API
+    // Call PayPal's revise subscription API with proper upgrade structure
     logStep("Calling PayPal revise subscription API", { 
       subscriptionId, 
-      paypalPlanId 
+      paypalPlanId,
+      currentPlanName: currentSubscription.plan?.name,
+      newPlanName: newPlan.name,
+      priceIncrease: newPlan.price_monthly - (currentSubscription.plan?.monthly_credits_allowance || 0)
     });
     
     const reviseResponse = await fetch(
@@ -209,9 +212,25 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           plan_id: paypalPlanId,
+          quantity: "1",
+          shipping_amount: {
+            currency_code: "USD",
+            value: "0.00"
+          },
+          subscriber: {
+            name: {
+              given_name: "Subscriber"
+            }
+          },
           application_context: {
-            brand_name: "Your App Name",
+            brand_name: "AI Character Platform",
+            locale: "en-US",
+            shipping_preference: "NO_SHIPPING",
             user_action: "SUBSCRIBE_NOW",
+            payment_method: {
+              payer_selected: "PAYPAL",
+              payee_preferred: "IMMEDIATE_PAYMENT_REQUIRED"
+            },
             return_url: `https://rclpyipeytqbamiwcuih.supabase.co/subscription?success=true`,
             cancel_url: `https://rclpyipeytqbamiwcuih.supabase.co/subscription?cancelled=true`
           }
@@ -236,7 +255,12 @@ serve(async (req) => {
 
     // Parse the PayPal API response
     const paypalRevisionResponse = await reviseResponse.json();
-    logStep("PayPal revision response parsed", { response: paypalRevisionResponse });
+    logStep("PayPal revision response parsed", { 
+      response: paypalRevisionResponse,
+      hasLinks: !!paypalRevisionResponse.links,
+      linksCount: paypalRevisionResponse.links?.length || 0,
+      allLinkRels: paypalRevisionResponse.links?.map(l => l.rel) || []
+    });
 
     // Check for an approval link
     const approvalLink = paypalRevisionResponse.links?.find(link => link.rel === 'approve');
