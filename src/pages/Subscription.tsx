@@ -47,6 +47,7 @@ interface UserSubscription {
   id: string;
   status: string;
   plan: Plan;
+  paypal_subscription_id: string | null;
 }
 
 const Subscription = () => {
@@ -110,10 +111,20 @@ const Subscription = () => {
   const handlePlanChange = async (newPlanId: string, newPlanName: string) => {
     if (!user || !userSubscription) return;
 
+    // Check if we have a PayPal subscription ID
+    if (!userSubscription.paypal_subscription_id) {
+      toast({
+        title: "Plan Change Failed",
+        description: "No PayPal subscription found. Please contact support.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('revise-paypal-subscription', {
         body: {
-          subscriptionId: userSubscription.id,
+          subscriptionId: userSubscription.paypal_subscription_id,
           newPlanId: newPlanId
         }
       });
