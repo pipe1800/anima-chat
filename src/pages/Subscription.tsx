@@ -10,6 +10,7 @@ import {
   getUserActiveSubscription 
 } from '@/lib/supabase-queries';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Crown, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -104,6 +105,40 @@ const Subscription = () => {
       title: "Coming Soon",
       description: `${planName} subscription will be available soon!`,
     });
+  };
+
+  const handlePlanChange = async (newPlanId: string, newPlanName: string) => {
+    if (!user || !userSubscription) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('revise-paypal-subscription', {
+        body: {
+          subscriptionId: userSubscription.id,
+          newPlanId: newPlanId
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Plan Change Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Plan Changed Successfully!",
+          description: `Your plan has been changed to ${newPlanName}.`
+        });
+        // Refresh the page to show updated subscription
+        window.location.reload();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Plan Change Failed",
+        description: error.message || "An error occurred while changing your plan.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -214,7 +249,16 @@ const Subscription = () => {
                         >
                           Get Started
                         </Button>
+                      ) : userSubscription ? (
+                        // User has active subscription, show upgrade/change plan button
+                        <Button 
+                          onClick={() => handlePlanChange(plan.id, plan.name)}
+                          className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+                        >
+                          {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
+                        </Button>
                       ) : (
+                        // User has no active subscription, show PayPal button
                         <StaticPayPalButton 
                           paypalPlanId={
                             plan.name === 'True Fan' 
