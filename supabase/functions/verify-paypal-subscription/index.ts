@@ -37,8 +37,12 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { subscriptionId } = await req.json();
-    if (!subscriptionId) throw new Error("Subscription ID is required");
+    const { subscriptionId, token: paypalToken } = await req.json();
+    logStep("Received parameters", { subscriptionId, paypalToken });
+    
+    if (!subscriptionId && !paypalToken) {
+      throw new Error("Either subscription ID or PayPal token is required");
+    }
 
     // Get PayPal access token
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
@@ -67,27 +71,63 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json();
     logStep("PayPal access token obtained");
 
-    // Get subscription details from PayPal
-    const subscriptionResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+    // If we have a subscription ID, verify it directly
+    // If we only have a token, we need to find the subscription
+    let subscription;
+    
+    if (subscriptionId) {
+      // Get subscription details from PayPal using subscription ID
+      const subscriptionResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!subscriptionResponse.ok) {
+        const errorData = await subscriptionResponse.text();
+        logStep("PayPal subscription fetch failed", { error: errorData });
+        throw new Error(`Failed to get PayPal subscription: ${errorData}`);
       }
-    });
 
-    if (!subscriptionResponse.ok) {
-      const errorData = await subscriptionResponse.text();
-      logStep("PayPal subscription fetch failed", { error: errorData });
-      throw new Error(`Failed to get PayPal subscription: ${errorData}`);
+      subscription = await subscriptionResponse.json();
+    } else if (paypalToken) {
+      // If we only have a token, we need to search for recent subscriptions for this user
+      // This is a fallback method when subscription_id is not provided in the return URL
+      logStep("Attempting to find subscription by user email since no subscription ID provided");
+      
+      // Search for subscriptions by user email (last 10 subscriptions)
+      const searchResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions?start_time=${new Date(Date.now() - 60*60*1000).toISOString()}&page_size=10`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        // Find the most recent active subscription for this user
+        subscription = searchData.subscriptions?.find((sub: any) => 
+          sub.subscriber?.email_address?.toLowerCase() === user.email?.toLowerCase() && 
+          sub.status === 'ACTIVE'
+        );
+        
+        if (!subscription) {
+          throw new Error("Could not find an active subscription for your email address");
+        }
+      } else {
+        throw new Error("Failed to search for subscription");
+      }
     }
-
-    const subscription = await subscriptionResponse.json();
-    logStep("PayPal subscription fetched", { 
+    
+    logStep("PayPal subscription verified", { 
       subscriptionId: subscription.id, 
       status: subscription.status,
-      planId: subscription.plan_id 
+      planId: subscription.plan_id,
+      subscriberEmail: subscription.subscriber?.email_address
     });
 
     // Find the plan in our database using the PayPal plan ID

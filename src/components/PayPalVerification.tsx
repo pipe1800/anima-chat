@@ -16,37 +16,48 @@ export const PayPalVerification = () => {
 
   useEffect(() => {
     const verifySubscription = async () => {
-      // PayPal returns with 'subscription_id' parameter in the URL
-      const subscriptionId = searchParams.get('subscription_id');
-      const token = searchParams.get('token'); // PayPal's approval token
+      // Get all URL parameters to debug what PayPal is sending
+      const allParams = Object.fromEntries(searchParams.entries());
+      console.log('All PayPal return parameters:', allParams);
       
-      console.log('PayPal return parameters:', {
+      // PayPal can return subscription info in different ways
+      const subscriptionId = searchParams.get('subscription_id') || searchParams.get('subscriptionID');
+      const token = searchParams.get('token');
+      const payerId = searchParams.get('PayerID');
+      
+      console.log('PayPal verification attempt:', {
         subscription_id: subscriptionId,
         token: token,
-        all_params: Object.fromEntries(searchParams.entries())
+        PayerID: payerId,
+        allParams
       });
 
-      if (!subscriptionId) {
+      if (!subscriptionId && !token) {
+        console.error('Missing critical parameters:', { subscriptionId, token });
         setStatus('error');
-        setMessage('Missing subscription ID from PayPal. Please try subscribing again.');
+        setMessage('Missing verification parameters from PayPal. Please try subscribing again.');
         return;
       }
 
       try {
+        console.log('Calling verify-paypal-subscription with:', { subscriptionId, token });
+        
         const { data, error } = await supabase.functions.invoke('verify-paypal-subscription', {
           body: { 
-            subscriptionId,
-            token // Include PayPal's approval token
+            subscriptionId: subscriptionId || token, // Use token as fallback
+            token: token
           }
         });
+
+        console.log('Verification response:', { data, error });
 
         if (error) {
           console.error('Verification error:', error);
           setStatus('error');
-          setMessage('Failed to verify subscription. Please contact support.');
+          setMessage(`Verification failed: ${error.message || 'Unknown error'}`);
           toast({
             title: "Verification Failed",
-            description: "Failed to verify your PayPal subscription.",
+            description: `Failed to verify subscription: ${error.message || 'Unknown error'}`,
             variant: "destructive"
           });
           return;
