@@ -255,10 +255,10 @@ const Subscription = () => {
                         </Button>
                       ) : isFree ? (
                         <Button 
-                          onClick={() => handleSubscribe(plan.name)}
-                          className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white"
+                          className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
+                          disabled={true}
                         >
-                          Get Started
+                          Current Plan
                         </Button>
                       ) : userSubscription ? (
                         // User has active subscription, show upgrade/change plan button
@@ -269,7 +269,7 @@ const Subscription = () => {
                           {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
                         </Button>
                       ) : (
-                        // User has no active subscription, show PayPal button
+                        // User has no active subscription, show PayPal button for paid plans
                         <StaticPayPalButton 
                           paypalPlanId={
                             plan.name === 'True Fan' 
