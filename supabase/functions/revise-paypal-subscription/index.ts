@@ -178,12 +178,15 @@ serve(async (req) => {
 
     // Find the PayPal plan ID for the new plan
     let paypalPlanId = '';
+    logStep("Mapping plan name to PayPal plan ID", { planName: newPlan.name });
+    
     if (newPlan.name === 'True Fan') {
       paypalPlanId = 'P-6FV20741XD451732ENBXH6WY';
     } else if (newPlan.name === 'The Whale') {
       paypalPlanId = 'P-70K46447GU478721BNBXH5PA';
     } else {
-      throw new Error(`No PayPal plan ID mapping found for plan: ${newPlan.name}`);
+      logStep("ERROR: No PayPal plan ID mapping found", { planName: newPlan.name });
+      throw new Error(`No PayPal plan ID mapping found for plan: ${newPlan.name}. Available mappings: True Fan, The Whale`);
     }
 
     logStep("PayPal plan ID mapped", { paypalPlanId });
