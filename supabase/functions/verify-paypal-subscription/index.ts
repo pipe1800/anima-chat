@@ -147,47 +147,52 @@ serve(async (req) => {
     const currentPeriodEnd = new Date();
     currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
 
-    // Save or update subscription in our database
-    const { data: existingSubscription } = await supabaseClient
+    // SAFEGUARD: Deactivate any existing active subscriptions to prevent multiple active subscriptions
+    logStep("Checking for existing active subscriptions");
+    const { data: existingActiveSubscriptions, error: fetchError } = await supabaseClient
       .from('subscriptions')
-      .select('id')
+      .select('id, paypal_subscription_id')
       .eq('user_id', user.id)
-      .eq('status', 'active')
-      .maybeSingle();
+      .eq('status', 'active');
 
-    if (existingSubscription) {
-      // Update existing subscription
-      const { error: updateError } = await supabaseClient
-        .from('subscriptions')
-        .update({
-          plan_id: plan.id,
-          status: subscription.status === 'ACTIVE' ? 'active' : subscription.status.toLowerCase(),
-          paypal_subscription_id: subscription.id,
-          current_period_end: currentPeriodEnd.toISOString()
-        })
-        .eq('id', existingSubscription.id);
-
-      if (updateError) {
-        throw new Error(`Failed to update subscription: ${updateError.message}`);
-      }
-      logStep("Subscription updated");
-    } else {
-      // Create new subscription
-      const { error: insertError } = await supabaseClient
-        .from('subscriptions')
-        .insert({
-          user_id: user.id,
-          plan_id: plan.id,
-          status: subscription.status === 'ACTIVE' ? 'active' : subscription.status.toLowerCase(),
-          paypal_subscription_id: subscription.id,
-          current_period_end: currentPeriodEnd.toISOString()
-        });
-
-      if (insertError) {
-        throw new Error(`Failed to create subscription: ${insertError.message}`);
-      }
-      logStep("Subscription created");
+    if (fetchError) {
+      logStep("Error fetching existing subscriptions", { error: fetchError });
+      throw new Error(`Failed to check existing subscriptions: ${fetchError.message}`);
     }
+
+    if (existingActiveSubscriptions && existingActiveSubscriptions.length > 0) {
+      logStep("Found existing active subscriptions, deactivating them", { count: existingActiveSubscriptions.length });
+      
+      // Deactivate all existing active subscriptions
+      const { error: deactivateError } = await supabaseClient
+        .from('subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (deactivateError) {
+        logStep("Error deactivating existing subscriptions", { error: deactivateError });
+        throw new Error(`Failed to deactivate existing subscriptions: ${deactivateError.message}`);
+      }
+      
+      logStep("Successfully deactivated existing active subscriptions");
+    }
+
+    // Create new subscription (always insert after deactivating existing ones)
+    const { error: insertError } = await supabaseClient
+      .from('subscriptions')
+      .insert({
+        user_id: user.id,
+        plan_id: plan.id,
+        status: subscription.status === 'ACTIVE' ? 'active' : subscription.status.toLowerCase(),
+        paypal_subscription_id: subscription.id,
+        current_period_end: currentPeriodEnd.toISOString()
+      });
+
+    if (insertError) {
+      throw new Error(`Failed to create subscription: ${insertError.message}`);
+    }
+    logStep("New subscription created successfully");
 
     return new Response(JSON.stringify({ 
       success: true,
