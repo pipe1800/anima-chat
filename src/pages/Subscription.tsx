@@ -273,13 +273,14 @@ const Subscription = () => {
                       ) : (
                         // User has no active subscription, show PayPal button for paid plans
                         <PayPalButton 
-                          planId={
+                          paypalPlanId={
                             plan.name === 'True Fan' 
                               ? 'P-6FV20741XD451732ENBXH6WY' 
                               : plan.name === 'The Whale' 
                                 ? 'P-70K46447GU478721BNBXH5PA'
                                 : ''
                           }
+                          planId={plan.id}
                           planName={plan.name}
                         />
                       )}

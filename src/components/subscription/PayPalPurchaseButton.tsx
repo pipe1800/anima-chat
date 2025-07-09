@@ -8,16 +8,6 @@ interface PayPalPurchaseButtonProps {
   onSuccess?: () => void;
 }
 
-// Extend Window interface to include PayPal SDK
-declare global {
-  interface Window {
-    paypal?: {
-      Buttons: (config: any) => {
-        render: (element: string | HTMLElement) => Promise<void>;
-      };
-    };
-  }
-}
 
 const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackId, onSuccess }) => {
   const [sdkState, setSdkState] = useState({ loading: true, ready: false });
@@ -29,7 +19,7 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
   // Load PayPal SDK
   useEffect(() => {
     const loadPayPalSDK = async () => {
-      if (window.paypal) {
+      if ((window as any).paypal) {
         setSdkState({ loading: false, ready: true });
         return;
       }
@@ -81,12 +71,12 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
 
   // Render PayPal buttons when SDK is ready
   useEffect(() => {
-    if (sdkState.ready && window.paypal && paypalRef.current && user) {
+    if (sdkState.ready && (window as any).paypal && paypalRef.current && user) {
       try {
         // Clear the container before rendering new buttons
         paypalRef.current.innerHTML = '';
         
-        window.paypal!.Buttons({
+        (window as any).paypal.Buttons({
           style: {
             shape: 'rect',
             color: 'gold',
