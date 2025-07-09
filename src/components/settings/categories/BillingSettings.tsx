@@ -77,17 +77,67 @@ export const BillingSettings = () => {
   }, [user]);
 
   const handleChangePlan = async () => {
-    toast({
-      title: "Coming Soon",
-      description: "PayPal integration will be rebuilt soon!",
-    });
+    if (!selectedNewPlan) return;
+    
+    setIsChangingPlan(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+        body: { planId: selectedNewPlan }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Open PayPal approval URL in new tab
+      if (data?.approvalUrl) {
+        window.open(data.approvalUrl, '_blank');
+        setIsChangePlanDialogOpen(false);
+        setSelectedNewPlan('');
+        toast({
+          title: "Redirecting to PayPal",
+          description: "Complete your plan change on PayPal's website.",
+        });
+      }
+    } catch (error) {
+      console.error('Plan change error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPlan(false);
+    }
   };
 
   const handleCancelSubscription = async () => {
-    toast({
-      title: "Coming Soon", 
-      description: "PayPal integration will be rebuilt soon!",
-    });
+    setIsCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-paypal-subscription');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.success) {
+        toast({
+          title: "Subscription Cancelled",
+          description: "Your subscription has been cancelled successfully.",
+        });
+        // Refresh the subscription data
+        await fetchSubscriptionData();
+      }
+    } catch (error) {
+      console.error('Cancellation error:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
