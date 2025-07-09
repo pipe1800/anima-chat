@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { Camera, Edit3, Plus, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/hooks/useProfile';
+import { useNavigate } from 'react-router-dom';
 
 export const ProfileHeader = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { user, profile, loading } = useCurrentUser();
+  const navigate = useNavigate();
   
   // For demo purposes, simulating whether this is the current user's profile
   const [isOwnProfile] = useState(true); // This would come from auth context in real app
@@ -116,8 +118,12 @@ export const ProfileHeader = () => {
           {/* Action Buttons */}
           <div className="pt-4 flex-shrink-0">
             {isOwnProfile ? (
-              <Button variant="secondary" className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
-                Edit Profile
+              <Button 
+                variant="secondary" 
+                className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
+                onClick={() => navigate('/settings')}
+              >
+                Settings
               </Button>
             ) : (
               <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium px-8">
