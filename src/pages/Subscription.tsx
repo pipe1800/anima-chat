@@ -273,9 +273,9 @@ const Subscription = () => {
                         <StaticPayPalButton 
                           paypalPlanId={
                             plan.name === 'True Fan' 
-                              ? 'P-6VC11234RX254105DNBW33UQ' 
+                              ? 'P-6FV20741XD451732ENBXH6WY' 
                               : plan.name === 'The Whale' 
-                                ? 'P-3K907001WR094711RNBW2YCY'
+                                ? 'P-70K46447GU478721BNBXH5PA'
                                 : ''
                           }
                         />
