@@ -227,7 +227,7 @@ const Subscription = () => {
                             <StaticPayPalButton 
                               paypalPlanId={
                                 plan.name === 'True Fan' 
-                                  ? 'P-YOUR-TRUE-FAN-PLAN-ID' 
+                                  ? 'P-6VC11234RX254105DNBW33UQ' 
                                   : plan.name === 'The Whale' 
                                     ? 'P-3K907001WR094711RNBW2YCY'
                                     : ''
