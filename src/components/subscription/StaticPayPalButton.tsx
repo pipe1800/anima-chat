@@ -44,7 +44,7 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
             try {
               const { error } = await supabase.functions.invoke('save-paypal-subscription', {
                 body: { 
-                  subscriptionID: data.subscriptionID, 
+                  subscriptionId: data.subscriptionID, 
                   planId: paypalPlanId 
                 }
               });
