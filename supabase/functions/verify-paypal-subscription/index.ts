@@ -127,18 +127,29 @@ serve(async (req) => {
       subscriptionId: subscription.id, 
       status: subscription.status,
       planId: subscription.plan_id,
-      subscriberEmail: subscription.subscriber?.email_address
+      subscriberEmail: subscription.subscriber?.email_address,
+      fullSubscriptionObject: subscription // Temporary: log full object to debug
     });
 
     // Find the plan in our database using the PayPal plan ID
+    // PayPal returns plan_id in the subscription object
+    const paypalPlanId = subscription.plan_id;
+    logStep("Looking up plan by PayPal plan ID", { paypalPlanId });
+    
     const { data: plan, error: planError } = await supabaseClient
       .from('plans')
       .select('*')
-      .eq('paypal_subscription_id', subscription.plan_id)
-      .single();
+      .eq('paypal_subscription_id', paypalPlanId)
+      .maybeSingle();
 
-    if (planError || !plan) {
-      throw new Error(`Plan not found for PayPal plan ID: ${subscription.plan_id}`);
+    if (planError) {
+      logStep("Database error when looking up plan", { error: planError });
+      throw new Error(`Database error when looking up plan: ${planError.message}`);
+    }
+
+    if (!plan) {
+      logStep("Plan not found", { paypalPlanId, availablePlans: { guestPass: 'Guest Pass', trueFan: 'P-6FV20741XD451732ENBXH6WY', theWhale: 'P-70K46447GU478721BNBXH5PA' }});
+      throw new Error(`Plan not found for PayPal plan ID: ${paypalPlanId}. Please contact support.`);
     }
 
     logStep("Plan found in database", { planName: plan.name, planId: plan.id });
