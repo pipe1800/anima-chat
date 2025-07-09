@@ -247,6 +247,7 @@ const Subscription = () => {
                     
                     <div className="mt-6">
                       {isCurrentPlan ? (
+                        // Current plan - show disabled button
                         <Button 
                           className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
                           disabled={true}
@@ -260,6 +261,14 @@ const Subscription = () => {
                           className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
                         >
                           {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
+                        </Button>
+                      ) : isFree ? (
+                        // Free plan for unsubscribed users - show current plan
+                        <Button 
+                          className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
+                          disabled={true}
+                        >
+                          Current Plan
                         </Button>
                       ) : (
                         // User has no active subscription, show PayPal button for paid plans
