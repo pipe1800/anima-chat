@@ -85,6 +85,13 @@ export const BillingSettings = () => {
       const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
       const isUpgrade = userSubscription?.plan?.name === 'True Fan' && selectedPlan?.name === 'The Whale';
       
+      console.log('Plan change attempt:', {
+        currentPlan: userSubscription?.plan?.name,
+        targetPlan: selectedPlan?.name,
+        isUpgrade,
+        selectedNewPlan
+      });
+      
       if (isUpgrade) {
         // Use the upgrade flow
         const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
