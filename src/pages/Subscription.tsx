@@ -253,13 +253,6 @@ const Subscription = () => {
                         >
                           Current Plan
                         </Button>
-                      ) : isFree ? (
-                        <Button 
-                          className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
-                          disabled={true}
-                        >
-                          Current Plan
-                        </Button>
                       ) : userSubscription ? (
                         // User has active subscription, show upgrade/change plan button
                         <Button 
