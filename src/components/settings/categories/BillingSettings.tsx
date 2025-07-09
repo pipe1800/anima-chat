@@ -113,15 +113,21 @@ export const BillingSettings = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Plan Changed Successfully!",
-        description: `Your subscription has been updated to ${selectedPlan.name}`,
-      });
+      // Check if approval is required
+      if (data.requires_approval && data.approve_url) {
+        window.location.href = data.approve_url;
+      } else {
+        // Existing success logic
+        toast({
+          title: "Plan Changed Successfully!",
+          description: `Your subscription has been updated to ${selectedPlan.name}`,
+        });
 
-      // Refresh subscription data
-      await fetchSubscriptionData();
-      setIsChangePlanDialogOpen(false);
-      setSelectedNewPlan('');
+        // Refresh subscription data
+        await fetchSubscriptionData();
+        setIsChangePlanDialogOpen(false);
+        setSelectedNewPlan('');
+      }
 
     } catch (error: any) {
       console.error('Error changing plan:', error);
