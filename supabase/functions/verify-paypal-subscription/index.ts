@@ -71,12 +71,10 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json();
     logStep("PayPal access token obtained");
 
-    // If we have a subscription ID, verify it directly
-    // If we only have a token, we need to find the subscription
+    // Get subscription details from PayPal
     let subscription;
     
     if (subscriptionId) {
-      // Get subscription details from PayPal using subscription ID
       const subscriptionResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
         method: 'GET',
         headers: {
@@ -94,11 +92,8 @@ serve(async (req) => {
 
       subscription = await subscriptionResponse.json();
     } else if (paypalToken) {
-      // If we only have a token, we need to search for recent subscriptions for this user
-      // This is a fallback method when subscription_id is not provided in the return URL
       logStep("Attempting to find subscription by user email since no subscription ID provided");
       
-      // Search for subscriptions by user email (last 10 subscriptions)
       const searchResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions?start_time=${new Date(Date.now() - 60*60*1000).toISOString()}&page_size=10`, {
         method: 'GET',
         headers: {
@@ -109,7 +104,6 @@ serve(async (req) => {
       
       if (searchResponse.ok) {
         const searchData = await searchResponse.json();
-        // Find the most recent active subscription for this user
         subscription = searchData.subscriptions?.find((sub: any) => 
           sub.subscriber?.email_address?.toLowerCase() === user.email?.toLowerCase() && 
           sub.status === 'ACTIVE'
@@ -123,16 +117,35 @@ serve(async (req) => {
       }
     }
     
-    logStep("PayPal subscription verified", { 
+    logStep("PayPal subscription found", { 
       subscriptionId: subscription.id, 
       status: subscription.status,
-      planId: subscription.plan_id,
-      subscriberEmail: subscription.subscriber?.email_address,
-      fullSubscriptionObject: subscription // Temporary: log full object to debug
+      planId: subscription.plan_id
     });
 
+    // Check if subscription already exists in our database
+    const { data: existingSubscription } = await supabaseClient
+      .from('subscriptions')
+      .select('id, plan_id')
+      .eq('paypal_subscription_id', subscription.id)
+      .maybeSingle();
+
+    if (existingSubscription) {
+      logStep("Subscription already exists, returning success", { subscriptionId: existingSubscription.id });
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: "Subscription already verified",
+        subscription: {
+          id: subscription.id,
+          status: subscription.status
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     // Find the plan in our database using the PayPal plan ID
-    // PayPal returns plan_id in the subscription object
     const paypalPlanId = subscription.plan_id;
     logStep("Looking up plan by PayPal plan ID", { paypalPlanId });
     
@@ -148,7 +161,7 @@ serve(async (req) => {
     }
 
     if (!plan) {
-      logStep("Plan not found", { paypalPlanId, availablePlans: { guestPass: 'Guest Pass', trueFan: 'P-6FV20741XD451732ENBXH6WY', theWhale: 'P-70K46447GU478721BNBXH5PA' }});
+      logStep("Plan not found", { paypalPlanId });
       throw new Error(`Plan not found for PayPal plan ID: ${paypalPlanId}. Please contact support.`);
     }
 
@@ -174,7 +187,6 @@ serve(async (req) => {
     if (existingActiveSubscriptions && existingActiveSubscriptions.length > 0) {
       logStep("Found existing active subscriptions, deactivating them", { count: existingActiveSubscriptions.length });
       
-      // Deactivate all existing active subscriptions
       const { error: deactivateError } = await supabaseClient
         .from('subscriptions')
         .update({ status: 'cancelled' })
@@ -189,7 +201,8 @@ serve(async (req) => {
       logStep("Successfully deactivated existing active subscriptions");
     }
 
-    // Create new subscription (always insert after deactivating existing ones)
+    // Create new subscription
+    logStep("Creating new subscription record");
     const { error: insertError } = await supabaseClient
       .from('subscriptions')
       .insert({
@@ -201,8 +214,10 @@ serve(async (req) => {
       });
 
     if (insertError) {
+      logStep("Error creating subscription", { error: insertError });
       throw new Error(`Failed to create subscription: ${insertError.message}`);
     }
+    
     logStep("New subscription created successfully");
 
     return new Response(JSON.stringify({ 
@@ -210,7 +225,10 @@ serve(async (req) => {
       subscription: {
         id: subscription.id,
         status: subscription.status,
-        plan: plan
+        plan: {
+          name: plan.name,
+          id: plan.id
+        }
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
