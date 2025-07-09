@@ -39,13 +39,13 @@ export const BillingSettings = () => {
   const [selectedNewPlan, setSelectedNewPlan] = useState<string>('');
   const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false);
 
-  // PayPal Plan ID mapping
+  // PayPal Plan ID mapping - these should match the backend
   const getPayPalPlanId = (planName: string): string => {
     switch (planName) {
       case 'True Fan':
-        return 'P-6VC11234RX254105DNBW33UQ';
+        return 'P-6FV20741XD451732ENBXH6WY';
       case 'The Whale':
-        return 'P-3K907001WR094711RNBW2YCY';
+        return 'P-70K46447GU478721BNBXH5PA';
       default:
         return '';
     }

@@ -205,28 +205,15 @@ serve(async (req) => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${accessToken}`,
           "Accept": "application/json",
+          "PayPal-Request-Id": `revise-${subscriptionId}-${Date.now()}`,
         },
         body: JSON.stringify({
           plan_id: paypalPlanId,
-          plan: {
-            billing_cycles: [{
-              frequency: {
-                interval_unit: "MONTH",
-                interval_count: 1
-              },
-              tenure_type: "REGULAR",
-              sequence: 1,
-              total_cycles: 0,
-              pricing_scheme: {
-                fixed_price: {
-                  value: newPlan.price_monthly,
-                  currency_code: "USD"
-                }
-              }
-            }],
-            payment_preferences: {
-              auto_bill_outstanding: true
-            }
+          application_context: {
+            brand_name: "Your App Name",
+            user_action: "SUBSCRIBE_NOW",
+            return_url: `https://rclpyipeytqbamiwcuih.supabase.co/subscription?success=true`,
+            cancel_url: `https://rclpyipeytqbamiwcuih.supabase.co/subscription?cancelled=true`
           }
         }),
       }
