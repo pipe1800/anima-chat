@@ -220,6 +220,23 @@ serve(async (req) => {
     
     logStep("New subscription created successfully");
 
+    // Grant monthly credits to user
+    logStep("Granting monthly credits to user", { creditsToGrant: plan.monthly_credits_allowance });
+    const { error: creditsError } = await supabaseClient
+      .from('credits')
+      .update({ 
+        balance: plan.monthly_credits_allowance 
+      })
+      .eq('user_id', user.id);
+
+    if (creditsError) {
+      logStep("Error granting credits", { error: creditsError });
+      // Don't throw error here - subscription was created successfully, just log the credit issue
+      console.error('Failed to grant credits:', creditsError);
+    } else {
+      logStep("Credits granted successfully", { newBalance: plan.monthly_credits_allowance });
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
       subscription: {
