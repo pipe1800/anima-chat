@@ -247,7 +247,26 @@ serve(async (req) => {
       throw new Error(`Failed to revise PayPal subscription: ${reviseResponse.status} - ${errorText}`);
     }
 
-    logStep("PayPal subscription revised successfully");
+    // Parse the PayPal API response
+    const paypalRevisionResponse = await reviseResponse.json();
+    logStep("PayPal revision response parsed", { response: paypalRevisionResponse });
+
+    // Check for an approval link
+    const approvalLink = paypalRevisionResponse.links?.find(link => link.rel === 'approve');
+    
+    if (approvalLink) {
+      logStep("Approval needed", { url: approvalLink.href });
+      return new Response(JSON.stringify({
+        success: true,
+        requires_approval: true,
+        approve_url: approvalLink.href
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    logStep("PayPal subscription revised successfully without approval needed");
 
     // Update our database - change the plan_id
     logStep("Updating subscription in database", { 
