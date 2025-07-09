@@ -201,7 +201,7 @@ serve(async (req) => {
         .from('credits')
         .select('balance')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (creditsError) {
         throw new Error(`Failed to fetch user credits: ${creditsError.message}`);
