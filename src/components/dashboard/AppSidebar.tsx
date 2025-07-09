@@ -57,7 +57,13 @@ export function AppSidebar() {
     }
   }, [user]);
 
-  const isActive = (path: string) => currentPath === path;
+  const isActive = (path: string) => {
+    if (path === '/profile') {
+      // Keep Profile active for both /profile and /profile/settings
+      return currentPath === '/profile' || currentPath.startsWith('/profile/');
+    }
+    return currentPath === path;
+  };
 
   const getNavClasses = (active: boolean) => 
     `flex items-center justify-start w-full space-x-2 px-3 py-2 transition-all duration-200 text-sm ${
@@ -97,14 +103,13 @@ export function AppSidebar() {
       <div className="flex flex-col h-full">
         <div className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
-          <div className="flex items-center justify-start mb-6">
+          <div className="flex items-center justify-center px-4 py-4">
             <img 
               src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
               alt="Anima AI Chat" 
               className="h-16 w-auto"
             />
           </div>
-
         </div>
 
         <div className="px-2 py-4 flex-1">

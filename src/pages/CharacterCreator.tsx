@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
@@ -298,25 +297,19 @@ const CharacterCreator = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#121212]">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col min-w-0 md:ml-64">
-          <div className="w-full">
-            <CreationStepsHeader
-              steps={steps}
-              currentStep={currentStep}
-              onStepChange={handleStepChange}
-            />
-          </div>
-
-          <div className="flex-1 overflow-auto">
-            {renderCurrentStep()}
-          </div>
-        </div>
+    <DashboardLayout>
+      <div className="w-full">
+        <CreationStepsHeader
+          steps={steps}
+          currentStep={currentStep}
+          onStepChange={handleStepChange}
+        />
       </div>
-    </SidebarProvider>
+
+      <div className="flex-1 overflow-auto">
+        {renderCurrentStep()}
+      </div>
+    </DashboardLayout>
   );
 };
 

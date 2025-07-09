@@ -1,19 +1,13 @@
 
 import React from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 
 const Dashboard = () => {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#121212]">
-        <AppSidebar />
-        <main className="flex-1 overflow-auto ml-64">
-          <DashboardContent />
-        </main>
-      </div>
-    </SidebarProvider>
+    <DashboardLayout>
+      <DashboardContent />
+    </DashboardLayout>
   );
 };
 
