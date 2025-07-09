@@ -220,21 +220,42 @@ serve(async (req) => {
     
     logStep("New subscription created successfully");
 
-    // Grant monthly credits to user
+    // Grant monthly credits to user (add to existing balance)
     logStep("Granting monthly credits to user", { creditsToGrant: plan.monthly_credits_allowance });
-    const { error: creditsError } = await supabaseClient
+    
+    // First get current balance
+    const { data: currentCredits, error: fetchCreditsError } = await supabaseClient
       .from('credits')
-      .update({ 
-        balance: plan.monthly_credits_allowance 
-      })
-      .eq('user_id', user.id);
-
-    if (creditsError) {
-      logStep("Error granting credits", { error: creditsError });
-      // Don't throw error here - subscription was created successfully, just log the credit issue
-      console.error('Failed to grant credits:', creditsError);
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (fetchCreditsError) {
+      logStep("Error fetching current credits", { error: fetchCreditsError });
+      // Don't throw error here - subscription was created successfully
+      console.error('Failed to fetch current credits:', fetchCreditsError);
     } else {
-      logStep("Credits granted successfully", { newBalance: plan.monthly_credits_allowance });
+      const newBalance = (currentCredits?.balance || 0) + plan.monthly_credits_allowance;
+      logStep("Adding credits to existing balance", { 
+        currentBalance: currentCredits?.balance, 
+        creditsToAdd: plan.monthly_credits_allowance,
+        newBalance 
+      });
+      
+      const { error: creditsError } = await supabaseClient
+        .from('credits')
+        .update({ 
+          balance: newBalance 
+        })
+        .eq('user_id', user.id);
+
+      if (creditsError) {
+        logStep("Error granting credits", { error: creditsError });
+        // Don't throw error here - subscription was created successfully, just log the credit issue
+        console.error('Failed to grant credits:', creditsError);
+      } else {
+        logStep("Credits granted successfully", { newBalance });
+      }
     }
 
     return new Response(JSON.stringify({ 

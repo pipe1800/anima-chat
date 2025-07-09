@@ -65,10 +65,11 @@ export const PayPalVerification = () => {
 
         if (data?.success) {
           setStatus('success');
-          setMessage(`Welcome to ${data.subscription.plan.name}! Your subscription is now active.`);
+          const planName = data.subscription?.plan?.name || 'subscription plan';
+          setMessage(`Welcome to ${planName}! Your subscription is now active.`);
           toast({
             title: "Subscription Activated!",
-            description: `Your ${data.subscription.plan.name} subscription is now active.`,
+            description: `Your ${planName} subscription is now active.`,
           });
           
           // Redirect to subscription page after 3 seconds
