@@ -111,12 +111,26 @@ export const BillingSettings = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      console.log('Checking response data:', {
+        requiresApproval: data?.requires_approval,
+        hasApprovalUrl: !!data?.approve_url,
+        approvalUrl: data?.approve_url,
+        fullData: data
+      });
 
       // Check if approval is required
-      if (data.requires_approval && data.approve_url) {
+      if (data?.requires_approval && data?.approve_url) {
+        console.log('Redirecting to PayPal approval URL:', data.approve_url);
         window.location.href = data.approve_url;
       } else {
+        console.log('No approval required, showing success message');
         // Existing success logic
         toast({
           title: "Plan Changed Successfully!",
