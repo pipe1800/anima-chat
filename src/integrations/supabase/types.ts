@@ -479,6 +479,7 @@ export type Database = {
           is_active: boolean
           monthly_credits_allowance: number
           name: string
+          paypal_subscription_id: string | null
           price_monthly: number | null
           price_yearly: number | null
           stripe_price_id_monthly: string | null
@@ -490,6 +491,7 @@ export type Database = {
           is_active?: boolean
           monthly_credits_allowance?: number
           name: string
+          paypal_subscription_id?: string | null
           price_monthly?: number | null
           price_yearly?: number | null
           stripe_price_id_monthly?: string | null
@@ -501,6 +503,7 @@ export type Database = {
           is_active?: boolean
           monthly_credits_allowance?: number
           name?: string
+          paypal_subscription_id?: string | null
           price_monthly?: number | null
           price_yearly?: number | null
           stripe_price_id_monthly?: string | null

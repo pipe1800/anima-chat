@@ -101,11 +101,44 @@ const Subscription = () => {
     fetchData();
   }, [user, toast]);
 
-  const handleSubscribe = (planName: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${planName} subscription will be available soon!`,
-    });
+  const handleSubscribe = async (planName: string) => {
+    try {
+      const plan = plans.find(p => p.name === planName);
+      if (!plan) {
+        toast({
+          title: "Error",
+          description: "Plan not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+        body: { planId: plan.id }
+      });
+
+      if (error) {
+        console.error('PayPal subscription error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create subscription",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Open PayPal approval URL in new tab
+      if (data?.approvalUrl) {
+        window.open(data.approvalUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create subscription",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
