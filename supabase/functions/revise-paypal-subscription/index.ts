@@ -176,13 +176,6 @@ serve(async (req) => {
       newCredits: newPlan.monthly_credits_allowance 
     });
 
-    // Map our plan IDs to PayPal plan IDs
-    const planIdMapping: { [key: string]: string } = {
-      // You'll need to update these with your actual plan IDs from the database
-      'true-fan-plan-id': 'P-6VC11234RX254105DNBW33UQ',
-      'the-whale-plan-id': 'P-3K907001WR094711RNBW2YCY'
-    };
-
     // Find the PayPal plan ID for the new plan
     let paypalPlanId = '';
     if (newPlan.name === 'True Fan') {
