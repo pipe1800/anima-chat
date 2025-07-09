@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import PayPalButton from '@/components/subscription/PayPalButton';
+
 import { 
   getActivePlans, 
   getActiveModels, 
@@ -106,50 +106,6 @@ const Subscription = () => {
       title: "Coming Soon",
       description: `${planName} subscription will be available soon!`,
     });
-  };
-
-  const handlePlanChange = async (newPlanId: string, newPlanName: string) => {
-    if (!user || !userSubscription) return;
-
-    // Check if we have a PayPal subscription ID
-    if (!userSubscription.paypal_subscription_id) {
-      toast({
-        title: "Plan Change Failed",
-        description: "No PayPal subscription found. Please contact support.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('revise-paypal-subscription', {
-        body: {
-          subscriptionId: userSubscription.paypal_subscription_id,
-          newPlanId: newPlanId
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Plan Change Failed",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Plan Changed Successfully!",
-          description: `Your plan has been changed to ${newPlanName}.`
-        });
-        // Refresh the page to show updated subscription
-        window.location.reload();
-      }
-    } catch (error: any) {
-      toast({
-        title: "Plan Change Failed",
-        description: error.message || "An error occurred while changing your plan.",
-        variant: "destructive"
-      });
-    }
   };
 
   if (loading) {
@@ -257,7 +213,7 @@ const Subscription = () => {
                       ) : userSubscription ? (
                         // User has active subscription, show upgrade/change plan button
                         <Button 
-                          onClick={() => handlePlanChange(plan.id, plan.name)}
+                          onClick={() => handleSubscribe(plan.name)}
                           className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
                         >
                           {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
@@ -271,18 +227,13 @@ const Subscription = () => {
                           Current Plan
                         </Button>
                       ) : (
-                        // User has no active subscription, show PayPal button for paid plans
-                        <PayPalButton 
-                          paypalPlanId={
-                            plan.name === 'True Fan' 
-                              ? 'P-6FV20741XD451732ENBXH6WY' 
-                              : plan.name === 'The Whale' 
-                                ? 'P-70K46447GU478721BNBXH5PA'
-                                : ''
-                          }
-                          planId={plan.id}
-                          planName={plan.name}
-                        />
+                        // User has no active subscription, show subscribe button for paid plans
+                        <Button 
+                          onClick={() => handleSubscribe(plan.name)}
+                          className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+                        >
+                          Subscribe
+                        </Button>
                       )}
                     </div>
                   </CardContent>

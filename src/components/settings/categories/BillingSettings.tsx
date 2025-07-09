@@ -39,18 +39,6 @@ export const BillingSettings = () => {
   const [selectedNewPlan, setSelectedNewPlan] = useState<string>('');
   const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false);
 
-  // PayPal Plan ID mapping - these should match the backend
-  const getPayPalPlanId = (planName: string): string => {
-    switch (planName) {
-      case 'True Fan':
-        return 'P-6FV20741XD451732ENBXH6WY';
-      case 'The Whale':
-        return 'P-70K46447GU478721BNBXH5PA';
-      default:
-        return '';
-    }
-  };
-
   const fetchSubscriptionData = async () => {
     if (!user) return;
 
@@ -89,104 +77,17 @@ export const BillingSettings = () => {
   }, [user]);
 
   const handleChangePlan = async () => {
-    if (!userSubscription || !selectedNewPlan) return;
-
-    try {
-      setIsChangingPlan(true);
-
-      const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
-      if (!selectedPlan) {
-        throw new Error('Selected plan not found');
-      }
-
-      const paypalPlanId = getPayPalPlanId(selectedPlan.name);
-      if (!paypalPlanId) {
-        throw new Error('PayPal plan ID not found for selected plan');
-      }
-
-      const { data, error } = await supabase.functions.invoke('revise-paypal-subscription', {
-        body: {
-          subscriptionId: userSubscription.paypal_subscription_id,
-          newPlanId: selectedNewPlan
-        }
-      });
-
-      console.log('Edge function response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      console.log('Checking response data:', {
-        requiresApproval: data?.requires_approval,
-        hasApprovalUrl: !!data?.approve_url,
-        approvalUrl: data?.approve_url,
-        fullData: data
-      });
-
-      // Check if approval is required
-      if (data?.requires_approval && data?.approve_url) {
-        console.log('Redirecting to PayPal approval URL:', data.approve_url);
-        window.location.href = data.approve_url;
-      } else {
-        console.log('No approval required, showing success message');
-        // Existing success logic
-        toast({
-          title: "Plan Changed Successfully!",
-          description: `Your subscription has been updated to ${selectedPlan.name}`,
-        });
-
-        // Refresh subscription data
-        await fetchSubscriptionData();
-        setIsChangePlanDialogOpen(false);
-        setSelectedNewPlan('');
-      }
-
-    } catch (error: any) {
-      console.error('Error changing plan:', error);
-      toast({
-        title: "Failed to Change Plan",
-        description: error.message || "An error occurred while changing your plan",
-        variant: "destructive"
-      });
-    } finally {
-      setIsChangingPlan(false);
-    }
+    toast({
+      title: "Coming Soon",
+      description: "PayPal integration will be rebuilt soon!",
+    });
   };
 
   const handleCancelSubscription = async () => {
-    if (!userSubscription) return;
-
-    try {
-      setIsCancelling(true);
-
-      const { data, error } = await supabase.functions.invoke('cancel-paypal-subscription', {
-        body: {
-          subscriptionId: userSubscription.paypal_subscription_id
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled. You'll continue to have access until the end of your billing period.",
-      });
-
-      // Refresh subscription data
-      await fetchSubscriptionData();
-
-    } catch (error: any) {
-      console.error('Error cancelling subscription:', error);
-      toast({
-        title: "Failed to Cancel Subscription",
-        description: error.message || "An error occurred while cancelling your subscription",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCancelling(false);
-    }
+    toast({
+      title: "Coming Soon", 
+      description: "PayPal integration will be rebuilt soon!",
+    });
   };
 
   const formatDate = (dateString: string) => {
