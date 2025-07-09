@@ -130,7 +130,10 @@ const PayPalPurchaseButton: React.FC<PayPalPurchaseButtonProps> = ({ creditPackI
               const { data: captureData, error } = await supabase.functions.invoke(
                 'capture-paypal-order',
                 {
-                  body: { orderID: data.orderID }
+                  body: { 
+                    orderID: data.orderID,
+                    creditPackId: creditPackId
+                  }
                 }
               );
 
