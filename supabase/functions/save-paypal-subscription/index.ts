@@ -66,7 +66,7 @@ serve(async (req) => {
     logStep("Request data received", { subscriptionId, planId });
 
     // Get PayPal access token
-    const tokenResponse = await fetch("https://api.paypal.com/v1/oauth2/token", {
+    const tokenResponse = await fetch("https://api.sandbox.paypal.com/v1/oauth2/token", {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -87,7 +87,7 @@ serve(async (req) => {
 
     // Verify subscription with PayPal
     const subscriptionResponse = await fetch(
-      `https://api.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
+      `https://api.sandbox.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
       {
         method: "GET",
         headers: {
