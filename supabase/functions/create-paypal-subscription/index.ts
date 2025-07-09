@@ -133,9 +133,12 @@ serve(async (req) => {
 
     logStep("Approval link found", { approvalLink });
 
+    // Modify the approval URL to include our subscription ID
+    const modifiedApprovalLink = `${approvalLink}&subscription_id=${subscription.id}`;
+
     return new Response(JSON.stringify({ 
       subscriptionId: subscription.id,
-      approvalUrl: approvalLink 
+      approvalUrl: modifiedApprovalLink 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

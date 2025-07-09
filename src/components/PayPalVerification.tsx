@@ -16,19 +16,28 @@ export const PayPalVerification = () => {
 
   useEffect(() => {
     const verifySubscription = async () => {
+      // PayPal returns with 'subscription_id' parameter in the URL
       const subscriptionId = searchParams.get('subscription_id');
-      const token = searchParams.get('token');
-      const payerId = searchParams.get('PayerID');
+      const token = searchParams.get('token'); // PayPal's approval token
+      
+      console.log('PayPal return parameters:', {
+        subscription_id: subscriptionId,
+        token: token,
+        all_params: Object.fromEntries(searchParams.entries())
+      });
 
-      if (!subscriptionId || !token || !payerId) {
+      if (!subscriptionId) {
         setStatus('error');
-        setMessage('Missing verification parameters. Please try subscribing again.');
+        setMessage('Missing subscription ID from PayPal. Please try subscribing again.');
         return;
       }
 
       try {
         const { data, error } = await supabase.functions.invoke('verify-paypal-subscription', {
-          body: { subscriptionId }
+          body: { 
+            subscriptionId,
+            token // Include PayPal's approval token
+          }
         });
 
         if (error) {
