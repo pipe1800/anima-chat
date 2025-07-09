@@ -77,7 +77,11 @@ export const BillingSettings = () => {
   }, [user]);
 
   const handleChangePlan = async () => {
+    console.log('handleChangePlan called with selectedNewPlan:', selectedNewPlan);
     if (!selectedNewPlan) return;
+    
+    console.log('Current subscription data:', userSubscription);
+    console.log('Available plans:', availablePlans);
     
     setIsChangingPlan(true);
     try {
