@@ -100,7 +100,7 @@ serve(async (req) => {
       `)
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (subError || !currentSubscription) {
       throw new Error("No active subscription found for user");
@@ -116,7 +116,7 @@ serve(async (req) => {
       .from('plans')
       .select('id, name, monthly_credits_allowance')
       .eq('id', newPlanId)
-      .single();
+      .maybeSingle();
 
     if (newPlanError || !newPlan) {
       throw new Error(`New plan not found: ${newPlanId}`);
