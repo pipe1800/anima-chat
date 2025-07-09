@@ -21,9 +21,12 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
   const initialOptions = {
     clientId: "AWale7howzdXmRvzPeTAgtC9fbKwPrXnURz85Rk6omnBs7xJevAF75B45WAKF287bYZHQV_a8r6EYtwJ",
     currency: "USD",
-    intent: "subscription",
+    intent: "subscription" as const,
     vault: true,
+    environment: "sandbox" as const, // Use sandbox environment for testing
   };
+
+  console.log("PayPal Button initialized with:", { paypalPlanId, planId, planName });
 
   return (
     <PayPalScriptProvider options={initialOptions}>
@@ -35,12 +38,15 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
           label: "subscribe"
         }}
         createSubscription={(data, actions) => {
+          console.log("Creating subscription with PayPal plan ID:", paypalPlanId);
+          console.log("Plan name:", planName);
           return actions.subscription.create({
             plan_id: paypalPlanId
           });
         }}
         onApprove={async (data, actions) => {
           try {
+            console.log("PayPal subscription approved:", data);
             const { error } = await supabase.functions.invoke('save-paypal-subscription', {
               body: { 
                 subscriptionId: data.subscriptionID, 
@@ -49,6 +55,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
             });
             
             if (error) {
+              console.error("Save subscription error:", error);
               toast({ 
                 title: "Subscription Failed", 
                 description: error.message, 
@@ -62,6 +69,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
               window.location.reload();
             }
           } catch (error: any) {
+            console.error("Subscription approval error:", error);
             toast({ 
               title: "Subscription Failed", 
               description: error.message || "An error occurred during subscription.", 
@@ -73,7 +81,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
           console.error('PayPal button error:', err);
           toast({ 
             title: "PayPal Error", 
-            description: "An error occurred. Please try again.", 
+            description: "The subscription plan doesn't exist. Please contact support.", 
             variant: "destructive" 
           });
         }}
