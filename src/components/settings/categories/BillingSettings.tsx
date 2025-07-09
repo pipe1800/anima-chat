@@ -81,23 +81,50 @@ export const BillingSettings = () => {
     
     setIsChangingPlan(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
-        body: { planId: selectedNewPlan }
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Open PayPal approval URL in new tab
-      if (data?.approvalUrl) {
-        window.open(data.approvalUrl, '_blank');
-        setIsChangePlanDialogOpen(false);
-        setSelectedNewPlan('');
-        toast({
-          title: "Redirecting to PayPal",
-          description: "Complete your plan change on PayPal's website.",
+      // Check if this is an upgrade (True Fan to The Whale)
+      const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
+      const isUpgrade = userSubscription?.plan?.name === 'True Fan' && selectedPlan?.name === 'The Whale';
+      
+      if (isUpgrade) {
+        // Use the upgrade flow
+        const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+          body: { targetPlanId: selectedNewPlan }
         });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Open PayPal payment URL for the difference
+        if (data?.approvalUrl) {
+          window.open(data.approvalUrl, '_blank');
+          setIsChangePlanDialogOpen(false);
+          setSelectedNewPlan('');
+          toast({
+            title: "Upgrade Payment",
+            description: `Pay $${data.priceDifference} to upgrade and receive ${data.creditDifference.toLocaleString()} additional credits immediately.`,
+          });
+        }
+      } else {
+        // Use the regular subscription change flow
+        const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+          body: { planId: selectedNewPlan }
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Open PayPal approval URL in new tab
+        if (data?.approvalUrl) {
+          window.open(data.approvalUrl, '_blank');
+          setIsChangePlanDialogOpen(false);
+          setSelectedNewPlan('');
+          toast({
+            title: "Redirecting to PayPal",
+            description: "Complete your plan change on PayPal's website.",
+          });
+        }
       }
     } catch (error) {
       console.error('Plan change error:', error);
@@ -272,14 +299,31 @@ export const BillingSettings = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedNewPlan && (
-                      <div className="bg-gray-800/50 rounded-lg p-4">
-                        <p className="text-sm text-gray-300">
-                          Your subscription will be updated immediately and you'll be charged the prorated difference.
-                          Credits will be adjusted accordingly.
-                        </p>
-                      </div>
-                    )}
+                    {selectedNewPlan && (() => {
+                      const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
+                      const isUpgrade = userSubscription?.plan?.name === 'True Fan' && selectedPlan?.name === 'The Whale';
+                      
+                      if (isUpgrade) {
+                        return (
+                          <div className="bg-orange-900/20 border border-orange-700/30 rounded-lg p-4">
+                            <p className="text-sm text-orange-200 mb-2">
+                              <strong>Instant Upgrade:</strong> Pay only $10.00 (the difference between plans) and receive 17,000 additional credits immediately.
+                            </p>
+                            <p className="text-xs text-orange-300">
+                              Your next billing cycle will charge the full $24.95 for The Whale plan.
+                            </p>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="bg-gray-800/50 rounded-lg p-4">
+                            <p className="text-sm text-gray-300">
+                              Your subscription will be updated and you'll be charged accordingly.
+                            </p>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                   <DialogFooter>
                     <Button 

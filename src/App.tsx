@@ -28,6 +28,7 @@ import PublicCharacterProfile from "./pages/PublicCharacterProfile";
 import PublicWorldInfoProfile from "./pages/PublicWorldInfoProfile";
 import NotFound from "./pages/NotFound";
 import { PayPalVerification } from "./components/PayPalVerification";
+import { UpgradeVerification } from "./components/UpgradeVerification";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,11 @@ const App = () => (
             <Route path="/paypal-verification" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <PayPalVerification />
+              </OnboardingGuard>
+            } />
+            <Route path="/upgrade-verification" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <UpgradeVerification />
               </OnboardingGuard>
             } />
             <Route path="*" element={<NotFound />} />
