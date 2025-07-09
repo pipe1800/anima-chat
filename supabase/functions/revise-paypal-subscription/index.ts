@@ -27,6 +27,13 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+    logStep("Environment variables check", {
+      hasPaypalClientId: !!paypalClientId,
+      hasPaypalClientSecret: !!paypalClientSecret,
+      hasSupabaseUrl: !!supabaseUrl,
+      hasSupabaseServiceKey: !!supabaseServiceKey
+    });
+
     if (!paypalClientId || !paypalClientSecret) {
       throw new Error("PayPal credentials not configured");
     }
@@ -39,33 +46,45 @@ serve(async (req) => {
 
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    logStep("Supabase client created");
 
     // Get user from authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header provided");
     }
+    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
+    logStep("Attempting to authenticate user");
+    
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      logStep("User authentication failed", { error: userError.message });
+      throw new Error(`Authentication error: ${userError.message}`);
+    }
     
     const user = userData.user;
-    if (!user) throw new Error("User not authenticated");
+    if (!user) {
+      logStep("No user found in token");
+      throw new Error("User not authenticated");
+    }
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Parse request body
+    logStep("Parsing request body");
     const body = await req.json();
     const { subscriptionId, newPlanId } = body;
+
+    logStep("Request data received", { subscriptionId, newPlanId });
 
     if (!subscriptionId || !newPlanId) {
       throw new Error("Missing required fields: subscriptionId and newPlanId");
     }
 
-    logStep("Request data received", { subscriptionId, newPlanId });
-
     // Get PayPal access token
+    logStep("Getting PayPal access token");
     const tokenResponse = await fetch("https://api.paypal.com/v1/oauth2/token", {
       method: "POST",
       headers: {
@@ -78,14 +97,19 @@ serve(async (req) => {
     });
 
     if (!tokenResponse.ok) {
+      logStep("PayPal token request failed", { 
+        status: tokenResponse.status, 
+        statusText: tokenResponse.statusText 
+      });
       throw new Error(`Failed to get PayPal access token: ${tokenResponse.status}`);
     }
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
-    logStep("PayPal access token obtained");
+    logStep("PayPal access token obtained successfully");
 
     // Get current user subscription to find current plan
+    logStep("Fetching current user subscription");
     const { data: currentSubscription, error: subError } = await supabase
       .from('subscriptions')
       .select(`
@@ -102,23 +126,48 @@ serve(async (req) => {
       .eq('status', 'active')
       .maybeSingle();
 
-    if (subError || !currentSubscription) {
+    logStep("Subscription query completed", { 
+      hasData: !!currentSubscription, 
+      error: subError?.message 
+    });
+
+    if (subError) {
+      logStep("Subscription query error", { error: subError.message });
+      throw new Error(`Failed to fetch subscription: ${subError.message}`);
+    }
+
+    if (!currentSubscription) {
+      logStep("No active subscription found for user");
       throw new Error("No active subscription found for user");
     }
 
     logStep("Current subscription found", { 
+      subscriptionId: currentSubscription.id,
       currentPlanId: currentSubscription.plan_id,
-      currentPlanName: currentSubscription.plan?.name 
+      currentPlanName: currentSubscription.plan?.name,
+      paypalSubscriptionId: currentSubscription.paypal_subscription_id
     });
 
     // Get new plan details
+    logStep("Fetching new plan details", { newPlanId });
     const { data: newPlan, error: newPlanError } = await supabase
       .from('plans')
       .select('id, name, monthly_credits_allowance')
       .eq('id', newPlanId)
       .maybeSingle();
 
-    if (newPlanError || !newPlan) {
+    logStep("New plan query completed", { 
+      hasData: !!newPlan, 
+      error: newPlanError?.message 
+    });
+
+    if (newPlanError) {
+      logStep("New plan query error", { error: newPlanError.message });
+      throw new Error(`Failed to fetch new plan: ${newPlanError.message}`);
+    }
+
+    if (!newPlan) {
+      logStep("New plan not found", { newPlanId });
       throw new Error(`New plan not found: ${newPlanId}`);
     }
 
@@ -147,6 +196,11 @@ serve(async (req) => {
     logStep("PayPal plan ID mapped", { paypalPlanId });
 
     // Call PayPal's revise subscription API
+    logStep("Calling PayPal revise subscription API", { 
+      subscriptionId, 
+      paypalPlanId 
+    });
+    
     const reviseResponse = await fetch(
       `https://api.paypal.com/v1/billing/subscriptions/${subscriptionId}/revise`,
       {
@@ -163,14 +217,29 @@ serve(async (req) => {
       }
     );
 
+    logStep("PayPal revise response received", { 
+      status: reviseResponse.status,
+      statusText: reviseResponse.statusText,
+      ok: reviseResponse.ok
+    });
+
     if (!reviseResponse.ok) {
       const errorText = await reviseResponse.text();
+      logStep("PayPal revise failed", { 
+        status: reviseResponse.status, 
+        error: errorText 
+      });
       throw new Error(`Failed to revise PayPal subscription: ${reviseResponse.status} - ${errorText}`);
     }
 
     logStep("PayPal subscription revised successfully");
 
     // Update our database - change the plan_id
+    logStep("Updating subscription in database", { 
+      subscriptionId: currentSubscription.id,
+      newPlanId 
+    });
+    
     const { error: updateError } = await supabase
       .from('subscriptions')
       .update({
@@ -179,10 +248,11 @@ serve(async (req) => {
       .eq('id', currentSubscription.id);
 
     if (updateError) {
+      logStep("Database update failed", { error: updateError.message });
       throw new Error(`Failed to update subscription in database: ${updateError.message}`);
     }
 
-    logStep("Subscription updated in database");
+    logStep("Subscription updated in database successfully");
 
     // Calculate credit difference and update user's balance
     const currentCredits = currentSubscription.plan?.monthly_credits_allowance || 0;
@@ -196,34 +266,55 @@ serve(async (req) => {
     });
 
     if (creditDifference !== 0) {
+      logStep("Credit difference detected, updating user balance", { creditDifference });
+      
       // Get current user credit balance
+      logStep("Fetching current user credit balance");
       const { data: userCredits, error: creditsError } = await supabase
         .from('credits')
         .select('balance')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      logStep("Credits query completed", { 
+        hasData: !!userCredits, 
+        currentBalance: userCredits?.balance,
+        error: creditsError?.message 
+      });
+
       if (creditsError) {
+        logStep("Credits query failed", { error: creditsError.message });
         throw new Error(`Failed to fetch user credits: ${creditsError.message}`);
       }
 
-      const newBalance = (userCredits?.balance || 0) + creditDifference;
+      const currentBalance = userCredits?.balance || 0;
+      const newBalance = currentBalance + creditDifference;
+
+      logStep("Calculating new credit balance", {
+        currentBalance,
+        creditDifference,
+        newBalance
+      });
 
       // Update credit balance
+      logStep("Updating credit balance in database");
       const { error: updateCreditsError } = await supabase
         .from('credits')
         .update({ balance: newBalance })
         .eq('user_id', user.id);
 
       if (updateCreditsError) {
+        logStep("Credits update failed", { error: updateCreditsError.message });
         throw new Error(`Failed to update credits: ${updateCreditsError.message}`);
       }
 
-      logStep("Credits updated", { 
-        previousBalance: userCredits?.balance || 0,
+      logStep("Credits updated successfully", { 
+        previousBalance: currentBalance,
         creditDifference,
         newBalance 
       });
+    } else {
+      logStep("No credit difference, skipping credit update");
     }
 
     // Return success response
