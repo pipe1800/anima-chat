@@ -38,9 +38,8 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ paypalPlanId, planId, planN
     return null;
   }
 
-  // IMPORTANT: This is a production client ID being used in sandbox mode
-  // You need to replace this with your SANDBOX client ID from PayPal Developer Dashboard
-  const clientId = "AWale7howzdXmRvzPeTAgtC9fbKwPrXnURz85Rk6omnBs7xJevAF75B45WAKF287bYZHQV_a8r6EYtwJ";
+  // Using sandbox client ID
+  const clientId = "Ae1k_GWddCY79FRV4OWluA_7XyNl0uGN9dgwtmK8uXZdZaE8iNG9iLlY_iUUxUHr2OeblEeiGpBCezDN";
 
   const initialOptions = {
     clientId: clientId,
