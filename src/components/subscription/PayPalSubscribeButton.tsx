@@ -73,9 +73,16 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
 
   useEffect(() => {
     if (sdkState.ready && paypalRef.current && user) {
+      const container = paypalRef.current;
+      
+      // Prevent duplicate renders - check if buttons already exist
+      if (container.children.length > 0) {
+        return;
+      }
+      
       try {
         // Clear the container before rendering new buttons
-        paypalRef.current.innerHTML = '';
+        container.innerHTML = '';
         
         window.paypal!.Buttons({
           style: {
@@ -90,7 +97,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
             // --- Use the REAL PayPal Plan IDs Here ---
             if (planName === 'True Fan') {
               // Replace this with the real ID for your "True Fan" plan
-              paypalPlanId = 'P-YOUR-TRUE-FAN-PLAN-ID'; 
+              paypalPlanId = 'P-6VC11234RX254105DNBW33UQ'; 
             } else if (planName === 'The Whale') {
               // This is the real ID for "The Whale" plan
               paypalPlanId = 'P-3K907001WR094711RNBW2YCY';
@@ -128,7 +135,7 @@ const PayPalSubscribeButton: React.FC<PayPalSubscribeButtonProps> = ({ planId, p
             console.error("PayPal button error:", err);
             toast({ title: "PayPal Error", description: "An error occurred with the PayPal button.", variant: "destructive" });
           }
-        }).render(paypalRef.current);
+        }).render(container);
       } catch (error) {
         console.error("Failed to render PayPal buttons:", error);
       }

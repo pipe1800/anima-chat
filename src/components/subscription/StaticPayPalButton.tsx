@@ -11,16 +11,22 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
   const { user } = useAuth();
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptsLoadedRef = useRef(false);
+  const isRenderingRef = useRef(false);
+  const isRenderedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !containerRef.current || isRenderingRef.current || isRenderedRef.current) return;
 
     const containerId = `paypal-button-container-${paypalPlanId}`;
+    const container = containerRef.current;
     
-    // Check if PayPal SDK is already loaded
-    if (window.paypal) {
-      // SDK already loaded, render button directly
+    // Clear any existing content and prevent duplicate renders
+    container.innerHTML = '';
+    isRenderingRef.current = true;
+    
+    const renderButton = () => {
+      if (!window.paypal || !container || isRenderedRef.current) return;
+      
       try {
         window.paypal.Buttons({
           style: {
@@ -44,107 +50,76 @@ const StaticPayPalButton: React.FC<StaticPayPalButtonProps> = ({ paypalPlanId })
               });
               
               if (error) {
-                window.dispatchEvent(new CustomEvent('paypal-error', { 
-                  detail: error.message 
-                }));
+                toast({ 
+                  title: "Subscription Failed", 
+                  description: error.message, 
+                  variant: "destructive" 
+                });
               } else {
-                window.dispatchEvent(new CustomEvent('paypal-success'));
+                toast({ 
+                  title: "Subscription Successful!", 
+                  description: "Your account has been upgraded." 
+                });
+                window.location.reload();
               }
             } catch (error: any) {
-              window.dispatchEvent(new CustomEvent('paypal-error', { 
-                detail: error.message 
-              }));
+              toast({ 
+                title: "Subscription Failed", 
+                description: error.message || "An error occurred during subscription.", 
+                variant: "destructive" 
+              });
             }
+          },
+          onError: (err: any) => {
+            console.error('PayPal button error:', err);
+            toast({ 
+              title: "PayPal Error", 
+              description: "An error occurred. Please try again.", 
+              variant: "destructive" 
+            });
           }
-        }).render(`#${containerId}`);
+        }).render(container).then(() => {
+          isRenderedRef.current = true;
+          isRenderingRef.current = false;
+        }).catch((error: any) => {
+          console.error('Error rendering PayPal button:', error);
+          isRenderingRef.current = false;
+        });
       } catch (error) {
         console.error('Error rendering PayPal button:', error);
+        isRenderingRef.current = false;
       }
-    } else if (!scriptsLoadedRef.current) {
-      // Load SDK first time only
-      const sdkScript = document.createElement('script');
-      sdkScript.src = 'https://www.paypal.com/sdk/js?client-id=AWale7howzdXmRvzPeTAgtC9fbKwPrXnURz85Rk6omnBs7xJevAF75B45WAKF287bYZHQV_a8r6EYtwJ&vault=true&intent=subscription';
-      sdkScript.async = true;
-      
-      sdkScript.onload = () => {
-        scriptsLoadedRef.current = true;
-        // Re-trigger the effect to render buttons for all instances
-        window.dispatchEvent(new CustomEvent('paypal-sdk-loaded'));
-      };
-      
-      document.head.appendChild(sdkScript);
+    };
+
+    // Check if PayPal SDK is already loaded
+    if (window.paypal) {
+      renderButton();
+    } else {
+      // Check if script is already being loaded
+      const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]');
+      if (!existingScript) {
+        const sdkScript = document.createElement('script');
+        sdkScript.src = 'https://www.paypal.com/sdk/js?client-id=AWale7howzdXmRvzPeTAgtC9fbKwPrXnURz85Rk6omnBs7xJevAF75B45WAKF287bYZHQV_a8r6EYtwJ&vault=true&intent=subscription';
+        sdkScript.async = true;
+        sdkScript.onload = renderButton;
+        sdkScript.onerror = () => {
+          console.error('Failed to load PayPal SDK');
+          isRenderingRef.current = false;
+        };
+        document.head.appendChild(sdkScript);
+      } else {
+        // Script exists, wait for it to load
+        existingScript.addEventListener('load', renderButton);
+      }
     }
 
-    // Event listeners for PayPal responses
-    const handleSuccess = () => {
-      toast({ 
-        title: "Subscription Successful!", 
-        description: "Your account has been upgraded." 
-      });
-      window.location.reload();
-    };
-
-    const handleError = (event: any) => {
-      toast({ 
-        title: "Subscription Failed", 
-        description: event.detail || "An error occurred during subscription.", 
-        variant: "destructive" 
-      });
-    };
-
-    const handleSdkLoaded = () => {
-      // Re-run this effect when SDK loads
-      if (window.paypal) {
-        try {
-          window.paypal.Buttons({
-            style: {
-              shape: 'rect',
-              color: 'gold',
-              layout: 'vertical',
-              label: 'subscribe'
-            },
-            createSubscription: function(data: any, actions: any) {
-              return actions.subscription.create({
-                'plan_id': paypalPlanId
-              });
-            },
-            onApprove: async function(data: any, actions: any) {
-              try {
-                const { error } = await supabase.functions.invoke('save-paypal-subscription', {
-                  body: { 
-                    subscriptionID: data.subscriptionID, 
-                    planId: paypalPlanId 
-                  }
-                });
-                
-                if (error) {
-                  window.dispatchEvent(new CustomEvent('paypal-error', { 
-                    detail: error.message 
-                  }));
-                } else {
-                  window.dispatchEvent(new CustomEvent('paypal-success'));
-                }
-              } catch (error: any) {
-                window.dispatchEvent(new CustomEvent('paypal-error', { 
-                  detail: error.message 
-                }));
-              }
-            }
-          }).render(`#${containerId}`);
-        } catch (error) {
-          console.error('Error rendering PayPal button:', error);
-        }
-      }
-    };
-
-    window.addEventListener('paypal-success', handleSuccess);
-    window.addEventListener('paypal-error', handleError);
-    window.addEventListener('paypal-sdk-loaded', handleSdkLoaded);
-
     return () => {
-      window.removeEventListener('paypal-success', handleSuccess);
-      window.removeEventListener('paypal-error', handleError);
-      window.removeEventListener('paypal-sdk-loaded', handleSdkLoaded);
+      // Cleanup on unmount
+      if (container) {
+        container.innerHTML = '';
+      }
+      isRenderingRef.current = false;
+      isRenderedRef.current = false;
     };
   }, [user, paypalPlanId, toast]);
 
