@@ -51,102 +51,15 @@ serve(async (req) => {
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
     const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
     
+    logStep("PayPal credentials check", { 
+      hasClientId: !!clientId, 
+      hasClientSecret: !!clientSecret,
+      clientIdLength: clientId?.length || 0,
+      clientSecretLength: clientSecret?.length || 0
+    });
+    
     if (!clientId || !clientSecret) {
-      logStep("PayPal credentials not configured - simulating successful upgrade for testing");
-      
-      // For now, just simulate the upgrade process
-      // Get current subscription and target plan
-      const { data: currentSub, error: subError } = await supabaseClient
-        .from('subscriptions')
-        .select(`
-          *,
-          plan:plans(*)
-        `)
-        .eq('id', subscriptionId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (subError || !currentSub) {
-        throw new Error("Subscription not found");
-      }
-
-      const { data: targetPlan, error: targetPlanError } = await supabaseClient
-        .from('plans')
-        .select('*')
-        .eq('id', targetPlanId)
-        .single();
-
-      if (targetPlanError || !targetPlan) {
-        throw new Error("Target plan not found");
-      }
-
-      const currentPlanName = currentSub.plan.name;
-      const targetPlanName = targetPlan.name;
-
-      // Calculate credit difference
-      const currentCredits = CREDIT_AMOUNTS[currentPlanName as keyof typeof CREDIT_AMOUNTS] || 0;
-      const targetCredits = CREDIT_AMOUNTS[targetPlanName as keyof typeof CREDIT_AMOUNTS] || 0;
-      const creditDifference = targetCredits - currentCredits;
-
-      logStep("Credit difference calculated", { 
-        currentCredits, 
-        targetCredits, 
-        difference: creditDifference 
-      });
-
-      // Add credits to user's account
-      if (creditDifference > 0) {
-        const { data: currentCreditsData, error: getCurrentError } = await supabaseClient
-          .from('credits')
-          .select('balance')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (getCurrentError) {
-          logStep("Failed to get current credits", { error: getCurrentError });
-          throw new Error(`Failed to get current credits: ${getCurrentError.message}`);
-        }
-        
-        const newBalance = currentCreditsData.balance + creditDifference;
-        logStep("Calculated new balance", { currentBalance: currentCreditsData.balance, newBalance });
-        
-        const { error: creditError } = await supabaseClient
-          .from('credits')
-          .update({ balance: newBalance })
-          .eq('user_id', user.id);
-
-        if (creditError) {
-          logStep("Credit update failed", { error: creditError });
-          throw new Error(`Failed to update credits: ${creditError.message}`);
-        }
-        
-        logStep("Credits updated successfully", { newBalance });
-      }
-
-      // Update the subscription plan
-      const { error: subscriptionUpdateError } = await supabaseClient
-        .from('subscriptions')
-        .update({ plan_id: targetPlanId })
-        .eq('id', subscriptionId);
-
-      if (subscriptionUpdateError) {
-        throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
-      }
-
-      logStep("Upgrade completed successfully (simulated)", { 
-        subscriptionId, 
-        newPlan: targetPlanName,
-        creditsAdded: creditDifference 
-      });
-
-      return new Response(JSON.stringify({ 
-        success: true,
-        newPlan: targetPlanName,
-        creditsAdded: creditDifference
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      throw new Error("PayPal credentials not configured");
     }
 
     // If PayPal credentials exist, continue with full PayPal integration...
