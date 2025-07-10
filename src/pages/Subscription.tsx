@@ -108,15 +108,13 @@ const Subscription = () => {
 
       let response;
       
-      // Check if user has an active subscription
-      if (!userSubscription) {
+      // Check if user has an active subscription and if it's the specific upgrade case
+      if (userSubscription && userSubscription.plan.name === 'True Fan' && targetPlan.name === 'The Whale') {
+        // True Fan upgrading to The Whale - use initiate-upgrade like in BillingSettings
+        response = await supabase.functions.invoke('initiate-upgrade');
+      } else if (!userSubscription) {
         // Guest user - create new subscription
         response = await supabase.functions.invoke('create-paypal-subscription', {
-          body: { planId: targetPlan.id }
-        });
-      } else if (userSubscription.plan.name === 'True Fan' && targetPlan.name === 'The Whale') {
-        // True Fan upgrading to The Whale
-        response = await supabase.functions.invoke('handle-upgrade', {
           body: { planId: targetPlan.id }
         });
       } else {
@@ -142,7 +140,7 @@ const Subscription = () => {
       }
 
       // Redirect to PayPal approval URL
-      if (data?.approvalUrl) {
+      if (data?.approvalUrl || (data?.success && data?.approvalUrl)) {
         window.location.href = data.approvalUrl;
       }
     } catch (error) {
