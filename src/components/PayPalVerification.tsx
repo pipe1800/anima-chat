@@ -80,10 +80,16 @@ export const PayPalVerification = () => {
             description: `Your ${planName} subscription is now active.`,
           });
           
-          // Redirect to settings page after 3 seconds
+          // Send success message to parent window and close popup
           setTimeout(() => {
-            navigate('/settings?tab=billing');
-          }, 3000);
+            if (window.opener) {
+              window.opener.postMessage({ paypal_status: 'success' }, '*');
+              window.close();
+            } else {
+              // Fallback if not in popup
+              navigate('/settings?tab=billing');
+            }
+          }, 2000);
         } else {
           setStatus('error');
           setMessage('Subscription verification failed. Please contact support.');
@@ -146,7 +152,7 @@ export const PayPalVerification = () => {
 
         {status === 'success' && (
           <p className="text-sm text-gray-400 mb-4">
-            Success! Redirecting you back to your account...
+            Success! Closing window...
           </p>
         )}
 

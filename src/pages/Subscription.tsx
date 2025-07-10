@@ -173,11 +173,33 @@ const Subscription = () => {
           `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
         
-        // Monitor popup closure
+        // Set up message listener for popup communication
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data?.paypal_status === 'success') {
+            // Payment successful, clean up and redirect
+            window.removeEventListener('message', handleMessage);
+            setShowPaymentModal(false);
+            setIsUpgrading(false);
+            // Redirect based on subscription type
+            if (userSubscription) {
+              // Upgrade case - go to billing settings
+              window.location.href = '/settings?tab=billing';
+            } else {
+              // New subscription - go to subscription page
+              window.location.href = '/subscription';
+            }
+          }
+        };
+        
+        window.addEventListener('message', handleMessage);
+        
+        // Monitor popup closure as fallback
         const checkClosed = setInterval(() => {
           if (popup?.closed) {
             clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
             setShowPaymentModal(false);
+            setIsUpgrading(false);
             // Refresh the page to update subscription status
             window.location.reload();
           }
@@ -190,7 +212,6 @@ const Subscription = () => {
         description: "Failed to process subscription action",
         variant: "destructive"
       });
-    } finally {
       setIsUpgrading(false);
     }
   };

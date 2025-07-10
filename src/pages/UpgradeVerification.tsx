@@ -42,10 +42,16 @@ const UpgradeVerification = () => {
       // Immediately show success message
       setStatus('success');
       
-      // Redirect to billing settings after 3 seconds
+      // Send success message to parent window and close popup
       setTimeout(() => {
-        navigate('/settings?tab=billing');
-      }, 3000);
+        if (window.opener) {
+          window.opener.postMessage({ paypal_status: 'success' }, '*');
+          window.close();
+        } else {
+          // Fallback if not in popup
+          navigate('/settings?tab=billing');
+        }
+      }, 2000);
     };
 
     processUpgrade();
@@ -67,7 +73,7 @@ const UpgradeVerification = () => {
             <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
             <p className="mt-4 text-white text-xl font-bold">Success!</p>
             <p className="text-gray-300">Your upgrade is processing. Your plan will be updated in a few moments.</p>
-            <p className="text-sm text-gray-400 mt-4">Success! Redirecting you back to your account...</p>
+            <p className="text-sm text-gray-400 mt-4">Success! Closing window...</p>
           </div>
         );
       case 'error':

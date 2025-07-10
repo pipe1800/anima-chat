@@ -106,11 +106,27 @@ export const BillingSettings = () => {
           `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
         
-        // Monitor popup closure
+        // Set up message listener for popup communication
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data?.paypal_status === 'success') {
+            // Payment successful, clean up and redirect
+            window.removeEventListener('message', handleMessage);
+            setShowPaymentModal(false);
+            setIsChangingPlan(false);
+            // Redirect to billing settings
+            window.location.href = '/settings?tab=billing';
+          }
+        };
+        
+        window.addEventListener('message', handleMessage);
+        
+        // Monitor popup closure as fallback
         const checkClosed = setInterval(() => {
           if (popup?.closed) {
             clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
             setShowPaymentModal(false);
+            setIsChangingPlan(false);
             // Refresh subscription data to update status
             fetchSubscriptionData();
           }
@@ -125,7 +141,6 @@ export const BillingSettings = () => {
         description: error instanceof Error ? error.message : "Could not start the upgrade process. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsChangingPlan(false);
     }
   };
