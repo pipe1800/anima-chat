@@ -24,7 +24,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
   const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
   const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
   const [personas, setPersonas] = useState<Persona[]>([]);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>(data.default_persona_id || '');
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>(data.default_persona_id || 'none');
 
   // Load user's personas
   useEffect(() => {
@@ -44,7 +44,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
     if (data) {
       setVisibility(data.visibility || 'public');
       setEnableNSFW(data.nsfw_enabled || false);
-      setSelectedPersonaId(data.default_persona_id || '');
+      setSelectedPersonaId(data.default_persona_id || 'none');
     }
   }, [data]);
 
@@ -73,7 +73,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
     onUpdate({
       visibility,
       nsfw_enabled: enableNSFW,
-      default_persona_id: selectedPersonaId || null
+      default_persona_id: selectedPersonaId === 'none' ? null : selectedPersonaId
     });
     onFinalize();
   };
@@ -242,7 +242,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
                 <SelectValue placeholder="Select a persona (optional)" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="" className="text-gray-300">No default persona</SelectItem>
+                <SelectItem value="none" className="text-gray-300">No default persona</SelectItem>
                 {personas.map((persona) => (
                   <SelectItem key={persona.id} value={persona.id} className="text-white">
                     {persona.name}
