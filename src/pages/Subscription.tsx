@@ -58,6 +58,7 @@ const Subscription = () => {
   const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paymentPopupOpen, setPaymentPopupOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -101,7 +102,32 @@ const Subscription = () => {
     fetchData();
   }, [user, toast]);
 
-  const handleSubscribe = async (planName: string) => {
+  const openPaymentPopup = (url: string, paymentType: 'paypal' | 'card' = 'paypal') => {
+    setPaymentPopupOpen(true);
+    
+    // Add payment type parameter to help PayPal show appropriate interface
+    const modifiedUrl = paymentType === 'card' ? `${url}&commit=true&intent=capture` : url;
+    
+    const popup = window.open(
+      modifiedUrl,
+      'paypal-payment',
+      'width=500,height=700,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no'
+    );
+
+    // Check if popup is closed to hide overlay
+    const checkClosed = setInterval(() => {
+      if (popup?.closed) {
+        setPaymentPopupOpen(false);
+        clearInterval(checkClosed);
+        // Refresh page to check for payment success
+        window.location.reload();
+      }
+    }, 1000);
+
+    return popup;
+  };
+
+  const handleSubscribe = async (planName: string, paymentType: 'paypal' | 'card' = 'paypal') => {
     try {
       const plan = plans.find(p => p.name === planName);
       if (!plan) {
@@ -122,7 +148,8 @@ const Subscription = () => {
         currentPlan: userSubscription?.plan?.name,
         targetPlan: planName,
         isUpgrade,
-        hasSubscription: !!userSubscription
+        hasSubscription: !!userSubscription,
+        paymentType
       });
 
       if (isUpgrade) {
@@ -143,7 +170,7 @@ const Subscription = () => {
 
         // Open PayPal payment URL for the difference
         if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
+          openPaymentPopup(data.approvalUrl, paymentType);
           toast({
             title: "Upgrade Payment",
             description: `Pay $${data.priceDifference} to upgrade and receive ${data.creditDifference.toLocaleString()} additional credits immediately.`,
@@ -165,9 +192,9 @@ const Subscription = () => {
           return;
         }
 
-        // Open PayPal approval URL in new tab
+        // Open PayPal approval URL in popup
         if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
+          openPaymentPopup(data.approvalUrl, paymentType);
         }
       }
     } catch (error) {
@@ -192,6 +219,28 @@ const Subscription = () => {
 
   return (
     <DashboardLayout>
+      {/* Payment Popup Overlay */}
+      {paymentPopupOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg p-6 max-w-md mx-4 text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-[#FF7A00]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Crown className="w-8 h-8 text-[#FF7A00]" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Payment Window Opened
+              </h3>
+              <p className="text-gray-400 text-sm">
+                A secure PayPal payment window has opened. Please complete your payment in that window to continue.
+              </p>
+            </div>
+            <div className="text-xs text-gray-500">
+              If you don't see the payment window, check if it was blocked by your browser's popup blocker.
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-6 py-8">
         
         {/* Hero Section */}
@@ -283,13 +332,26 @@ const Subscription = () => {
                           Current Plan
                         </Button>
                       ) : userSubscription ? (
-                        // User has active subscription, show upgrade/change plan button
-                        <Button 
-                          onClick={() => handleSubscribe(plan.name)}
-                          className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
-                        >
-                          {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
-                        </Button>
+                        // User has active subscription, show upgrade/change plan buttons with payment options
+                        <div className="space-y-3">
+                          <div className="text-sm text-gray-400 text-center mb-2">
+                            {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade with:' : 'Change plan with:'}
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <Button 
+                              onClick={() => handleSubscribe(plan.name, 'paypal')}
+                              className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
+                            >
+                              Pay with PayPal
+                            </Button>
+                            <Button 
+                              onClick={() => handleSubscribe(plan.name, 'card')}
+                              className="w-full py-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white text-sm"
+                            >
+                              Pay with Credit/Debit Card
+                            </Button>
+                          </div>
+                        </div>
                       ) : isFree ? (
                         // Free plan for unsubscribed users - show current plan
                         <Button 
@@ -299,13 +361,26 @@ const Subscription = () => {
                           Current Plan
                         </Button>
                       ) : (
-                        // User has no active subscription, show subscribe button for paid plans
-                        <Button 
-                          onClick={() => handleSubscribe(plan.name)}
-                          className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
-                        >
-                          Subscribe
-                        </Button>
+                        // User has no active subscription, show subscribe buttons with payment options for paid plans
+                        <div className="space-y-3">
+                          <div className="text-sm text-gray-400 text-center mb-2">
+                            Subscribe with:
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <Button 
+                              onClick={() => handleSubscribe(plan.name, 'paypal')}
+                              className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
+                            >
+                              Pay with PayPal
+                            </Button>
+                            <Button 
+                              onClick={() => handleSubscribe(plan.name, 'card')}
+                              className="w-full py-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white text-sm"
+                            >
+                              Pay with Credit/Debit Card
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </CardContent>
