@@ -481,9 +481,6 @@ export type Database = {
           name: string
           paypal_subscription_id: string | null
           price_monthly: number | null
-          price_yearly: number | null
-          stripe_price_id_monthly: string | null
-          stripe_price_id_yearly: string | null
         }
         Insert: {
           features?: Json | null
@@ -493,9 +490,6 @@ export type Database = {
           name: string
           paypal_subscription_id?: string | null
           price_monthly?: number | null
-          price_yearly?: number | null
-          stripe_price_id_monthly?: string | null
-          stripe_price_id_yearly?: string | null
         }
         Update: {
           features?: Json | null
@@ -505,9 +499,6 @@ export type Database = {
           name?: string
           paypal_subscription_id?: string | null
           price_monthly?: number | null
-          price_yearly?: number | null
-          stripe_price_id_monthly?: string | null
-          stripe_price_id_yearly?: string | null
         }
         Relationships: []
       }
