@@ -37,7 +37,7 @@ export const UpgradeVerification = () => {
           targetPlanId
         });
 
-        const { data, error } = await supabase.functions.invoke('test-verify-upgrade', {
+        const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
           body: { 
             orderId: token,
             subscriptionId,
@@ -54,7 +54,8 @@ export const UpgradeVerification = () => {
 
         if (data?.success) {
           setStatus('success');
-          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan} and received ${data.creditsAdded.toLocaleString()} additional credits.`);
+          const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
+          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`);
           
           // Redirect to settings after 3 seconds
           setTimeout(() => {
