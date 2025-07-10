@@ -11,6 +11,9 @@ import CreationStepsHeader from '@/components/character-creator/CreationStepsHea
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
 import { getCharacterDetails } from '@/lib/supabase-queries';
 import { useToast } from '@/hooks/use-toast';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Tag = Tables<'tags'>;
 
 const CharacterCreator = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -43,7 +46,7 @@ const CharacterCreator = () => {
     visibility: 'public',
     nsfw_enabled: false
   });
-  const [selectedTags, setSelectedTags] = useState<import('@/integrations/supabase/types').Tables<'tags'>[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
