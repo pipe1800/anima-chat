@@ -54,10 +54,7 @@ serve(async (req) => {
     // Get user's current subscription
     const { data: currentSub, error: subError } = await supabaseClient
       .from('subscriptions')
-      .select(`
-        *,
-        plans(*)
-      `)
+      .select('*, plan:plans(*)')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
@@ -66,7 +63,7 @@ serve(async (req) => {
       throw new Error("No active subscription found");
     }
 
-    if (!currentSub.plans) {
+    if (!currentSub.plan) {
       throw new Error("Plan details could not be found for the current subscription");
     }
 
@@ -81,7 +78,7 @@ serve(async (req) => {
       throw new Error(`Target plan not found: ${targetPlanError?.message}`);
     }
 
-    const currentPlanName = currentSub.plans.name;
+    const currentPlanName = currentSub.plan.name;
     const targetPlanName = targetPlan.name;
 
     logStep("Plans identified", { 
@@ -118,6 +115,7 @@ serve(async (req) => {
     }
 
     const paypalBaseUrl = "https://api-m.sandbox.paypal.com";
+    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "http://localhost:8080";
     
     // Get access token
     const tokenResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
@@ -147,8 +145,8 @@ serve(async (req) => {
         description: `Upgrade from ${currentPlanName} to ${targetPlanName}`
       }],
       application_context: {
-        return_url: `${req.headers.get("origin")}/upgrade-verification?token={token}&subscription_id=${currentSub.id}&target_plan_id=${targetPlanId}&PayerID={PayerID}`,
-        cancel_url: `${req.headers.get("origin")}/subscription?upgrade_cancelled=true`
+        return_url: `${siteUrl}/upgrade-verification?token={token}&subscription_id=${currentSub.id}&target_plan_id=${targetPlanId}&PayerID={PayerID}`,
+        cancel_url: `${siteUrl}/subscription?upgrade_cancelled=true`
       }
     };
 
