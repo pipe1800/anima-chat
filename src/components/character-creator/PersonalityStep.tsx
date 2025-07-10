@@ -95,8 +95,6 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
 
   // Filter out already selected tags
   const availableTagsToSelect = availableTags.filter(tag => !personalityTags.includes(tag.name));
-  
-  console.log('Debug - Available tags:', availableTags.length, 'total, showing', availableTagsToSelect.length, 'in dropdown');
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
@@ -146,10 +144,6 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
             
             {/* Tag Dropdown */}
             <div className="space-y-4">
-              {/* Debug info */}
-              <div className="text-xs text-gray-500">
-                Available tags: {availableTags.length} | Available to select: {availableTagsToSelect.length}
-              </div>
               
               <Select onValueChange={addTag}>
                 <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg">

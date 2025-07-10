@@ -92,6 +92,33 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
       throw new Error('Failed to create character definition');
     }
 
+    // Save character tags if any are selected
+    if (characterData.personality.tags && characterData.personality.tags.length > 0) {
+      // First, get tag IDs from tag names
+      const { data: tagData, error: tagError } = await supabase
+        .from('tags')
+        .select('id, name')
+        .in('name', characterData.personality.tags);
+
+      if (tagError) {
+        console.error('Error fetching tag IDs:', tagError);
+      } else if (tagData) {
+        // Insert character_tags relationships
+        const characterTagInserts = tagData.map(tag => ({
+          character_id: character.id,
+          tag_id: tag.id
+        }));
+
+        const { error: characterTagsError } = await supabase
+          .from('character_tags')
+          .insert(characterTagInserts);
+
+        if (characterTagsError) {
+          console.error('Error creating character tags:', characterTagsError);
+        }
+      }
+    }
+
     return character;
   } catch (error) {
     console.error('Error in createCharacter:', error);
@@ -152,6 +179,40 @@ export const updateCharacter = async (characterId: string, characterData: Charac
     if (definitionError) {
       console.error('Error updating character definition:', definitionError);
       throw new Error('Failed to update character definition');
+    }
+
+    // Update character tags
+    // First, delete all existing tags for this character
+    await supabase
+      .from('character_tags')
+      .delete()
+      .eq('character_id', characterId);
+
+    // Then, save new character tags if any are selected
+    if (characterData.personality.tags && characterData.personality.tags.length > 0) {
+      // Get tag IDs from tag names
+      const { data: tagData, error: tagError } = await supabase
+        .from('tags')
+        .select('id, name')
+        .in('name', characterData.personality.tags);
+
+      if (tagError) {
+        console.error('Error fetching tag IDs:', tagError);
+      } else if (tagData) {
+        // Insert character_tags relationships
+        const characterTagInserts = tagData.map(tag => ({
+          character_id: characterId,
+          tag_id: tag.id
+        }));
+
+        const { error: characterTagsError } = await supabase
+          .from('character_tags')
+          .insert(characterTagInserts);
+
+        if (characterTagsError) {
+          console.error('Error updating character tags:', characterTagsError);
+        }
+      }
     }
 
     return character;
