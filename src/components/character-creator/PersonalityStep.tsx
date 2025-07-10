@@ -14,27 +14,25 @@ interface PersonalityStepProps {
   onUpdate: (data: any) => void;
   onNext: () => void;
   onPrevious: () => void;
+  selectedTags: Tables<'tags'>[];
+  setSelectedTags: (tags: Tables<'tags'>[]) => void;
 }
 
-const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStepProps) => {
+const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, setSelectedTags }: PersonalityStepProps) => {
   const [corePersonality, setCorePersonality] = useState(data.personality?.core_personality || '');
-  const [personalityTags, setPersonalityTags] = useState<string[]>(data.personality?.tags || []);
   const [knowledgeBase, setKnowledgeBase] = useState(data.personality?.knowledge_base || '');
   const [scenarioDefinition, setScenarioDefinition] = useState(data.personality?.scenario_definition || '');
-  const [availableTags, setAvailableTags] = useState<Tables<'tags'>[]>([]);
+  const [allTags, setAllTags] = useState<Tables<'tags'>[]>([]);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
-  // Fetch available tags from the database
+  // Fetch all tags from the database
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        console.log('Starting to fetch tags...');
         const { data: tags, error } = await supabase
           .from('tags')
           .select('*')
           .order('name');
-        
-        console.log('Tag query result:', { tags, error });
         
         if (error) {
           console.error('Error fetching tags:', error);
@@ -42,10 +40,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
         }
         
         if (tags) {
-          console.log('Fetched tags:', tags.length, 'tags', tags);
-          setAvailableTags(tags);
-        } else {
-          console.log('No tags returned from query');
+          setAllTags(tags);
         }
       } catch (err) {
         console.error('Exception fetching tags:', err);
@@ -59,7 +54,6 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   useEffect(() => {
     if (data.personality) {
       setCorePersonality(data.personality.core_personality || '');
-      setPersonalityTags(data.personality.tags || []);
       setKnowledgeBase(data.personality.knowledge_base || '');
       setScenarioDefinition(data.personality.scenario_definition || '');
       
@@ -75,20 +69,21 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   }, [data]);
 
   const addTag = (tagName: string) => {
-    if (tagName && !personalityTags.includes(tagName)) {
-      setPersonalityTags(prev => [...prev, tagName]);
+    const fullTag = allTags.find(tag => tag.name === tagName);
+    if (fullTag && !selectedTags.find(tag => tag.id === fullTag.id)) {
+      setSelectedTags([...selectedTags, fullTag]);
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setPersonalityTags(prev => prev.filter(tag => tag !== tagToRemove));
+  const removeTag = (tagToRemove: Tables<'tags'>) => {
+    setSelectedTags(selectedTags.filter(tag => tag.id !== tagToRemove.id));
   };
 
   const handleNext = () => {
     onUpdate({
       personality: {
         core_personality: corePersonality,
-        tags: personalityTags,
+        tags: selectedTags,
         knowledge_base: knowledgeBase,
         scenario_definition: scenarioDefinition
       }
@@ -99,7 +94,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   const isValid = corePersonality.trim().length >= 50;
 
   // Filter out already selected tags
-  const availableTagsToSelect = availableTags.filter(tag => !personalityTags.includes(tag.name));
+  const availableTagsToSelect = allTags.filter(tag => !selectedTags.find(selected => selected.id === tag.id));
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
@@ -167,21 +162,21 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
                     ))
                   ) : (
                     <SelectItem value="no-tags" disabled className="text-gray-400">
-                      {availableTags.length === 0 ? 'Loading tags...' : 'All tags already selected'}
+                      {allTags.length === 0 ? 'Loading tags...' : 'All tags already selected'}
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
 
               {/* Display Selected Tags */}
-              {personalityTags.length > 0 && (
+              {selectedTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {personalityTags.map((tag, index) => (
+                  {selectedTags.map((tag) => (
                     <Badge 
-                      key={index} 
+                      key={tag.id} 
                       className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30 px-3 py-2 text-sm font-medium hover:bg-[#FF7A00]/30 transition-colors"
                     >
-                      {tag}
+                      {tag.name}
                       <button
                         onClick={() => removeTag(tag)}
                         className="ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"

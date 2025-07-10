@@ -43,6 +43,7 @@ const CharacterCreator = () => {
     visibility: 'public',
     nsfw_enabled: false
   });
+  const [selectedTags, setSelectedTags] = useState<import('@/integrations/supabase/types').Tables<'tags'>[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
@@ -260,6 +261,8 @@ const CharacterCreator = () => {
             onUpdate={handleDataUpdate}
             onNext={handleNext}
             onPrevious={handlePrevious}
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
           />
         );
       case 3:
