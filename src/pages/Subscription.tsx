@@ -102,28 +102,40 @@ const Subscription = () => {
     fetchData();
   }, [user, toast]);
 
-  const handleUpgrade = async (planName: string) => {
+  const handleSubscriptionAction = async (targetPlan: Plan) => {
     try {
       setIsUpgrading(true);
-      const plan = plans.find(p => p.name === planName);
-      if (!plan) {
+
+      let response;
+      
+      // Check if user has an active subscription
+      if (!userSubscription) {
+        // Guest user - create new subscription
+        response = await supabase.functions.invoke('create-paypal-subscription', {
+          body: { planId: targetPlan.id }
+        });
+      } else if (userSubscription.plan.name === 'True Fan' && targetPlan.name === 'The Whale') {
+        // True Fan upgrading to The Whale
+        response = await supabase.functions.invoke('handle-upgrade', {
+          body: { planId: targetPlan.id }
+        });
+      } else {
+        // Invalid action
         toast({
           title: "Error",
-          description: "Plan not found",
+          description: "Invalid subscription action",
           variant: "destructive"
         });
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('handle-upgrade', {
-        body: { planId: plan.id }
-      });
+      const { data, error } = response;
 
       if (error) {
-        console.error('Upgrade error:', error);
+        console.error('Subscription action error:', error);
         toast({
           title: "Error",
-          description: "Failed to initiate upgrade",
+          description: "Failed to process subscription action",
           variant: "destructive"
         });
         return;
@@ -134,10 +146,10 @@ const Subscription = () => {
         window.location.href = data.approvalUrl;
       }
     } catch (error) {
-      console.error('Upgrade error:', error);
+      console.error('Subscription action error:', error);
       toast({
         title: "Error",
-        description: "Failed to initiate upgrade",
+        description: "Failed to process subscription action",
         variant: "destructive"
       });
     } finally {
@@ -265,7 +277,7 @@ const Subscription = () => {
                         ) : canUpgrade ? (
                           // User can upgrade to this plan (True Fan → The Whale)
                           <Button 
-                            onClick={() => handleUpgrade(plan.name)}
+                            onClick={() => handleSubscriptionAction(plan)}
                             className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
                             disabled={isUpgrading}
                           >
@@ -274,7 +286,7 @@ const Subscription = () => {
                         ) : !userSubscription ? (
                           // User has no subscription, show subscribe button for paid plans
                           <Button 
-                            onClick={() => handleUpgrade(plan.name)}
+                            onClick={() => handleSubscriptionAction(plan)}
                             className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
                             disabled={isUpgrading}
                           >
