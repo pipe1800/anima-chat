@@ -312,7 +312,7 @@ const Subscription = () => {
         </div>
 
         {/* Subscription Tier Cards */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="flex flex-wrap justify-center gap-8">
           {plans.length === 0 ? (
             <div className="col-span-3 text-center text-white">
               <p>No subscription plans available at the moment.</p>
