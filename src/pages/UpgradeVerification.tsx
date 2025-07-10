@@ -20,40 +20,31 @@ const UpgradeVerification = () => {
 
   useEffect(() => {
     const finalize = async () => {
-      const orderId = query.get('token');
+      // The subscription_id is now in the URL from PayPal's redirect
+      const paypalSubscriptionId = query.get('subscription_id');
 
-      if (!orderId) {
-        setErrorMessage("No order token found in URL. Cannot verify upgrade.");
+      if (!paypalSubscriptionId) {
+        setErrorMessage("No subscription ID found in URL. Cannot verify upgrade.");
         setStatus('error');
         return;
       }
 
       try {
-        const { data, error } = await supabase.functions.invoke('finalize-upgrade', {
-          body: { orderId },
+        const { data, error } = await supabase.functions.invoke('verify-upgrade-completion', {
+          body: { subscription_id: paypalSubscriptionId },
         });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (error) throw new Error(error.message);
 
-        // --- START OF CHANGED CODE ---
         if (data?.success) {
-          if (data.requiresApproval && data.approvalUrl) {
-            // User needs to approve the change on PayPal. Redirect them.
-            window.location.href = data.approvalUrl;
-          } else {
-            // No approval needed, the upgrade is fully complete.
-            setStatus('success');
-            toast({
-              title: "Upgrade Complete!",
-              description: "Your plan has been successfully upgraded to The Whale.",
-            });
-          }
+          setStatus('success');
+          toast({
+            title: "Upgrade Complete!",
+            description: "Your plan has been successfully upgraded to The Whale.",
+          });
         } else {
-          throw new Error(data?.error || "An unknown error occurred during finalization.");
+          throw new Error(data?.error || "An unknown error occurred during verification.");
         }
-        // --- END OF CHANGED CODE ---
 
       } catch (e) {
         const message = e instanceof Error ? e.message : "An unknown error occurred.";
