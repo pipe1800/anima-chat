@@ -202,6 +202,33 @@ export const BillingSettings = () => {
                   ${userSubscription.plan.price_monthly}/month
                 </span>
               </div>
+
+              {/* Show upgrade button only if the current plan is 'True Fan' */}
+              {userSubscription.plan.name === 'True Fan' && (
+                <>
+                  <Separator className="bg-gray-700 my-4" />
+                  <div className="bg-orange-900/20 border border-orange-700/30 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="font-semibold text-orange-200">Upgrade to The Whale</h5>
+                      <p className="text-sm text-orange-300">Get 17,000 more credits instantly for a one-time payment of $10.00.</p>
+                    </div>
+                    <Button
+                      onClick={handleUpgrade}
+                      disabled={isChangingPlan}
+                      className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                    >
+                      {isChangingPlan ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Upgrade Now'
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="bg-gray-800/50 rounded-lg p-6">
