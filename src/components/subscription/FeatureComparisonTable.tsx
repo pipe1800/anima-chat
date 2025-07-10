@@ -1,131 +1,206 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Check, X } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export const FeatureComparisonTable = () => {
-  const features = [
-    {
-      category: "Core Features",
-      items: [
-        { name: "Messages", guest: "75 per day", trueFan: "Unlimited", whale: "Unlimited" },
-        { name: "AI Models", guest: "Standard", trueFan: "Premium", whale: "Premium + Experimental" },
-        { name: "Custom Characters", guest: "1", trueFan: "50", whale: "50" },
-        { name: "Context Memory", guest: "2k", trueFan: "8k", whale: "16k+" },
-      ]
-    },
-    {
-      category: "Experience",
-      items: [
-        { name: "Priority Queue", guest: false, trueFan: true, whale: true },
-        { name: "Longer AI Responses", guest: false, trueFan: true, whale: true },
-        { name: "Image Generation", guest: false, trueFan: false, whale: true },
-        { name: "Text-to-Speech", guest: false, trueFan: false, whale: true },
-      ]
-    }
-  ];
+interface Plan {
+  id: string;
+  name: string;
+  price_monthly: number;
+  monthly_credits_allowance: number;
+  features: any;
+  is_active: boolean;
+}
 
-  const renderFeatureValue = (value: string | boolean, plan: string, featureName?: string) => {
-    if (typeof value === 'boolean') {
-      return value ? (
-        <Check className="h-5 w-5 text-[#FF7A00] mx-auto" />
-      ) : (
-        <X className="h-5 w-5 text-gray-500 mx-auto" />
-      );
-    }
+interface FeatureComparisonTableProps {
+  plans: Plan[];
+}
+
+interface FeatureRow {
+  label: string;
+  key: string;
+  type: 'boolean' | 'value' | 'credits' | 'price';
+  getValue?: (plan: Plan) => string | number | boolean;
+}
+
+const featureRows: FeatureRow[] = [
+  {
+    label: 'Monthly Price',
+    key: 'price',
+    type: 'price',
+    getValue: (plan) => plan.price_monthly === 0 ? 'Free' : `$${plan.price_monthly}`
+  },
+  {
+    label: 'Monthly Credits',
+    key: 'credits',
+    type: 'credits',
+    getValue: (plan) => plan.monthly_credits_allowance.toLocaleString()
+  },
+  {
+    label: 'Character Creation',
+    key: 'character_creation',
+    type: 'boolean',
+    getValue: (plan) => true // All plans have this
+  },
+  {
+    label: 'Chat with Characters',
+    key: 'chat_feature',
+    type: 'boolean',
+    getValue: (plan) => true // All plans have this
+  },
+  {
+    label: 'Basic AI Models',
+    key: 'basic_models',
+    type: 'boolean',
+    getValue: (plan) => true // All plans have this
+  },
+  {
+    label: 'Advanced AI Models',
+    key: 'advanced_models',
+    type: 'boolean',
+    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+  },
+  {
+    label: 'Priority Generation',
+    key: 'priority_generation',
+    type: 'boolean',
+    getValue: (plan) => plan.name === 'The Whale' // Only highest tier
+  },
+  {
+    label: 'Custom Personas',
+    key: 'custom_personas',
+    type: 'boolean',
+    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+  },
+  {
+    label: 'World Info Access',
+    key: 'world_info',
+    type: 'boolean',
+    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+  },
+  {
+    label: 'Export Conversations',
+    key: 'export_conversations',
+    type: 'boolean',
+    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+  },
+  {
+    label: 'Credit Booster Packs',
+    key: 'credit_boosters',
+    type: 'boolean',
+    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+  },
+  {
+    label: '24/7 Support',
+    key: 'support',
+    type: 'boolean',
+    getValue: (plan) => plan.name === 'The Whale' // Only highest tier
+  }
+];
+
+export const FeatureComparisonTable: React.FC<FeatureComparisonTableProps> = ({ plans }) => {
+  if (!plans || plans.length === 0) {
+    return null;
+  }
+
+  const activePlans = plans.filter(plan => plan.is_active);
+
+  const renderFeatureCell = (plan: Plan, feature: FeatureRow) => {
+    const value = feature.getValue ? feature.getValue(plan) : false;
     
-    // Special handling for Messages row - show checkmark for unlimited
-    if (featureName === 'Messages' && value === 'Unlimited') {
-      return (
-        <div className="flex items-center justify-center space-x-2">
-          <Check className="h-5 w-5 text-[#FF7A00]" />
-          <span className="text-sm font-medium text-white">Unlimited</span>
+    if (feature.type === 'boolean') {
+      return value ? (
+        <div className="flex justify-center">
+          <CheckCircle className="w-5 h-5 text-green-500" />
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <X className="w-5 h-5 text-gray-500" />
         </div>
       );
     }
-    
-    return (
-      <span className={`text-sm font-medium ${
-        plan === 'guest' ? 'text-gray-400' : 'text-white'
-      }`}>
-        {value}
-      </span>
-    );
+
+    if (feature.type === 'price' || feature.type === 'credits' || feature.type === 'value') {
+      return (
+        <div className="text-center font-medium text-white">
+          {value}
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
-    <section className="py-16 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Compare All Features
-          </h2>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            See exactly what you get with each plan. No hidden features, no surprises.
-          </p>
+    <Card className="bg-[#1a1a2e] border-gray-700/50 overflow-hidden">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-2xl text-white text-center">
+          Plan Comparison
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            {/* Header Row */}
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="text-left py-4 px-6 text-gray-300 font-medium min-w-[200px]">
+                  Features
+                </th>
+                {activePlans.map((plan) => (
+                  <th key={plan.id} className="text-center py-4 px-6 min-w-[140px]">
+                    <div className="space-y-2">
+                      <div className="text-lg font-bold text-white">
+                        {plan.name}
+                      </div>
+                      <div className={`text-sm px-3 py-1 rounded-full ${
+                        plan.name === 'True Fan' 
+                          ? 'bg-[#FF7A00] text-white' 
+                          : plan.name === 'The Whale'
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                          : 'bg-gray-700 text-gray-300'
+                      }`}>
+                        {plan.price_monthly === 0 ? 'Free' : `$${plan.price_monthly}/mo`}
+                      </div>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            {/* Feature Rows */}
+            <tbody>
+              {featureRows.map((feature, index) => (
+                <tr 
+                  key={feature.key} 
+                  className={`border-b border-gray-700/30 ${
+                    index % 2 === 0 ? 'bg-gray-800/20' : 'bg-transparent'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-gray-300 font-medium">
+                    {feature.label}
+                  </td>
+                  {activePlans.map((plan) => (
+                    <td key={plan.id} className="py-4 px-6">
+                      {renderFeatureCell(plan, feature)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Comparison Table */}
-        <Card className="bg-[#1a1a2e] border-gray-700/50 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-[#1a1a2e] to-[#1a1a2e]/80 border-b border-gray-700/50">
-            <div className="grid grid-cols-4 gap-4 items-center">
-              <div></div>
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-white">The Guest Pass</h3>
-                <p className="text-sm text-gray-400">Free</p>
-              </div>
-              <div className="text-center relative">
-                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#FF7A00] text-white text-xs px-2 py-1 rounded-full font-bold">
-                    Popular
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mt-2">True Fan</h3>
-                <p className="text-sm text-gray-400">$14.95/month</p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-white">The Whale</h3>
-                <p className="text-sm text-gray-400">$24.95/month</p>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="p-0">
-            {features.map((category, categoryIndex) => (
-              <div key={categoryIndex}>
-                {/* Category Header */}
-                <div className="bg-[#FF7A00]/10 border-b border-gray-700/30 px-6 py-3">
-                  <h4 className="text-sm font-bold text-[#FF7A00] uppercase tracking-wide">
-                    {category.category}
-                  </h4>
-                </div>
-                
-                {/* Category Features */}
-                {category.items.map((feature, featureIndex) => (
-                  <div 
-                    key={featureIndex}
-                    className="grid grid-cols-4 gap-4 items-center px-6 py-4 border-b border-gray-700/30 hover:bg-[#1a1a2e]/50 transition-colors"
-                  >
-                    <div className="font-medium text-white">
-                      {feature.name}
-                    </div>
-                    <div className="text-center">
-                      {renderFeatureValue(feature.guest, 'guest', feature.name)}
-                    </div>
-                    <div className="text-center">
-                      {renderFeatureValue(feature.trueFan, 'trueFan', feature.name)}
-                    </div>
-                    <div className="text-center">
-                      {renderFeatureValue(feature.whale, 'whale', feature.name)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </section>
+        {/* Additional Notes */}
+        <div className="mt-6 pt-6 border-t border-gray-700/50">
+          <div className="text-sm text-gray-400 space-y-2">
+            <p>• All features are included for the lifetime of your subscription</p>
+            <p>• Credits reset monthly and do not roll over</p>
+            <p>• Advanced AI models require True Fan or The Whale plan</p>
+            <p>• Upgrade or downgrade at any time</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
