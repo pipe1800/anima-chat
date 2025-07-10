@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Crown, Zap, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FeatureComparisonTable } from '@/components/subscription/FeatureComparisonTable';
 
 interface Plan {
   id: string;
@@ -560,6 +561,14 @@ const Subscription = () => {
             </div>
           </div>
         )}
+        
+        {/* Plan Comparison Section */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center text-white mb-8">
+            Compare Our Plans
+          </h2>
+          <FeatureComparisonTable plans={plans} />
+        </div>
         
         {/* Upgrade Confirmation Dialog */}
         <AlertDialog open={showUpgradeConfirmation} onOpenChange={setShowUpgradeConfirmation}>
