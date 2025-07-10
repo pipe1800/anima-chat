@@ -281,7 +281,7 @@ const Subscription = () => {
                           >
                             {isUpgrading ? 'Processing...' : 'Upgrade Plan'}
                           </Button>
-                        ) : !userSubscription ? (
+                        ) : !userSubscription && !isFree ? (
                           // User has no subscription, show subscribe button for paid plans
                           <Button 
                             onClick={() => handleSubscriptionAction(plan)}
@@ -291,12 +291,12 @@ const Subscription = () => {
                             {isUpgrading ? 'Processing...' : 'Subscribe'}
                           </Button>
                         ) : (
-                          // Fallback disabled button
+                          // Fallback disabled button for free plan or invalid states
                           <Button 
                             className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
                             disabled={true}
                           >
-                            Subscribe
+                            {isFree ? 'Current Plan' : 'Subscribe'}
                           </Button>
                         )}
                       </div>
