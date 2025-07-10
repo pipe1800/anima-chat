@@ -73,25 +73,26 @@ export const BillingSettings = () => {
   }, [user]);
 
   const handleUpgrade = async () => {
-    setIsChangingPlan(true); // We can reuse this state for loading indication
+    setIsChangingPlan(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-upgrade-order');
+      // This now calls our new, correct function
+      const { data, error } = await supabase.functions.invoke('initiate-upgrade');
 
       if (error) {
         throw new Error(error.message);
       }
 
       if (data?.approvalUrl) {
-        // Redirect the user to PayPal to approve the one-time payment
+        // Redirect user to PayPal to approve the prorated charge and plan change
         window.location.href = data.approvalUrl;
       } else {
         throw new Error("Could not get PayPal approval URL.");
       }
     } catch (error) {
-      console.error('Upgrade error:', error);
+      console.error('Upgrade initiation error:', error);
       toast({
         title: "Error",
-        description: "Failed to start the upgrade process. Please try again.",
+        description: "Could not start the upgrade process. Please try again.",
         variant: "destructive"
       });
     } finally {
