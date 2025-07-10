@@ -1,8 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[UPGRADE-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
 console.log("[UPGRADE-SUBSCRIPTION] Function script loaded.");
@@ -15,6 +21,27 @@ serve(async (req) => {
   }
 
   try {
+    logStep("Function started");
+
+    // --- START OF NEW DEBUGGING BLOCK ---
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    logStep("Checking environment variables", {
+      hasSupabaseUrl: !!supabaseUrl,
+      urlLength: supabaseUrl?.length || 0,
+      hasSupabaseKey: !!supabaseKey,
+    });
+
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are not set.");
+    }
+    // --- END OF NEW DEBUGGING BLOCK ---
+
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false }
+    });
+
     let body;
     try {
         body = await req.json();
