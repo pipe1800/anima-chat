@@ -180,14 +180,8 @@ const Subscription = () => {
             window.removeEventListener('message', handleMessage);
             setShowPaymentModal(false);
             setIsUpgrading(false);
-            // Redirect based on subscription type
-            if (userSubscription) {
-              // Upgrade case - go to billing settings
-              window.location.href = '/settings?tab=billing';
-            } else {
-              // New subscription - go to subscription page
-              window.location.href = '/subscription';
-            }
+            // Always redirect back to subscription page
+            window.location.href = '/subscription';
           }
         };
         

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -95,18 +93,12 @@ const UpgradeVerification = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="max-w-xl mx-auto py-12">
-        <Card className="bg-[#1a1a2e] border-gray-700/50">
-          <CardHeader>
-            <CardTitle className="text-center text-white">Upgrade Verification</CardTitle>
-          </CardHeader>
-          <CardContent className="py-8">
-            {renderContent()}
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-6">
+      <div className="max-w-md w-full rounded-lg border border-gray-700/50 bg-[#1a1a2e] p-8 text-center">
+        <h1 className="text-2xl font-bold text-white mb-6">Upgrade Verification</h1>
+        {renderContent()}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
