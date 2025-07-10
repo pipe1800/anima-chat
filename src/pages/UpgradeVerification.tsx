@@ -42,10 +42,10 @@ const UpgradeVerification = () => {
       // Immediately show success message
       setStatus('success');
       
-      // Redirect to billing settings after 5 seconds
+      // Redirect to billing settings after 3 seconds
       setTimeout(() => {
         navigate('/settings?tab=billing');
-      }, 5000);
+      }, 3000);
     };
 
     processUpgrade();
@@ -67,7 +67,7 @@ const UpgradeVerification = () => {
             <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
             <p className="mt-4 text-white text-xl font-bold">Success!</p>
             <p className="text-gray-300">Your upgrade is processing. Your plan will be updated in a few moments.</p>
-            <p className="text-sm text-gray-400 mt-4">Redirecting you to billing settings...</p>
+            <p className="text-sm text-gray-400 mt-4">Success! Redirecting you back to your account...</p>
           </div>
         );
       case 'error':

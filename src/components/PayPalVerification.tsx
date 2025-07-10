@@ -80,9 +80,9 @@ export const PayPalVerification = () => {
             description: `Your ${planName} subscription is now active.`,
           });
           
-          // Redirect to subscription page after 3 seconds
+          // Redirect to settings page after 3 seconds
           setTimeout(() => {
-            navigate('/subscription');
+            navigate('/settings?tab=billing');
           }, 3000);
         } else {
           setStatus('error');
@@ -146,7 +146,7 @@ export const PayPalVerification = () => {
 
         {status === 'success' && (
           <p className="text-sm text-gray-400 mb-4">
-            You will be redirected to your subscription page automatically...
+            Success! Redirecting you back to your account...
           </p>
         )}
 
@@ -168,14 +168,6 @@ export const PayPalVerification = () => {
           </div>
         )}
 
-        {status === 'success' && (
-          <Button 
-            onClick={() => navigate('/subscription')}
-            className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
-          >
-            View Subscription Details
-          </Button>
-        )}
       </div>
     </div>
   );
