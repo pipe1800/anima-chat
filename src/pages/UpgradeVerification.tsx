@@ -19,7 +19,7 @@ const UpgradeVerification = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const finalize = async () => {
+    const processUpgrade = () => {
       // The subscription_id is now in the URL from PayPal's redirect
       const paypalSubscriptionId = query.get('subscription_id');
 
@@ -29,37 +29,27 @@ const UpgradeVerification = () => {
         return;
       }
 
-      try {
-        const { data, error } = await supabase.functions.invoke('verify-upgrade-completion', {
-          body: { subscription_id: paypalSubscriptionId },
-        });
+      // Call the finalize-and-resubscribe function in the background without waiting
+      supabase.functions.invoke('finalize-and-resubscribe', {
+        body: { subscription_id: paypalSubscriptionId },
+      }).then(({ data, error }) => {
+        // Log the result but don't change the UI based on it
+        console.log('Background finalize-and-resubscribe result:', { data, error });
+      }).catch((error) => {
+        console.error('Background finalize-and-resubscribe error:', error);
+      });
 
-        if (error) throw new Error(error.message);
-
-        if (data?.success) {
-          setStatus('success');
-          toast({
-            title: "Upgrade Complete!",
-            description: "Your plan has been successfully upgraded to The Whale.",
-          });
-        } else {
-          throw new Error(data?.error || "An unknown error occurred during verification.");
-        }
-
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "An unknown error occurred.";
-        setErrorMessage(message);
-        setStatus('error');
-        toast({
-          title: "Upgrade Failed",
-          description: message,
-          variant: "destructive",
-        });
-      }
+      // Immediately show success message
+      setStatus('success');
+      
+      // Redirect to billing settings after 5 seconds
+      setTimeout(() => {
+        navigate('/settings?tab=billing');
+      }, 5000);
     };
 
-    finalize();
-  }, []);
+    processUpgrade();
+  }, [query, navigate]);
 
   const renderContent = () => {
     switch (status) {
@@ -75,14 +65,9 @@ const UpgradeVerification = () => {
         return (
           <div className="text-center">
             <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
-            <p className="mt-4 text-white text-xl font-bold">Upgrade Successful!</p>
-            <p className="text-gray-300">Your plan has been upgraded to The Whale. You can now enjoy your new benefits.</p>
-            <Button
-              onClick={() => navigate('/settings?tab=billing')}
-              className="mt-6 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
-            >
-              Back to Billing
-            </Button>
+            <p className="mt-4 text-white text-xl font-bold">Success!</p>
+            <p className="text-gray-300">Your upgrade is processing. Your plan will be updated in a few moments.</p>
+            <p className="text-sm text-gray-400 mt-4">Redirecting you to billing settings...</p>
           </div>
         );
       case 'error':
