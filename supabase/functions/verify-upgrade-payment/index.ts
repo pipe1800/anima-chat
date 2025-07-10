@@ -190,9 +190,7 @@ serve(async (req) => {
       });
 
       const revisionData = {
-        plan_id: targetPlan.paypal_subscription_id,
-        effective_time: new Date(Date.now() + 60000).toISOString(), // 1 minute from now
-        revision_type: "REPLACE"
+        plan_id: targetPlan.paypal_subscription_id
       };
 
       logStep("Sending revision request", { revisionData });
@@ -212,7 +210,31 @@ serve(async (req) => {
         statusText: reviseResponse.statusText 
       });
 
-      if (!reviseResponse.ok) {
+      if (reviseResponse.ok) {
+        const revisionResult = await reviseResponse.json();
+        logStep("PayPal subscription revision initiated", { result: revisionResult });
+        
+        // Look for approval link in HATEOAS links
+        const approvalLink = revisionResult.links?.find((link: any) => link.rel === 'approve');
+        if (approvalLink) {
+          logStep("PayPal approval link found", { approvalUrl: approvalLink.href });
+          
+          // Store the approval URL in the response so the frontend can redirect the user
+          return new Response(JSON.stringify({ 
+            success: true,
+            newPlan: targetPlanName,
+            creditsAdded: creditDifference,
+            paypalApprovalRequired: true,
+            paypalApprovalUrl: approvalLink.href,
+            message: "Upgrade successful! Please approve the PayPal subscription change to complete the process."
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } else {
+          logStep("No approval link found in PayPal response");
+        }
+      } else {
         const errorData = await reviseResponse.text();
         logStep("PayPal subscription revision failed", { 
           error: errorData,
@@ -222,9 +244,6 @@ serve(async (req) => {
         
         // Don't fail the entire upgrade if PayPal revision fails
         logStep("Continuing with upgrade despite PayPal revision failure");
-      } else {
-        const revisionResult = await reviseResponse.json();
-        logStep("PayPal subscription revised successfully", { result: revisionResult });
       }
     } else {
       logStep("PayPal subscription revision skipped", { 

@@ -55,7 +55,17 @@ export const UpgradeVerification = () => {
         if (data?.success) {
           setStatus('success');
           const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
-          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`);
+          
+          if (data.paypalApprovalRequired && data.paypalApprovalUrl) {
+            setMessage(`${data.message || `Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`} Opening PayPal approval page...`);
+            
+            // Open PayPal approval in a new tab
+            setTimeout(() => {
+              window.open(data.paypalApprovalUrl, '_blank');
+            }, 1000);
+          } else {
+            setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`);
+          }
           
           // Redirect to settings after 3 seconds
           setTimeout(() => {
