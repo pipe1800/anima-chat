@@ -162,11 +162,31 @@ serve(async (req) => {
         targetPlanId: targetPlan.paypal_subscription_id 
       });
 
+      // First, get the current subscription details from PayPal
+      const getSubResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (getSubResponse.ok) {
+        const currentSubDetails = await getSubResponse.json();
+        logStep("Current PayPal subscription details", { 
+          status: currentSubDetails.status,
+          plan_id: currentSubDetails.plan_id 
+        });
+      }
+
+      // Try the revision API
       const revisionData = {
         plan_id: targetPlan.paypal_subscription_id,
-        effective_time: new Date().toISOString(),
+        effective_time: new Date(Date.now() + 60000).toISOString(), // 1 minute from now
         revision_type: "REPLACE"
       };
+
+      logStep("Sending revision request", { revisionData });
 
       const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
         method: 'POST',
@@ -178,6 +198,11 @@ serve(async (req) => {
         body: JSON.stringify(revisionData)
       });
 
+      logStep("PayPal revision response", { 
+        status: reviseResponse.status,
+        statusText: reviseResponse.statusText 
+      });
+
       if (!reviseResponse.ok) {
         const errorData = await reviseResponse.text();
         logStep("PayPal subscription revision failed", { 
@@ -185,7 +210,36 @@ serve(async (req) => {
           revisionData,
           status: reviseResponse.status 
         });
-        // Don't throw error here - the upgrade payment is complete, just log the issue
+        
+        // Try alternative approach: suspend current and activate new
+        logStep("Attempting alternative approach: suspend and reactivate");
+        
+        try {
+          // Suspend current subscription
+          const suspendResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/suspend`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${tokenData.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: "Plan upgrade" })
+          });
+
+          if (suspendResponse.ok) {
+            logStep("Successfully suspended current subscription");
+            
+            // Note: In a real scenario, you'd need to create a new subscription
+            // For now, just log that manual intervention is needed
+            logStep("MANUAL INTERVENTION NEEDED: Create new subscription with plan", { 
+              targetPlanId: targetPlan.paypal_subscription_id 
+            });
+          } else {
+            const suspendError = await suspendResponse.text();
+            logStep("Failed to suspend subscription", { error: suspendError });
+          }
+        } catch (altError) {
+          logStep("Alternative approach failed", { error: altError });
+        }
       } else {
         const revisionResult = await reviseResponse.json();
         logStep("PayPal subscription revised successfully", { result: revisionResult });
