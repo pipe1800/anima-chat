@@ -48,8 +48,17 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { targetPlanId } = await req.json();
-    if (!targetPlanId) throw new Error("Target plan ID is required");
+    let targetPlanId;
+    try {
+      const body = await req.json();
+      targetPlanId = body.targetPlanId;
+    } catch (e) {
+      throw new Error(`Failed to parse request body: ${e.message}`);
+    }
+
+    if (!targetPlanId) {
+      throw new Error("Target plan ID is required in the request body");
+    }
 
     // Get user's current subscription
     const { data: currentSub, error: subError } = await supabaseClient
