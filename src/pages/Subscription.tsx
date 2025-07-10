@@ -181,8 +181,8 @@ const Subscription = () => {
               let plansToShow = [];
 
               if (!userSubscription) {
-                // Guest Pass - show all paid plans
-                plansToShow = plans.filter(plan => plan.price_monthly > 0);
+                // Guest Pass - show Guest plan and all paid plans
+                plansToShow = plans;
               } else if (currentPlan === 'True Fan') {
                 // True Fan - show current plan and The Whale upgrade option
                 plansToShow = plans.filter(plan => plan.name === 'True Fan' || plan.name === 'The Whale');
@@ -195,7 +195,7 @@ const Subscription = () => {
                 const isPopular = plan.name === 'True Fan';
                 const isPremium = plan.name === 'The Whale';
                 const isFree = plan.price_monthly === 0;
-                const isCurrentPlan = userSubscription?.plan?.name === plan.name;
+                const isCurrentPlan = (!userSubscription && isFree) || userSubscription?.plan?.name === plan.name;
                 const canUpgrade = currentPlan === 'True Fan' && plan.name === 'The Whale';
                 
                 return (
