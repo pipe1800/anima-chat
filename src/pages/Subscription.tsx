@@ -334,23 +334,47 @@ const Subscription = () => {
                       ) : userSubscription ? (
                         // User has active subscription, show upgrade/change plan buttons with payment options
                         <div className="space-y-3">
-                          <div className="text-sm text-gray-400 text-center mb-2">
-                            {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade with:' : 'Change plan with:'}
-                          </div>
-                          <div className="grid grid-cols-1 gap-2">
-                            <Button 
-                              onClick={() => handleSubscribe(plan.name, 'paypal')}
-                              className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
-                            >
-                              Pay with PayPal
-                            </Button>
-                            <Button 
-                              onClick={() => handleSubscribe(plan.name, 'card')}
-                              className="w-full py-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white text-sm"
-                            >
-                              Pay with Credit/Debit Card
-                            </Button>
-                          </div>
+                          {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? (
+                            // Upgrade case - guest checkout available for one-time payment
+                            <>
+                              <div className="text-sm text-gray-400 text-center mb-2">
+                                Upgrade with:
+                              </div>
+                              <div className="grid grid-cols-1 gap-2">
+                                <Button 
+                                  onClick={() => handleSubscribe(plan.name, 'paypal')}
+                                  className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
+                                >
+                                  Pay with PayPal
+                                </Button>
+                                <Button 
+                                  onClick={() => handleSubscribe(plan.name, 'card')}
+                                  className="w-full py-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white text-sm"
+                                >
+                                  Pay with Credit/Debit Card
+                                </Button>
+                              </div>
+                              <div className="text-xs text-gray-500 text-center mt-2">
+                                Credit/debit payment available for upgrades
+                              </div>
+                            </>
+                          ) : (
+                            // Downgrade case - only PayPal subscription available
+                            <>
+                              <div className="text-sm text-gray-400 text-center mb-2">
+                                Change plan (requires PayPal account):
+                              </div>
+                              <Button 
+                                onClick={() => handleSubscribe(plan.name, 'paypal')}
+                                className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
+                              >
+                                Change via PayPal
+                              </Button>
+                              <div className="text-xs text-gray-500 text-center mt-2">
+                                Subscription changes require PayPal account
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : isFree ? (
                         // Free plan for unsubscribed users - show current plan
@@ -361,24 +385,19 @@ const Subscription = () => {
                           Current Plan
                         </Button>
                       ) : (
-                        // User has no active subscription, show subscribe buttons with payment options for paid plans
+                        // User has no active subscription, show subscribe buttons (requires PayPal for recurring)
                         <div className="space-y-3">
                           <div className="text-sm text-gray-400 text-center mb-2">
-                            Subscribe with:
+                            Subscribe (requires PayPal account):
                           </div>
-                          <div className="grid grid-cols-1 gap-2">
-                            <Button 
-                              onClick={() => handleSubscribe(plan.name, 'paypal')}
-                              className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
-                            >
-                              Pay with PayPal
-                            </Button>
-                            <Button 
-                              onClick={() => handleSubscribe(plan.name, 'card')}
-                              className="w-full py-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white text-sm"
-                            >
-                              Pay with Credit/Debit Card
-                            </Button>
+                          <Button 
+                            onClick={() => handleSubscribe(plan.name, 'paypal')}
+                            className="w-full py-2 bg-[#0070ba] hover:bg-[#005ea6] text-white text-sm"
+                          >
+                            Subscribe via PayPal
+                          </Button>
+                          <div className="text-xs text-gray-500 text-center mt-2">
+                            Recurring subscriptions require PayPal account
                           </div>
                         </div>
                       )}
