@@ -56,7 +56,7 @@ serve(async (req) => {
       .from('subscriptions')
       .select(`
         *,
-        plan:plans(*)
+        plans(*)
       `)
       .eq('user_id', user.id)
       .eq('status', 'active')
@@ -64,6 +64,10 @@ serve(async (req) => {
 
     if (subError || !currentSub) {
       throw new Error("No active subscription found");
+    }
+
+    if (!currentSub.plans) {
+      throw new Error("Plan details could not be found for the current subscription");
     }
 
     // Get target plan
@@ -77,7 +81,7 @@ serve(async (req) => {
       throw new Error(`Target plan not found: ${targetPlanError?.message}`);
     }
 
-    const currentPlanName = currentSub.plan.name;
+    const currentPlanName = currentSub.plans.name;
     const targetPlanName = targetPlan.name;
 
     logStep("Plans identified", { 
