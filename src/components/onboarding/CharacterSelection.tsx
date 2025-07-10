@@ -22,9 +22,10 @@ interface Character {
 interface CharacterSelectionProps {
   selectedVibes: string[];
   onCharacterSelect: (character: Character) => void;
+  onSkip: () => void;
 }
 
-const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelectionProps) => {
+const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: CharacterSelectionProps) => {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -190,10 +191,19 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect }: CharacterSelec
         ))}
       </div>
 
-      {/* Footer hint */}
-      <p className="text-gray-500 text-sm">
-        Click on any character to begin your first conversation
-      </p>
+      {/* Footer actions */}
+      <div className="text-center space-y-4">
+        <p className="text-gray-500 text-sm">
+          Click on any character to begin your first conversation
+        </p>
+        <Button
+          variant="outline"
+          onClick={onSkip}
+          className="text-gray-400 border-gray-600 hover:bg-gray-800/50 hover:text-white"
+        >
+          Skip for now
+        </Button>
+      </div>
     </div>
   );
 };

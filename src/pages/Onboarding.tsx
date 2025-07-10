@@ -104,7 +104,19 @@ const Onboarding = () => {
 
   const handleCharacterSelect = async (character: any) => {
     console.log('Selected character:', character);
-    
+    await completeOnboarding();
+    // Navigate to chat with selected character and replace history to prevent back navigation
+    navigate('/chat', { state: { selectedCharacter: character }, replace: true });
+  };
+
+  const handleSkipCharacter = async () => {
+    console.log('Skipping character selection');
+    await completeOnboarding();
+    // Navigate to dashboard and replace history to prevent back navigation
+    navigate('/dashboard', { replace: true });
+  };
+
+  const completeOnboarding = async () => {
     // Mark onboarding as completed
     if (user) {
       await supabase.auth.updateUser({
@@ -117,9 +129,6 @@ const Onboarding = () => {
         .update({ onboarding_completed: true })
         .eq('id', user.id);
     }
-    
-    // Navigate to chat with selected character and replace history to prevent back navigation
-    navigate('/chat', { state: { selectedCharacter: character }, replace: true });
   };
 
   if (loading) {
@@ -195,6 +204,7 @@ const Onboarding = () => {
           <CharacterSelection
             selectedVibes={selectedVibes}
             onCharacterSelect={handleCharacterSelect}
+            onSkip={handleSkipCharacter}
           />
         )}
       </div>
