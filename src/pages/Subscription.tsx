@@ -13,7 +13,7 @@ import {
 } from '@/lib/supabase-queries';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Crown, Zap } from 'lucide-react';
+import { Crown, Zap, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Plan {
@@ -61,6 +61,7 @@ const Subscription = () => {
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isPurchasingCredits, setIsPurchasingCredits] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
   const [planToUpgradeTo, setPlanToUpgradeTo] = useState<Plan | null>(null);
@@ -207,6 +208,82 @@ const Subscription = () => {
         variant: "destructive"
       });
       setIsUpgrading(false);
+    }
+  };
+
+  const handleCreditPackPurchase = async (packId: string) => {
+    try {
+      setIsPurchasingCredits(true);
+
+      const response = await supabase.functions.invoke('create-credit-purchase', {
+        body: { packId }
+      });
+
+      const { data, error } = response;
+
+      if (error) {
+        console.error('Credit pack purchase error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to process credit pack purchase",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Open PayPal in a centered popup window
+      if (data?.approvalUrl) {
+        const approvalUrl = data.approvalUrl;
+        const width = 600;
+        const height = 800;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
+        
+        setShowPaymentModal(true);
+        
+        const popup = window.open(
+          approvalUrl,
+          'paypal-credit-purchase',
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+        
+        // Set up message listener for popup communication
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data?.paypal_status === 'success') {
+            // Payment successful, clean up and redirect
+            window.removeEventListener('message', handleMessage);
+            setShowPaymentModal(false);
+            setIsPurchasingCredits(false);
+            toast({
+              title: "Success!",
+              description: "Credit pack purchased successfully! Credits will be added to your account shortly.",
+              variant: "default"
+            });
+            // Refresh the page to update any credit displays
+            window.location.reload();
+          }
+        };
+        
+        window.addEventListener('message', handleMessage);
+        
+        // Monitor popup closure as fallback
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
+            setShowPaymentModal(false);
+            setIsPurchasingCredits(false);
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Credit pack purchase error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process credit pack purchase",
+        variant: "destructive"
+      });
+      setIsPurchasingCredits(false);
     }
   };
 
@@ -362,6 +439,127 @@ const Subscription = () => {
             })()
           )}
         </div>
+        
+        {/* Credit Boosters Section - Only visible to subscribed users */}
+        {userSubscription && (
+          <div className="mt-20">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Credit Booster Packs
+              </h2>
+              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+                Need more credits? Get instant credit boosts with our convenient one-time purchase packs.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* 12,000 Credits Pack */}
+              <Card className="bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-[#FF7A00]" />
+                    12,000 Credits Pack
+                  </CardTitle>
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-[#FF7A00]">
+                      $10.00
+                      <span className="text-sm text-gray-400 font-normal ml-2">one-time</span>
+                    </div>
+                    <div className="text-lg text-gray-300">
+                      12,000 Credits Added Instantly
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Perfect for extended conversations</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Credits never expire</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Added to your account instantly</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <Button 
+                      onClick={() => handleCreditPackPurchase('pack_12k')}
+                      className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+                      disabled={isPurchasingCredits}
+                    >
+                      {isPurchasingCredits ? 'Processing...' : 'Buy Now'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 24,000 Credits Pack */}
+              <Card className="bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col ring-2 ring-[#FF7A00]">
+                <div className="absolute top-4 right-4">
+                  <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium">
+                    Best Value
+                  </div>
+                </div>
+                
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-[#FF7A00]" />
+                    24,000 Credits Pack
+                  </CardTitle>
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-[#FF7A00]">
+                      $20.00
+                      <span className="text-sm text-gray-400 font-normal ml-2">one-time</span>
+                    </div>
+                    <div className="text-lg text-gray-300">
+                      24,000 Credits Added Instantly
+                    </div>
+                    <div className="text-sm text-green-400">
+                      Save 17% vs 12k pack
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Maximum value for heavy users</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Credits never expire</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#FF7A00] rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-300 text-sm">Added to your account instantly</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <Button 
+                      onClick={() => handleCreditPackPurchase('pack_24k')}
+                      className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+                      disabled={isPurchasingCredits}
+                    >
+                      {isPurchasingCredits ? 'Processing...' : 'Buy Now'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
         
         {/* Upgrade Confirmation Dialog */}
         <AlertDialog open={showUpgradeConfirmation} onOpenChange={setShowUpgradeConfirmation}>
