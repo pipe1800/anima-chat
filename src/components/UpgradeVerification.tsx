@@ -37,19 +37,31 @@ export const UpgradeVerification = () => {
           targetPlanId
         });
 
-        const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
-          body: { 
+        const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/verify-upgrade-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({
             orderId: token,
             subscriptionId,
             targetPlanId
-          }
+          })
         });
 
-        console.log('Function response:', { data, error });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('HTTP Error:', response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
 
-        if (error) {
-          console.error('Function error:', error);
-          throw new Error(`Edge Function Error: ${error.message}`);
+        const data = await response.json();
+        console.log('Function response:', data);
+
+        if (data.error) {
+          console.error('Function returned error:', data.error);
+          throw new Error(data.error);
         }
 
         if (data?.success) {
