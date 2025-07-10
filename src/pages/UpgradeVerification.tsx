@@ -20,7 +20,7 @@ const UpgradeVerification = () => {
 
   useEffect(() => {
     const finalize = async () => {
-      const orderId = query.get('token'); // PayPal uses 'token' in the return URL for the Order ID
+      const orderId = query.get('token');
 
       if (!orderId) {
         setErrorMessage("No order token found in URL. Cannot verify upgrade.");
@@ -37,15 +37,23 @@ const UpgradeVerification = () => {
           throw new Error(error.message);
         }
 
+        // --- START OF CHANGED CODE ---
         if (data?.success) {
-          setStatus('success');
-          toast({
-            title: "Upgrade Complete!",
-            description: "Your plan has been successfully upgraded to The Whale.",
-          });
+          if (data.requiresApproval && data.approvalUrl) {
+            // User needs to approve the change on PayPal. Redirect them.
+            window.location.href = data.approvalUrl;
+          } else {
+            // No approval needed, the upgrade is fully complete.
+            setStatus('success');
+            toast({
+              title: "Upgrade Complete!",
+              description: "Your plan has been successfully upgraded to The Whale.",
+            });
+          }
         } else {
           throw new Error(data?.error || "An unknown error occurred during finalization.");
         }
+        // --- END OF CHANGED CODE ---
 
       } catch (e) {
         const message = e instanceof Error ? e.message : "An unknown error occurred.";
