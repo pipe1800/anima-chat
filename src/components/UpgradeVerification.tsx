@@ -37,7 +37,7 @@ export const UpgradeVerification = () => {
           targetPlanId
         });
 
-        const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
+        const { data, error } = await supabase.functions.invoke('test-verify-upgrade', {
           body: { 
             orderId: token,
             subscriptionId,
