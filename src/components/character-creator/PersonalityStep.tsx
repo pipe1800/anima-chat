@@ -27,13 +27,23 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   // Fetch available tags from the database
   useEffect(() => {
     const fetchTags = async () => {
-      const { data: tags, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name');
-      
-      if (!error && tags) {
-        setAvailableTags(tags);
+      try {
+        const { data: tags, error } = await supabase
+          .from('tags')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching tags:', error);
+          return;
+        }
+        
+        if (tags) {
+          console.log('Fetched tags:', tags.length, 'tags');
+          setAvailableTags(tags);
+        }
+      } catch (err) {
+        console.error('Exception fetching tags:', err);
       }
     };
 
@@ -85,6 +95,8 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
 
   // Filter out already selected tags
   const availableTagsToSelect = availableTags.filter(tag => !personalityTags.includes(tag.name));
+  
+  console.log('Debug - Available tags:', availableTags.length, 'total, showing', availableTagsToSelect.length, 'in dropdown');
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
@@ -134,20 +146,31 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
             
             {/* Tag Dropdown */}
             <div className="space-y-4">
+              {/* Debug info */}
+              <div className="text-xs text-gray-500">
+                Available tags: {availableTags.length} | Available to select: {availableTagsToSelect.length}
+              </div>
+              
               <Select onValueChange={addTag}>
                 <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg">
-                  <SelectValue placeholder="Select a tag to add..." />
+                  <SelectValue placeholder={`Select a tag to add... (${availableTagsToSelect.length} available)`} />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  {availableTagsToSelect.map((tag) => (
-                    <SelectItem 
-                      key={tag.id} 
-                      value={tag.name}
-                      className="text-white hover:bg-gray-700 focus:bg-gray-700"
-                    >
-                      {tag.name}
+                <SelectContent className="bg-gray-800 border-gray-600 z-50">
+                  {availableTagsToSelect.length > 0 ? (
+                    availableTagsToSelect.map((tag) => (
+                      <SelectItem 
+                        key={tag.id} 
+                        value={tag.name}
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                      >
+                        {tag.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-tags" disabled className="text-gray-400">
+                      {availableTags.length === 0 ? 'Loading tags...' : 'All tags already selected'}
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
 
