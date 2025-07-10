@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 import { 
   getActivePlans, 
@@ -59,6 +60,7 @@ const Subscription = () => {
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -139,9 +141,31 @@ const Subscription = () => {
         return;
       }
 
-      // Redirect to PayPal approval URL
+      // Open PayPal in a centered popup window
       if (data?.approvalUrl || (data?.success && data?.approvalUrl)) {
-        window.location.href = data.approvalUrl;
+        const approvalUrl = data.approvalUrl;
+        const width = 600;
+        const height = 800;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
+        
+        setShowPaymentModal(true);
+        
+        const popup = window.open(
+          approvalUrl,
+          'paypal-payment',
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+        
+        // Monitor popup closure
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            setShowPaymentModal(false);
+            // Refresh the page to update subscription status
+            window.location.reload();
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Subscription action error:', error);
@@ -307,6 +331,23 @@ const Subscription = () => {
             })()
           )}
         </div>
+        
+        {/* Payment Modal Overlay */}
+        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+          <DialogContent className="bg-[#1a1a2e] border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Complete Your Payment</DialogTitle>
+            </DialogHeader>
+            <div className="py-6">
+              <p className="text-gray-300 text-center">
+                Please complete your transaction in the popup window. This dialog will close automatically when the payment is complete.
+              </p>
+              <div className="flex justify-center mt-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

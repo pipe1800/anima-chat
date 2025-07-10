@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreditCard, Loader2, Crown, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,7 @@ export const BillingSettings = () => {
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const fetchSubscriptionData = async () => {
     if (!user) return;
@@ -83,9 +85,30 @@ export const BillingSettings = () => {
       }
 
       if (data?.success && data?.approvalUrl) {
-        // Redirect user to PayPal to approve the new subscription
-        // The webhook will handle the completion in the background
-        window.location.href = data.approvalUrl;
+        // Open PayPal in a centered popup window
+        const approvalUrl = data.approvalUrl;
+        const width = 600;
+        const height = 800;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
+        
+        setShowPaymentModal(true);
+        
+        const popup = window.open(
+          approvalUrl,
+          'paypal-payment',
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+        
+        // Monitor popup closure
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            setShowPaymentModal(false);
+            // Refresh subscription data to update status
+            fetchSubscriptionData();
+          }
+        }, 1000);
       } else {
         throw new Error(data?.error || "Could not get PayPal approval URL.");
       }
@@ -324,6 +347,23 @@ export const BillingSettings = () => {
           </div>
         )}
       </div>
+      
+      {/* Payment Modal Overlay */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent className="bg-[#1a1a2e] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Complete Your Payment</DialogTitle>
+          </DialogHeader>
+          <div className="py-6">
+            <p className="text-gray-300 text-center">
+              Please complete your transaction in the popup window. This dialog will close automatically when the payment is complete.
+            </p>
+            <div className="flex justify-center mt-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7A00]"></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
