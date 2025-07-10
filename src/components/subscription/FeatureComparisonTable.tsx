@@ -60,26 +60,19 @@ const featureRows: FeatureRow[] = [
     getValue: (plan) => plan.price_monthly > 0 // Only paid plans
   },
   {
-    label: 'Priority Generation',
-    key: 'priority_generation',
-    type: 'boolean',
-    getValue: (plan) => plan.name === 'The Whale' // Only highest tier
-  },
-  {
     label: 'Custom Personas',
     key: 'custom_personas',
-    type: 'boolean',
-    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
+    type: 'value',
+    getValue: (plan) => {
+      if (plan.price_monthly === 0) return '1';
+      if (plan.name === 'True Fan') return '5';
+      if (plan.name === 'The Whale') return '10';
+      return '1';
+    }
   },
   {
     label: 'World Info Access',
     key: 'world_info',
-    type: 'boolean',
-    getValue: (plan) => plan.price_monthly > 0 // Only paid plans
-  },
-  {
-    label: 'Export Conversations',
-    key: 'export_conversations',
     type: 'boolean',
     getValue: (plan) => plan.price_monthly > 0 // Only paid plans
   },
@@ -90,8 +83,14 @@ const featureRows: FeatureRow[] = [
     getValue: (plan) => plan.price_monthly > 0 // Only paid plans
   },
   {
-    label: '24/7 Support',
-    key: 'support',
+    label: 'Add-ons',
+    key: 'addons',
+    type: 'boolean',
+    getValue: (plan) => plan.name === 'True Fan' || plan.name === 'The Whale'
+  },
+  {
+    label: 'Priority Generation',
+    key: 'priority_generation',
     type: 'boolean',
     getValue: (plan) => plan.name === 'The Whale' // Only highest tier
   }
