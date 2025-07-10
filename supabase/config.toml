@@ -18,5 +18,8 @@ verify_jwt = true
 [functions.complete-subscription-upgrade]
 verify_jwt = true
 
+[functions.handle-upgrade]
+verify_jwt = true
+
 [functions.paypal-webhook]
 verify_jwt = false
