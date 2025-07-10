@@ -12,7 +12,6 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -32,15 +31,15 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
-    if (userError || !user) {
-      throw new Error("User not authenticated.");
-    }
+    if (userError || !user) throw new Error("User not authenticated.");
     logStep("User authenticated", { userId: user.id });
 
     // 1. Get PayPal API access token
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
     const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
     const paypalBaseUrl = "https://api-m.sandbox.paypal.com";
+    
+    if (!clientId || !clientSecret) throw new Error("PayPal credentials not configured.");
 
     const tokenResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
         method: 'POST',
@@ -87,7 +86,11 @@ serve(async (req) => {
     await supabaseClient.from('credits').update({ balance: (credits?.balance || 0) + creditDifference }).eq('user_id', user.id);
     logStep("Added credits to user's account");
 
-    // 6. Revise the recurring subscription on PayPal
+    // --- START OF CHANGED CODE ---
+    // 6. Revise the recurring subscription on PayPal and check for required approval
+    let requiresApproval = false;
+    let approvalUrl = '';
+
     if (currentSub.paypal_subscription_id && whalePlan.paypal_subscription_id) {
         const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
             method: 'POST',
@@ -96,21 +99,36 @@ serve(async (req) => {
         });
 
         if (!reviseResponse.ok) {
-            // CRITICAL: Log this error for manual admin review.
-            // The user has paid and is upgraded in our system, so we must honor it.
             const errorText = await reviseResponse.text();
             logStep("URGENT: PAYPAL REVISE FAILED", { subId: currentSub.paypal_subscription_id, error: errorText });
+            // Don't throw an error, as the user has paid. We will handle this manually.
         } else {
-            logStep("Successfully revised PayPal recurring subscription.");
+            const reviseData = await reviseResponse.json();
+            const approveLink = reviseData.links?.find((link: any) => link.rel === 'approve');
+            
+            if (approveLink) {
+                // Approval is required! Send the link back to the frontend.
+                requiresApproval = true;
+                approvalUrl = approveLink.href;
+                logStep("PayPal revision requires user approval", { approvalUrl });
+            } else {
+                // No approval needed, revision is complete.
+                logStep("Successfully revised PayPal recurring subscription immediately.");
+            }
         }
     } else {
         logStep("WARNING: Missing PayPal ID(s), could not revise subscription on PayPal's side.");
     }
 
-    return new Response(JSON.stringify({ success: true, message: "Upgrade successful!" }), {
+    return new Response(JSON.stringify({
+        success: true,
+        requiresApproval,
+        approvalUrl
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+    // --- END OF CHANGED CODE ---
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
