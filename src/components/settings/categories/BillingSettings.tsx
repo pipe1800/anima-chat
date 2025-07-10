@@ -75,8 +75,8 @@ export const BillingSettings = () => {
   const handleUpgrade = async () => {
     setIsChangingPlan(true);
     try {
-      // Call the new handle-upgrade function that does the complete upgrade process
-      const { data, error } = await supabase.functions.invoke('handle-upgrade');
+      // Call the new initiate-upgrade function that creates the PayPal subscription
+      const { data, error } = await supabase.functions.invoke('initiate-upgrade');
 
       if (error) {
         throw new Error(error.message);
@@ -84,6 +84,7 @@ export const BillingSettings = () => {
 
       if (data?.success && data?.approvalUrl) {
         // Redirect user to PayPal to approve the new subscription
+        // The webhook will handle the completion in the background
         window.location.href = data.approvalUrl;
       } else {
         throw new Error(data?.error || "Could not get PayPal approval URL.");
