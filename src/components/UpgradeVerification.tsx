@@ -10,7 +10,7 @@ export const UpgradeVerification = () => {
   const [message, setMessage] = useState('Verifying your upgrade payment...');
 
   useEffect(() => {
-    const verifyUpgrade = async () => {
+    const processUpgrade = () => {
       const token = searchParams.get('token');
       const subscriptionId = searchParams.get('subscription_id');
       const targetPlanId = searchParams.get('target_plan_id');
@@ -30,60 +30,31 @@ export const UpgradeVerification = () => {
         return;
       }
 
-      try {
-        console.log('Calling verify-upgrade-payment function with:', {
+      // Call the handle-upgrade function in the background without waiting
+      supabase.functions.invoke('handle-upgrade', {
+        body: { 
           orderId: token,
           subscriptionId,
           targetPlanId
-        });
-
-        const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
-          body: { 
-            orderId: token,
-            subscriptionId,
-            targetPlanId
-          }
-        });
-
-        console.log('Function response:', { data, error });
-
-        if (error) {
-          console.error('Function error:', error);
-          throw new Error(`Edge Function Error: ${error.message}`);
         }
+      }).then(({ data, error }) => {
+        // Log the result but don't change the UI based on it
+        console.log('Background handle-upgrade result:', { data, error });
+      }).catch((error) => {
+        console.error('Background handle-upgrade error:', error);
+      });
 
-        if (data?.success) {
-          setStatus('success');
-          const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
-          
-          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}. Your PayPal subscription has been updated.`);
-          
-          // Redirect to settings after 3 seconds
-          setTimeout(() => {
-            navigate('/settings?tab=billing');
-          }, 3000);
-        } else if (data?.requiresApproval) {
-          setStatus('success');
-          setMessage('Payment processed! Please approve the subscription change on PayPal in the new tab, then return here.');
-          
-          // Open PayPal approval URL in new tab
-          window.open(data.approvalUrl, '_blank');
-          
-          // Redirect to settings after 5 seconds
-          setTimeout(() => {
-            navigate('/settings?tab=billing');
-          }, 5000);
-        } else {
-          throw new Error('Upgrade verification failed');
-        }
-      } catch (error) {
-        console.error('Upgrade verification error:', error);
-        setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Failed to verify upgrade payment');
-      }
+      // Immediately show success message
+      setStatus('success');
+      setMessage('Processing your upgrade... Your plan will be updated shortly.');
+      
+      // Redirect to billing settings after 5 seconds
+      setTimeout(() => {
+        navigate('/settings?tab=billing');
+      }, 5000);
     };
 
-    verifyUpgrade();
+    processUpgrade();
   }, [searchParams, navigate]);
 
   return (
