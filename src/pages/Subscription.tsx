@@ -127,7 +127,7 @@ const Subscription = () => {
 
       if (isUpgrade) {
         // Use upgrade flow for price difference
-        const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+        const { data, error } = await supabase.functions.invoke('change-plan', {
           body: { targetPlanId: plan.id }
         });
 

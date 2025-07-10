@@ -98,7 +98,7 @@ export const BillingSettings = () => {
       
       if (isUpgrade) {
         // Use the upgrade flow
-        const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+        const { data, error } = await supabase.functions.invoke('change-plan', {
           body: { targetPlanId: selectedNewPlan }
         });
 
