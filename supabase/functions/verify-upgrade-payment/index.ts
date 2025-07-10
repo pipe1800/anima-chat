@@ -194,10 +194,15 @@ serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'PayPal-Request-Id': `revise-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         },
         body: JSON.stringify({
-          plan_id: targetPayPalPlanId
+          plan_id: targetPayPalPlanId,
+          application_context: {
+            return_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/upgrade-callback?subscription_id=${subscriptionId}&target_plan_id=${targetPlanId}`,
+            cancel_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/settings?tab=billing`
+          }
         })
       });
 
@@ -213,21 +218,7 @@ serve(async (req) => {
       // Find the approval link that the user needs to approve
       const approvalLink = reviseData.links?.find((link: any) => link.rel === 'approve')?.href;
       
-      if (!approvalLink) {
-        logStep("No approval link found in revision response", { reviseData });
-        // If no approval link, the revision might have been successful automatically
-        // Update our database and continue
-        const { error: subscriptionUpdateError } = await supabaseClient
-          .from('subscriptions')
-          .update({ plan_id: targetPlanId })
-          .eq('id', subscriptionId);
-
-        if (subscriptionUpdateError) {
-          throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
-        }
-        
-        logStep("Subscription updated successfully without approval required");
-      } else {
+      if (approvalLink) {
         logStep("Approval required for subscription revision", { approvalLink });
         
         // Return the approval URL for the user to approve the change
@@ -243,6 +234,17 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
+      } else {
+        logStep("No approval link found - revision may be automatic", { reviseData });
+        // Update the subscription plan in our database
+        const { error: subscriptionUpdateError } = await supabaseClient
+          .from('subscriptions')
+          .update({ plan_id: targetPlanId })
+          .eq('id', subscriptionId);
+
+        if (subscriptionUpdateError) {
+          throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
+        }
       }
     } else {
       logStep("No PayPal subscription ID found, updating database only");
