@@ -145,7 +145,6 @@ const Subscription = () => {
     }
   };
 
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -264,7 +263,7 @@ const Subscription = () => {
                             Current Plan
                           </Button>
                         ) : canUpgrade ? (
-                          // User can upgrade to this plan
+                          // User can upgrade to this plan (True Fan → The Whale)
                           <Button 
                             onClick={() => handleUpgrade(plan.name)}
                             className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
