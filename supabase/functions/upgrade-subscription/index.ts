@@ -59,6 +59,9 @@ serve(async (req) => {
       .eq('status', 'active')
       .single();
 
+    // DEBUGGING: Log the entire subscription object to see its structure
+    console.log('[DEBUG] Full currentSub object:', JSON.stringify(currentSub, null, 2));
+
     if (subError || !currentSub) {
       throw new Error("No active subscription found");
     }
