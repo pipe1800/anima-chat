@@ -182,6 +182,57 @@ serve(async (req) => {
       throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
     }
 
+    // Revise PayPal subscription for next billing cycle
+    if (currentSub.paypal_subscription_id && targetPlan.paypal_subscription_id) {
+      logStep("Attempting to revise PayPal subscription", { 
+        currentSubscriptionId: currentSub.paypal_subscription_id,
+        targetPlanId: targetPlan.paypal_subscription_id 
+      });
+
+      const revisionData = {
+        plan_id: targetPlan.paypal_subscription_id,
+        effective_time: new Date(Date.now() + 60000).toISOString(), // 1 minute from now
+        revision_type: "REPLACE"
+      };
+
+      logStep("Sending revision request", { revisionData });
+
+      const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(revisionData)
+      });
+
+      logStep("PayPal revision response", { 
+        status: reviseResponse.status,
+        statusText: reviseResponse.statusText 
+      });
+
+      if (!reviseResponse.ok) {
+        const errorData = await reviseResponse.text();
+        logStep("PayPal subscription revision failed", { 
+          error: errorData,
+          revisionData,
+          status: reviseResponse.status 
+        });
+        
+        // Don't fail the entire upgrade if PayPal revision fails
+        logStep("Continuing with upgrade despite PayPal revision failure");
+      } else {
+        const revisionResult = await reviseResponse.json();
+        logStep("PayPal subscription revised successfully", { result: revisionResult });
+      }
+    } else {
+      logStep("PayPal subscription revision skipped", { 
+        hasCurrentSubscriptionId: !!currentSub.paypal_subscription_id,
+        hasTargetPlanId: !!targetPlan.paypal_subscription_id 
+      });
+    }
+
     logStep("Upgrade completed successfully", { 
       subscriptionId, 
       newPlan: targetPlanName,
