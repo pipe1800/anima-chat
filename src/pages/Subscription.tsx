@@ -313,40 +313,54 @@ const Subscription = () => {
         </div>
 
         {/* Subscription Tier Cards */}
-        <div className="flex flex-wrap justify-center gap-8">
-          {plans.length === 0 ? (
-            <div className="col-span-3 text-center text-white">
-              <p>No subscription plans available at the moment.</p>
-            </div>
-          ) : (
-            (() => {
-              const currentPlan = userSubscription?.plan?.name;
-              let plansToShow = [];
+        {(() => {
+          const currentPlan = userSubscription?.plan?.name;
+          let plansToShow = [];
 
-              if (!userSubscription) {
-                // Guest Pass - show Guest plan and all paid plans
-                plansToShow = plans;
-              } else if (currentPlan === 'True Fan') {
-                // True Fan - show current plan and The Whale upgrade option
-                plansToShow = plans.filter(plan => plan.name === 'True Fan' || plan.name === 'The Whale');
-              } else if (currentPlan === 'The Whale') {
-                // The Whale - show only current plan
-                plansToShow = plans.filter(plan => plan.name === 'The Whale');
-              }
+          if (!userSubscription) {
+            // Guest Pass - show Guest plan and all paid plans
+            plansToShow = plans;
+          } else if (currentPlan === 'True Fan') {
+            // True Fan - show current plan and The Whale upgrade option
+            plansToShow = plans.filter(plan => plan.name === 'True Fan' || plan.name === 'The Whale');
+          } else if (currentPlan === 'The Whale') {
+            // The Whale - show only current plan
+            plansToShow = plans.filter(plan => plan.name === 'The Whale');
+          }
 
-              return plansToShow.map((plan) => {
-                const isPopular = plan.name === 'True Fan';
-                const isPremium = plan.name === 'The Whale';
-                const isFree = plan.price_monthly === 0;
-                const isCurrentPlan = (!userSubscription && isFree) || userSubscription?.plan?.name === plan.name;
-                const canUpgrade = currentPlan === 'True Fan' && plan.name === 'The Whale';
-                
-                return (
-                  <Card 
-                    key={plan.id} 
-                    className={`bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col ${
-                      isPopular ? 'ring-2 ring-[#FF7A00]' : ''
-                    } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+          // Dynamic container classes based on number of plans
+          const getContainerClasses = () => {
+            return "flex flex-wrap justify-center gap-8";
+          };
+
+          // Dynamic card classes based on number of plans
+          const getCardClasses = () => {
+            if (plansToShow.length === 1) return "w-full max-w-md";
+            if (plansToShow.length === 2) return "w-full max-w-md";
+            if (plansToShow.length === 3) return "w-full max-w-sm";
+            return "w-full max-w-md";
+          };
+
+          return (
+            <div className={getContainerClasses()}>
+              {plans.length === 0 ? (
+                <div className="col-span-3 text-center text-white">
+                  <p>No subscription plans available at the moment.</p>
+                </div>
+              ) : (
+                plansToShow.map((plan) => {
+                  const isPopular = plan.name === 'True Fan';
+                  const isPremium = plan.name === 'The Whale';
+                  const isFree = plan.price_monthly === 0;
+                  const isCurrentPlan = (!userSubscription && isFree) || userSubscription?.plan?.name === plan.name;
+                  const canUpgrade = currentPlan === 'True Fan' && plan.name === 'The Whale';
+                  
+                  return (
+                    <Card 
+                      key={plan.id} 
+                      className={`${getCardClasses()} bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col ${
+                        isPopular ? 'ring-2 ring-[#FF7A00]' : ''
+                      } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
                   >
                     {isPopular && !isCurrentPlan && (
                       <div className="absolute top-4 right-4">
@@ -436,10 +450,11 @@ const Subscription = () => {
                     </CardContent>
                   </Card>
                 );
-              });
-            })()
-          )}
-        </div>
+              })
+              )}
+            </div>
+          );
+        })()}
         
         {/* Credit Boosters Section - Only visible to subscribed users */}
         {userSubscription && (
