@@ -113,62 +113,24 @@ const Subscription = () => {
         return;
       }
 
-      // Check if this is an upgrade (user has active subscription and target plan is more expensive)
-      const isUpgrade = userSubscription && 
-                       userSubscription.plan && 
-                       plan.price_monthly > (userSubscription.plan.price_monthly || 0);
-
-      console.log('Subscription attempt:', {
-        currentPlan: userSubscription?.plan?.name,
-        targetPlan: planName,
-        isUpgrade,
-        hasSubscription: !!userSubscription
+      // Use regular subscription flow
+      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+        body: { planId: plan.id }
       });
 
-      if (isUpgrade) {
-        // Use upgrade flow for price difference
-        const { data, error } = await supabase.functions.invoke('change-plan', {
-          body: { targetPlanId: plan.id }
+      if (error) {
+        console.error('PayPal subscription error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create subscription",
+          variant: "destructive"
         });
+        return;
+      }
 
-        if (error) {
-          console.error('PayPal upgrade error:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create upgrade payment",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Open PayPal payment URL for the difference
-        if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
-          toast({
-            title: "Upgrade Payment",
-            description: `Pay $${data.priceDifference} to upgrade and receive ${data.creditDifference.toLocaleString()} additional credits immediately.`,
-          });
-        }
-      } else {
-        // Use regular subscription flow for new subscriptions or downgrades
-        const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
-          body: { planId: plan.id }
-        });
-
-        if (error) {
-          console.error('PayPal subscription error:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create subscription",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Open PayPal approval URL in new tab
-        if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
-        }
+      // Open PayPal approval URL in new tab
+      if (data?.approvalUrl) {
+        window.open(data.approvalUrl, '_blank');
       }
     } catch (error) {
       console.error('Subscription error:', error);
@@ -283,12 +245,12 @@ const Subscription = () => {
                           Current Plan
                         </Button>
                       ) : userSubscription ? (
-                        // User has active subscription, show upgrade/change plan button
+                        // User has active subscription, show subscribe button
                         <Button 
                           onClick={() => handleSubscribe(plan.name)}
                           className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
                         >
-                          {plan.price_monthly > (userSubscription.plan.price_monthly || 0) ? 'Upgrade Plan' : 'Change Plan'}
+                          Subscribe
                         </Button>
                       ) : isFree ? (
                         // Free plan for unsubscribed users - show current plan

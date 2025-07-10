@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CreditCard, Loader2, Crown, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,10 +32,7 @@ export const BillingSettings = () => {
   const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [selectedNewPlan, setSelectedNewPlan] = useState<string>('');
-  const [isChangePlanDialogOpen, setIsChangePlanDialogOpen] = useState(false);
 
   const fetchSubscriptionData = async () => {
     if (!user) return;
@@ -76,78 +71,6 @@ export const BillingSettings = () => {
     fetchSubscriptionData();
   }, [user]);
 
-  const handleChangePlan = async () => {
-    console.log('handleChangePlan called with selectedNewPlan:', selectedNewPlan);
-    if (!selectedNewPlan) return;
-    
-    console.log('Current subscription data:', userSubscription);
-    console.log('Available plans:', availablePlans);
-    
-    setIsChangingPlan(true);
-    try {
-      // Check if this is an upgrade (True Fan to The Whale)
-      const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
-      const isUpgrade = userSubscription?.plan?.name === 'True Fan' && selectedPlan?.name === 'The Whale';
-      
-      console.log('Plan change attempt:', {
-        currentPlan: userSubscription?.plan?.name,
-        targetPlan: selectedPlan?.name,
-        isUpgrade,
-        selectedNewPlan
-      });
-      
-      if (isUpgrade) {
-        // Use the upgrade flow
-        const { data, error } = await supabase.functions.invoke('change-plan', {
-          body: { targetPlanId: selectedNewPlan }
-        });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        // Open PayPal payment URL for the difference
-        if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
-          setIsChangePlanDialogOpen(false);
-          setSelectedNewPlan('');
-          toast({
-            title: "Upgrade Payment",
-            description: `Pay $${data.priceDifference} to upgrade and receive ${data.creditDifference.toLocaleString()} additional credits immediately.`,
-          });
-        }
-      } else {
-        // Use the regular subscription change flow
-        const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
-          body: { planId: selectedNewPlan }
-        });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        // Open PayPal approval URL in new tab
-        if (data?.approvalUrl) {
-          window.open(data.approvalUrl, '_blank');
-          setIsChangePlanDialogOpen(false);
-          setSelectedNewPlan('');
-          toast({
-            title: "Redirecting to PayPal",
-            description: "Complete your plan change on PayPal's website.",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Plan change error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to change plan. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsChangingPlan(false);
-    }
-  };
 
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
@@ -186,15 +109,6 @@ export const BillingSettings = () => {
     });
   };
 
-  const getAvailablePlansForChange = () => {
-    if (!userSubscription) return availablePlans;
-    
-    // Filter out free plans and current plan
-    return availablePlans.filter(plan => 
-      plan.price_monthly && plan.price_monthly > 0 && 
-      plan.id !== userSubscription.plan.id
-    );
-  };
 
   const renderPaymentMethod = () => {
     return (
@@ -279,92 +193,6 @@ export const BillingSettings = () => {
 
           {userSubscription && userSubscription.status === 'active' && (
             <div className="mt-4 flex gap-3">
-              {/* Change Plan Dialog */}
-              <Dialog open={isChangePlanDialogOpen} onOpenChange={setIsChangePlanDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
-                    Change Plan
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[#1a1a2e] border-gray-700">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Change Your Plan</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-gray-300">
-                      You are currently on the <span className="font-semibold text-white">{userSubscription.plan.name}</span> plan.
-                      Select a new plan below:
-                    </p>
-                    <Select value={selectedNewPlan} onValueChange={setSelectedNewPlan}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                        <SelectValue placeholder="Select a new plan" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
-                        {getAvailablePlansForChange().map((plan) => (
-                          <SelectItem key={plan.id} value={plan.id} className="text-white hover:bg-gray-700">
-                            <div className="flex items-center justify-between w-full">
-                              <span>{plan.name}</span>
-                              <span className="ml-4 text-[#FF7A00]">${plan.price_monthly}/month</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedNewPlan && (() => {
-                      const selectedPlan = availablePlans.find(p => p.id === selectedNewPlan);
-                      const isUpgrade = userSubscription?.plan?.name === 'True Fan' && selectedPlan?.name === 'The Whale';
-                      
-                      if (isUpgrade) {
-                        return (
-                          <div className="bg-orange-900/20 border border-orange-700/30 rounded-lg p-4">
-                            <p className="text-sm text-orange-200 mb-2">
-                              <strong>Instant Upgrade:</strong> Pay only $10.00 (the difference between plans) and receive 17,000 additional credits immediately.
-                            </p>
-                            <p className="text-xs text-orange-300">
-                              Your current PayPal subscription will be cancelled and you'll need to set up a new subscription for future billing.
-                            </p>
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div className="bg-gray-800/50 rounded-lg p-4">
-                            <p className="text-sm text-gray-300">
-                              Your subscription will be updated and you'll be charged accordingly.
-                            </p>
-                          </div>
-                        );
-                      }
-                    })()}
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setIsChangePlanDialogOpen(false);
-                        setSelectedNewPlan('');
-                      }}
-                      className="border-gray-600 text-white hover:bg-gray-800"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleChangePlan}
-                      disabled={!selectedNewPlan || isChangingPlan}
-                      className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                    >
-                      {isChangingPlan ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        'Update Plan'
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
               {/* Cancel Subscription Dialog */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
