@@ -100,9 +100,9 @@ const CharacterCreator = () => {
         };
       } = {};
 
-      if (character.definition?.[0]?.definition) {
+      if (character.definition?.[0]?.personality_summary) {
         try {
-          definitionData = JSON.parse(character.definition[0].definition);
+          definitionData = JSON.parse(character.definition[0].personality_summary);
         } catch (e) {
           console.error('Error parsing character definition:', e);
         }
@@ -117,7 +117,7 @@ const CharacterCreator = () => {
         title: definitionData.title || '',
         description: character.short_description || '',
         personality: {
-          core_personality: character.definition?.[0]?.long_description || '',
+          core_personality: character.definition?.[0]?.description || '',
           tags: definitionData.personality?.tags || [],
           knowledge_base: definitionData.personality?.knowledge_base || '',
           scenario_definition: definitionData.personality?.scenario_definition || ''

@@ -77,9 +77,10 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
       .from('character_definitions')
       .insert({
         character_id: character.id,
-        definition: JSON.stringify(definition),
+        personality_summary: JSON.stringify(definition),
         greeting: characterData.dialogue.greeting,
-        long_description: characterData.personality.core_personality
+        description: characterData.personality.core_personality,
+        scenario: characterData.personality.scenario_definition || null
       });
 
     if (definitionError) {
@@ -138,9 +139,10 @@ export const updateCharacter = async (characterId: string, characterData: Charac
     const { error: definitionError } = await supabase
       .from('character_definitions')
       .update({
-        definition: JSON.stringify(definition),
+        personality_summary: JSON.stringify(definition),
         greeting: characterData.dialogue.greeting,
-        long_description: characterData.personality.core_personality
+        description: characterData.personality.core_personality,
+        scenario: characterData.personality.scenario_definition || null
       })
       .eq('character_id', characterId);
 

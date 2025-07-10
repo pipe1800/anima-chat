@@ -30,8 +30,8 @@ interface CharacterData {
   creator_id: string;
   visibility: string;
   character_definitions?: {
-    definition: string;
-    long_description: string | null;
+    personality_summary: string;
+    description: string | null;
     greeting: string | null;
   };
   creator?: {
@@ -354,39 +354,39 @@ export default function CharacterProfile() {
                     </Card>
                   )}
 
-                  {/* Long Description */}
-                  {character.character_definitions?.long_description && (
-                    <Card className="bg-[#1a1a2e] border-gray-700/50">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center">
-                          <Eye className="w-5 h-5 mr-2 text-[#FF7A00]" />
-                          Character Background
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                          {character.character_definitions.long_description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+            {/* Character Description */}
+            {character.character_definitions?.description && (
+              <Card className="bg-[#1a1a2e] border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Eye className="w-5 h-5 mr-2 text-[#FF7A00]" />
+                    Character Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {character.character_definitions.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-                  {/* Character Definition */}
-                  {character.character_definitions?.definition && (
-                    <Card className="bg-[#1a1a2e] border-gray-700/50">
-                      <CardHeader>
-                        <CardTitle className="text-white flex items-center">
-                          <Star className="w-5 h-5 mr-2 text-[#FF7A00]" />
-                          Character Personality
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                          {character.character_definitions.definition}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+            {/* Character Personality Summary */}
+            {character.character_definitions?.personality_summary && (
+              <Card className="bg-[#1a1a2e] border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Star className="w-5 h-5 mr-2 text-[#FF7A00]" />
+                    Character Personality
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {character.character_definitions.personality_summary}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
                 </div>
 
                 {/* Sidebar */}

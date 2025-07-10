@@ -326,9 +326,9 @@ export const createCharacter = async (characterData: {
     .from('character_definitions')
     .insert({
       character_id: character.id,
-      definition: characterData.definition,
+      personality_summary: characterData.definition,
       greeting: characterData.greeting,
-      long_description: characterData.long_description
+      description: characterData.long_description
     })
 
   if (definitionError) {

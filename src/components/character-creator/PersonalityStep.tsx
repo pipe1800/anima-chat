@@ -1,12 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { X, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, ChevronDown, ChevronRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 
 interface PersonalityStepProps {
   data: any;
@@ -20,8 +21,24 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   const [personalityTags, setPersonalityTags] = useState<string[]>(data.personality?.tags || []);
   const [knowledgeBase, setKnowledgeBase] = useState(data.personality?.knowledge_base || '');
   const [scenarioDefinition, setScenarioDefinition] = useState(data.personality?.scenario_definition || '');
-  const [newTag, setNewTag] = useState('');
+  const [availableTags, setAvailableTags] = useState<Tables<'tags'>[]>([]);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+
+  // Fetch available tags from the database
+  useEffect(() => {
+    const fetchTags = async () => {
+      const { data: tags, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+      
+      if (!error && tags) {
+        setAvailableTags(tags);
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   // Update form data when character data is loaded
   useEffect(() => {
@@ -42,22 +59,14 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
     }
   }, [data]);
 
-  const addTag = () => {
-    if (newTag.trim() && !personalityTags.includes(newTag.trim())) {
-      setPersonalityTags(prev => [...prev, newTag.trim()]);
-      setNewTag('');
+  const addTag = (tagName: string) => {
+    if (tagName && !personalityTags.includes(tagName)) {
+      setPersonalityTags(prev => [...prev, tagName]);
     }
   };
 
   const removeTag = (tagToRemove: string) => {
     setPersonalityTags(prev => prev.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleTagKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag();
-    }
   };
 
   const handleNext = () => {
@@ -74,6 +83,9 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
 
   const isValid = corePersonality.trim().length >= 50;
 
+  // Filter out already selected tags
+  const availableTagsToSelect = availableTags.filter(tag => !personalityTags.includes(tag.name));
+
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
       <div className="max-w-4xl mx-auto p-6 lg:p-8">
@@ -88,15 +100,15 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
         </div>
 
         <div className="space-y-8">
-          {/* Core Personality Text Area */}
+          {/* Description Text Area */}
           <div className="space-y-4">
             <Label htmlFor="core-personality" className="text-white text-xl font-medium block">
-              Core Personality *
+              Description *
             </Label>
             <div className="relative">
               <Textarea
                 id="core-personality"
-                placeholder="Describe their personality. Are they sarcastic, shy, heroic? What are their likes, dislikes, fears, and motivations? Use single-word traits, full sentences, or even a backstory. The more detail, the deeper the character."
+                placeholder="Describe the physical and mental details of your character. What do they look like? How do they think and behave? What are their motivations, fears, and quirks?"
                 value={corePersonality}
                 onChange={(e) => setCorePersonality(e.target.value)}
                 rows={8}
@@ -107,7 +119,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
               </div>
             </div>
             <p className="text-sm text-gray-500">
-              Minimum 50 characters. The more detail you provide, the more authentic your character will feel.
+              Describe the physical and mental details of your character
             </p>
           </div>
 
@@ -120,46 +132,48 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
               Add personality tags for quick reference. These help define key traits at a glance.
             </p>
             
-            {/* Tag Input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g., Confident, Witty, Loyal, Chaotic"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={handleTagKeyPress}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg flex-1"
-              />
-              <Button
-                onClick={addTag}
-                disabled={!newTag.trim() || personalityTags.includes(newTag.trim())}
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-4 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Display Tags */}
-            {personalityTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {personalityTags.map((tag, index) => (
-                  <Badge 
-                    key={index} 
-                    className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30 px-3 py-2 text-sm font-medium hover:bg-[#FF7A00]/30 transition-colors"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"
+            {/* Tag Dropdown */}
+            <div className="space-y-4">
+              <Select onValueChange={addTag}>
+                <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg">
+                  <SelectValue placeholder="Select a tag to add..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {availableTagsToSelect.map((tag) => (
+                    <SelectItem 
+                      key={tag.id} 
+                      value={tag.name}
+                      className="text-white hover:bg-gray-700 focus:bg-gray-700"
                     >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Display Selected Tags */}
+              {personalityTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {personalityTags.map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30 px-3 py-2 text-sm font-medium hover:bg-[#FF7A00]/30 transition-colors"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Advanced Personality Collapsible Section */}
+          {/* Advanced Section */}
           <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
             <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
               <div className="flex items-center gap-2 text-white text-xl font-medium hover:text-[#FF7A00] transition-colors">
@@ -168,44 +182,44 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
                 ) : (
                   <ChevronRight className="w-5 h-5" />
                 )}
-                Advanced Personality
+                Advanced
               </div>
             </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-6 mt-4">
-              {/* Knowledge Base */}
+              {/* Personality Summary */}
               <div className="space-y-4">
                 <Label htmlFor="knowledge-base" className="text-white text-lg font-medium block">
-                  Knowledge Base
+                  Personality summary
                 </Label>
                 <Textarea
                   id="knowledge-base"
-                  placeholder="Input specific facts, lore, or world-building information the character should know. This helps create more authentic and consistent responses based on their background."
+                  placeholder="A short summary of the personality"
                   value={knowledgeBase}
                   onChange={(e) => setKnowledgeBase(e.target.value)}
                   rows={5}
                   className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
                 />
                 <p className="text-sm text-gray-500">
-                  Optional: Add any specific knowledge, background, or world details your character should be aware of.
+                  A short summary of the personality.
                 </p>
               </div>
 
-              {/* Scenario Definition */}
+              {/* Scenario */}
               <div className="space-y-4">
                 <Label htmlFor="scenario-definition" className="text-white text-lg font-medium block">
-                  Scenario Definition
+                  Scenario
                 </Label>
                 <Textarea
                   id="scenario-definition"
-                  placeholder="e.g., When the user is sad, the character becomes more gentle and supportive. When challenged, the character becomes competitive."
+                  placeholder="Share context of the scenario or the interaction taking place in the chat"
                   value={scenarioDefinition}
                   onChange={(e) => setScenarioDefinition(e.target.value)}
                   rows={5}
                   className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
                 />
                 <p className="text-sm text-gray-500">
-                  Optional: Define how your character should behave in specific situations or contexts.
+                  Share context of the scenario or the interaction taking place in the chat.
                 </p>
               </div>
             </CollapsibleContent>

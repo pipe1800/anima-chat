@@ -26,9 +26,9 @@ export interface Character {
 export interface CharacterDefinition {
   character_id: string;
   greeting?: string;
-  long_description?: string;
-  definition: string;
-  contextual_data?: any;
+  description?: string;
+  personality_summary: string;
+  scenario?: any;
   model_id?: string;
 }
 
