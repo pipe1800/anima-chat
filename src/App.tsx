@@ -31,6 +31,7 @@ import { PayPalVerification } from "./components/PayPalVerification";
 import { UpgradeVerification as ComponentUpgradeVerification } from "./components/UpgradeVerification";
 import { UpgradeCallback } from "./pages/UpgradeCallback";
 import UpgradeVerification from "./pages/UpgradeVerification";
+import CreditPurchaseVerification from "./pages/CreditPurchaseVerification";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,11 @@ const App = () => (
             <Route path="/upgrade-verification" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <UpgradeVerification />
+              </OnboardingGuard>
+            } />
+            <Route path="/credit-purchase-verification" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <CreditPurchaseVerification />
               </OnboardingGuard>
             } />
             <Route path="/finalize-upgrade" element={

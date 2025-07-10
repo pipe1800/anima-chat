@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.create-paypal-subscription]
 verify_jwt = true
 
+[functions.finalize-credit-purchase]
+verify_jwt = true
+
 [functions.verify-paypal-subscription]
 verify_jwt = true
 
