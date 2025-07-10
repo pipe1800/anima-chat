@@ -182,74 +182,46 @@ serve(async (req) => {
       throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
     }
 
-    // Revise PayPal subscription for next billing cycle
-    if (currentSub.paypal_subscription_id && targetPlan.paypal_subscription_id) {
-      logStep("Attempting to revise PayPal subscription", { 
-        currentSubscriptionId: currentSub.paypal_subscription_id,
-        targetPlanId: targetPlan.paypal_subscription_id 
+    // Cancel current PayPal subscription and create a new one
+    if (currentSub.paypal_subscription_id) {
+      logStep("Cancelling current PayPal subscription", { 
+        currentSubscriptionId: currentSub.paypal_subscription_id
       });
 
-      const revisionData = {
-        plan_id: targetPlan.paypal_subscription_id
-      };
-
-      logStep("Sending revision request", { revisionData });
-
-      const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
+      // Cancel the current subscription
+      const cancelResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/cancel`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        body: JSON.stringify(revisionData)
+        body: JSON.stringify({
+          reason: "Upgraded to a different plan"
+        })
       });
 
-      logStep("PayPal revision response", { 
-        status: reviseResponse.status,
-        statusText: reviseResponse.statusText 
-      });
-
-      if (reviseResponse.ok) {
-        const revisionResult = await reviseResponse.json();
-        logStep("PayPal subscription revision initiated", { result: revisionResult });
+      if (cancelResponse.ok) {
+        logStep("PayPal subscription cancelled successfully");
         
-        // Look for approval link in HATEOAS links
-        const approvalLink = revisionResult.links?.find((link: any) => link.rel === 'approve');
-        if (approvalLink) {
-          logStep("PayPal approval link found", { approvalUrl: approvalLink.href });
-          
-          // Store the approval URL in the response so the frontend can redirect the user
-          return new Response(JSON.stringify({ 
-            success: true,
-            newPlan: targetPlanName,
-            creditsAdded: creditDifference,
-            paypalApprovalRequired: true,
-            paypalApprovalUrl: approvalLink.href,
-            message: "Upgrade successful! Please approve the PayPal subscription change to complete the process."
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        } else {
-          logStep("No approval link found in PayPal response");
+        // Clear the paypal_subscription_id since it's cancelled
+        const { error: clearSubError } = await supabaseClient
+          .from('subscriptions')
+          .update({ paypal_subscription_id: null })
+          .eq('id', subscriptionId);
+
+        if (clearSubError) {
+          logStep("Failed to clear PayPal subscription ID", { error: clearSubError });
         }
       } else {
-        const errorData = await reviseResponse.text();
-        logStep("PayPal subscription revision failed", { 
+        const errorData = await cancelResponse.text();
+        logStep("PayPal subscription cancellation failed", { 
           error: errorData,
-          revisionData,
-          status: reviseResponse.status 
+          status: cancelResponse.status 
         });
-        
-        // Don't fail the entire upgrade if PayPal revision fails
-        logStep("Continuing with upgrade despite PayPal revision failure");
+        // Continue anyway - the subscription plan was already updated in our database
       }
     } else {
-      logStep("PayPal subscription revision skipped", { 
-        hasCurrentSubscriptionId: !!currentSub.paypal_subscription_id,
-        hasTargetPlanId: !!targetPlan.paypal_subscription_id 
-      });
+      logStep("No PayPal subscription to cancel");
     }
 
     logStep("Upgrade completed successfully", { 

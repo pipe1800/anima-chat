@@ -321,7 +321,7 @@ export const BillingSettings = () => {
                               <strong>Instant Upgrade:</strong> Pay only $10.00 (the difference between plans) and receive 17,000 additional credits immediately.
                             </p>
                             <p className="text-xs text-orange-300">
-                              Your next billing cycle will charge the full $24.95 for The Whale plan.
+                              Your current PayPal subscription will be cancelled and you'll need to set up a new subscription for future billing.
                             </p>
                           </div>
                         );

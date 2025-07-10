@@ -56,16 +56,7 @@ export const UpgradeVerification = () => {
           setStatus('success');
           const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
           
-          if (data.paypalApprovalRequired && data.paypalApprovalUrl) {
-            setMessage(`${data.message || `Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`} Opening PayPal approval page...`);
-            
-            // Open PayPal approval in a new tab
-            setTimeout(() => {
-              window.open(data.paypalApprovalUrl, '_blank');
-            }, 1000);
-          } else {
-            setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}.`);
-          }
+          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}. Your PayPal subscription has been updated.`);
           
           // Redirect to settings after 3 seconds
           setTimeout(() => {
