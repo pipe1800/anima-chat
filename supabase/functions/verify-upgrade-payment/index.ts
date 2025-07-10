@@ -135,15 +135,34 @@ serve(async (req) => {
     });
 
     // Add credits to user's account
+    logStep("Adding credits to user account", { creditDifference });
+    
+    // First get current balance
+    const { data: currentCredits, error: getCurrentError } = await supabaseClient
+      .from('credits')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (getCurrentError) {
+      logStep("Failed to get current credits", { error: getCurrentError });
+      throw new Error(`Failed to get current credits: ${getCurrentError.message}`);
+    }
+    
+    const newBalance = currentCredits.balance + creditDifference;
+    logStep("Calculated new balance", { currentBalance: currentCredits.balance, newBalance });
+    
     const { error: creditError } = await supabaseClient
       .from('credits')
-      .update({ balance: supabaseClient.rpc('increment', { x: creditDifference }) })
+      .update({ balance: newBalance })
       .eq('user_id', user.id);
 
     if (creditError) {
       logStep("Credit update failed", { error: creditError });
-      // We should continue even if credit update fails to update the subscription
+      throw new Error(`Failed to update credits: ${creditError.message}`);
     }
+    
+    logStep("Credits updated successfully", { newBalance });
 
     // Update the subscription plan
     const { error: subscriptionUpdateError } = await supabaseClient
