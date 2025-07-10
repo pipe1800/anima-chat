@@ -142,26 +142,9 @@ serve(async (req) => {
         },
         description: `Upgrade from ${currentPlanName} to ${targetPlanName}`
       }],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            payment_method_preference: "UNRESTRICTED",
-            brand_name: "AnimaChat",
-            locale: "en-US",
-            landing_page: "GUEST_CHECKOUT",
-            shipping_preference: "NO_SHIPPING",
-            user_action: "PAY_NOW"
-          }
-        }
-      },
       application_context: {
         return_url: `${req.headers.get("origin")}/upgrade-verification?subscription_id=${currentSub.id}&target_plan_id=${targetPlanId}`,
-        cancel_url: `${req.headers.get("origin")}/subscription?upgrade_cancelled=true`,
-        brand_name: "AnimaChat",
-        locale: "en-US",
-        landing_page: "GUEST_CHECKOUT",
-        shipping_preference: "NO_SHIPPING",
-        user_action: "PAY_NOW"
+        cancel_url: `${req.headers.get("origin")}/subscription?upgrade_cancelled=true`
       }
     };
 
