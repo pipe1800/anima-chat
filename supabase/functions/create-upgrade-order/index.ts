@@ -64,6 +64,14 @@ serve(async (req) => {
     logStep("PayPal token obtained");
 
     // 3. Create a PayPal order for the $10 difference
+    const siteUrl = Deno.env.get("SITE_URL");
+    if (!siteUrl) {
+        throw new Error("SITE_URL environment variable is not set.");
+    }
+
+    const returnUrl = new URL('/upgrade-verification', siteUrl);
+    const cancelUrl = new URL('/settings?tab=billing', siteUrl);
+
     const orderData = {
       intent: "CAPTURE",
       purchase_units: [{
@@ -71,9 +79,8 @@ serve(async (req) => {
         description: "Upgrade from True Fan to The Whale"
       }],
       application_context: {
-        // IMPORTANT: We will create this page in the next step
-        return_url: `${Deno.env.get("SITE_URL")}/upgrade-verification`,
-        cancel_url: `${Deno.env.get("SITE_URL")}/settings?tab=billing`
+        return_url: returnUrl.href,
+        cancel_url: cancelUrl.href
       }
     };
 
