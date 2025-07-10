@@ -33,6 +33,7 @@ export const BillingSettings = () => {
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isChangingPlan, setIsChangingPlan] = useState(false);
 
   const fetchSubscriptionData = async () => {
     if (!user) return;
@@ -70,6 +71,33 @@ export const BillingSettings = () => {
   useEffect(() => {
     fetchSubscriptionData();
   }, [user]);
+
+  const handleUpgrade = async () => {
+    setIsChangingPlan(true); // We can reuse this state for loading indication
+    try {
+      const { data, error } = await supabase.functions.invoke('create-upgrade-order');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.approvalUrl) {
+        // Redirect the user to PayPal to approve the one-time payment
+        window.location.href = data.approvalUrl;
+      } else {
+        throw new Error("Could not get PayPal approval URL.");
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start the upgrade process. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPlan(false);
+    }
+  };
 
 
   const handleCancelSubscription = async () => {
@@ -193,6 +221,24 @@ export const BillingSettings = () => {
 
           {userSubscription && userSubscription.status === 'active' && (
             <div className="mt-4 flex gap-3">
+              {/* Upgrade Plan Button for True Fan users */}
+              {userSubscription.plan.name === 'True Fan' && (
+                <Button 
+                  onClick={handleUpgrade}
+                  disabled={isChangingPlan}
+                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                >
+                  {isChangingPlan ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Upgrade to The Whale'
+                  )}
+                </Button>
+              )}
+              
               {/* Cancel Subscription Dialog */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
