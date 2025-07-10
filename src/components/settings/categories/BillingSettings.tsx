@@ -307,10 +307,29 @@ export const BillingSettings = () => {
                 <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-white">Cancel Subscription</AlertDialogTitle>
-                    <AlertDialogDescription className="text-gray-300">
-                      Are you sure you want to cancel your subscription? You'll continue to have access to your plan features 
-                      until {formatDate(userSubscription.current_period_end)}, but your subscription will not renew.
-                    </AlertDialogDescription>
+                  <AlertDialogDescription className="text-gray-300">
+                    <div className="space-y-3">
+                      <p>Are you sure you want to cancel your subscription? You'll continue to have access to your plan features until {formatDate(userSubscription.current_period_end)}, but your subscription will not renew.</p>
+                      
+                      <div>
+                        <p className="font-medium mb-2">If you cancel your membership, you will lose access to the following benefits:</p>
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                          {userSubscription.plan.features?.features && Array.isArray(userSubscription.plan.features.features) ? (
+                            <ul className="space-y-1">
+                              {userSubscription.plan.features.features.map((feature: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-red-400 mt-1">•</span>
+                                  <span className="text-sm">{feature}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm">All premium features and benefits</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="border-gray-600 text-white hover:bg-gray-800">
