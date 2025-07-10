@@ -31,6 +31,12 @@ export const UpgradeVerification = () => {
       }
 
       try {
+        console.log('Calling verify-upgrade-payment function with:', {
+          orderId: token,
+          subscriptionId,
+          targetPlanId
+        });
+
         const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
           body: { 
             orderId: token,
@@ -39,8 +45,11 @@ export const UpgradeVerification = () => {
           }
         });
 
+        console.log('Function response:', { data, error });
+
         if (error) {
-          throw new Error(error.message);
+          console.error('Function error:', error);
+          throw new Error(`Edge Function Error: ${error.message}`);
         }
 
         if (data?.success) {
