@@ -157,8 +157,15 @@ serve(async (req) => {
 
     // Revise PayPal subscription for next billing cycle
     if (currentSub.paypal_subscription_id && targetPlan.paypal_subscription_id) {
+      logStep("Attempting to revise PayPal subscription", { 
+        currentSubscriptionId: currentSub.paypal_subscription_id,
+        targetPlanId: targetPlan.paypal_subscription_id 
+      });
+
       const revisionData = {
-        plan_id: targetPlan.paypal_subscription_id
+        plan_id: targetPlan.paypal_subscription_id,
+        effective_time: new Date().toISOString(),
+        revision_type: "REPLACE"
       };
 
       const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
@@ -173,11 +180,21 @@ serve(async (req) => {
 
       if (!reviseResponse.ok) {
         const errorData = await reviseResponse.text();
-        logStep("PayPal subscription revision failed", { error: errorData });
+        logStep("PayPal subscription revision failed", { 
+          error: errorData,
+          revisionData,
+          status: reviseResponse.status 
+        });
         // Don't throw error here - the upgrade payment is complete, just log the issue
       } else {
-        logStep("PayPal subscription revised successfully");
+        const revisionResult = await reviseResponse.json();
+        logStep("PayPal subscription revised successfully", { result: revisionResult });
       }
+    } else {
+      logStep("PayPal subscription revision skipped", { 
+        hasCurrentSubscriptionId: !!currentSub.paypal_subscription_id,
+        hasTargetPlanId: !!targetPlan.paypal_subscription_id 
+      });
     }
 
     logStep("Upgrade completed successfully", { 
