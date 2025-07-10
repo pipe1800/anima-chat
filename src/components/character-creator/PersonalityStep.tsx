@@ -9,44 +9,41 @@ import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
+// Define the Tag type
+interface Tag {
+  id: number;
+  name: string;
+}
+
 interface PersonalityStepProps {
   data: any;
   onUpdate: (data: any) => void;
   onNext: () => void;
   onPrevious: () => void;
-  selectedTags: Tables<'tags'>[];
-  setSelectedTags: (tags: Tables<'tags'>[]) => void;
+  selectedTags: Tag[];
+  setSelectedTags: React.Dispatch<React.SetStateAction<Tag[]>>;
 }
 
 const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, setSelectedTags }: PersonalityStepProps) => {
   const [corePersonality, setCorePersonality] = useState(data.personality?.core_personality || '');
   const [knowledgeBase, setKnowledgeBase] = useState(data.personality?.knowledge_base || '');
   const [scenarioDefinition, setScenarioDefinition] = useState(data.personality?.scenario_definition || '');
-  const [allTags, setAllTags] = useState<Tables<'tags'>[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch all tags from the database
+  // Fetch all available tags from the database when the component mounts
   useEffect(() => {
     const fetchTags = async () => {
-      try {
-        const { data: tags, error } = await supabase
-          .from('tags')
-          .select('*')
-          .order('name');
-        
-        if (error) {
-          console.error('Error fetching tags:', error);
-          return;
-        }
-        
-        if (tags) {
-          setAllTags(tags);
-        }
-      } catch (err) {
-        console.error('Exception fetching tags:', err);
+      setIsLoading(true);
+      const { data, error } = await supabase.from('tags').select('*').order('name');
+      if (error) {
+        console.error('Error fetching tags:', error);
+      } else {
+        setAllTags(data || []);
       }
+      setIsLoading(false);
     };
-
     fetchTags();
   }, []);
 
@@ -68,15 +65,18 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
     }
   }, [data]);
 
-  const addTag = (tagName: string) => {
-    const fullTag = allTags.find(tag => tag.name === tagName);
-    if (fullTag && !selectedTags.find(tag => tag.id === fullTag.id)) {
-      setSelectedTags([...selectedTags, fullTag]);
+  // Handler to add a tag
+  const handleAddTag = (tagId: string) => {
+    const tagToAdd = allTags.find(tag => tag.id.toString() === tagId);
+    // Add the tag only if it exists and is not already selected
+    if (tagToAdd && !selectedTags.some(tag => tag.id === tagToAdd.id)) {
+      setSelectedTags([...selectedTags, tagToAdd]);
     }
   };
 
-  const removeTag = (tagToRemove: Tables<'tags'>) => {
-    setSelectedTags(selectedTags.filter(tag => tag.id !== tagToRemove.id));
+  // Handler to remove a tag
+  const handleRemoveTag = (tagId: number) => {
+    setSelectedTags(selectedTags.filter(tag => tag.id !== tagId));
   };
 
   const handleNext = () => {
@@ -93,8 +93,8 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
 
   const isValid = corePersonality.trim().length >= 50;
 
-  // Filter out already selected tags
-  const availableTagsToSelect = allTags.filter(tag => !selectedTags.find(selected => selected.id === tag.id));
+  // Filter the dropdown to show only tags that haven't been selected yet
+  const availableTags = allTags.filter(tag => !selectedTags.some(selected => selected.id === tag.id));
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
@@ -133,7 +133,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
             </p>
           </div>
 
-          {/* Tag System */}
+          {/* Quick Tags System */}
           <div className="space-y-4">
             <Label className="text-white text-xl font-medium block">
               Quick Tags
@@ -144,17 +144,16 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
             
             {/* Tag Dropdown */}
             <div className="space-y-4">
-              
-              <Select onValueChange={addTag}>
+              <Select onValueChange={handleAddTag} disabled={isLoading}>
                 <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg">
-                  <SelectValue placeholder={`Select a tag to add... (${availableTagsToSelect.length} available)`} />
+                  <SelectValue placeholder={isLoading ? 'Loading tags...' : `Select a tag to add... (${availableTags.length} available)`} />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-600 z-50">
-                  {availableTagsToSelect.length > 0 ? (
-                    availableTagsToSelect.map((tag) => (
+                  {availableTags.length > 0 ? (
+                    availableTags.map((tag) => (
                       <SelectItem 
                         key={tag.id} 
-                        value={tag.name}
+                        value={tag.id.toString()}
                         className="text-white hover:bg-gray-700 focus:bg-gray-700"
                       >
                         {tag.name}
@@ -178,7 +177,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                     >
                       {tag.name}
                       <button
-                        onClick={() => removeTag(tag)}
+                        onClick={() => handleRemoveTag(tag.id)}
                         className="ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"
                       >
                         <X className="w-3 h-3" />
