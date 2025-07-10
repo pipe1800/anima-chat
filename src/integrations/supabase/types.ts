@@ -17,27 +17,27 @@ export type Database = {
       character_definitions: {
         Row: {
           character_id: string
-          contextual_data: Json | null
-          definition: string
+          description: string | null
           greeting: string | null
-          long_description: string | null
           model_id: string | null
+          personality_summary: string
+          scenario: Json | null
         }
         Insert: {
           character_id: string
-          contextual_data?: Json | null
-          definition: string
+          description?: string | null
           greeting?: string | null
-          long_description?: string | null
           model_id?: string | null
+          personality_summary: string
+          scenario?: Json | null
         }
         Update: {
           character_id?: string
-          contextual_data?: Json | null
-          definition?: string
+          description?: string | null
           greeting?: string | null
-          long_description?: string | null
           model_id?: string | null
+          personality_summary?: string
+          scenario?: Json | null
         }
         Relationships: [
           {
@@ -178,6 +178,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           creator_id: string
+          default_persona_id: string | null
           id: string
           interaction_count: number
           name: string
@@ -189,6 +190,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           creator_id: string
+          default_persona_id?: string | null
           id?: string
           interaction_count?: number
           name: string
@@ -200,6 +202,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           creator_id?: string
+          default_persona_id?: string | null
           id?: string
           interaction_count?: number
           name?: string
@@ -207,7 +210,15 @@ export type Database = {
           updated_at?: string
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_characters_default_persona"
+            columns: ["default_persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chats: {
         Row: {
