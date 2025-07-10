@@ -36,6 +36,7 @@ export const BillingSettings = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
 
   const fetchSubscriptionData = async () => {
     if (!user) return;
@@ -74,8 +75,13 @@ export const BillingSettings = () => {
     fetchSubscriptionData();
   }, [user]);
 
+  const handleUpgradeClick = () => {
+    setShowUpgradeConfirmation(true);
+  };
+
   const handleUpgrade = async () => {
     setIsChangingPlan(true);
+    setShowUpgradeConfirmation(false);
     try {
       // Call the new initiate-upgrade function that creates the PayPal subscription
       const { data, error } = await supabase.functions.invoke('initiate-upgrade');
@@ -238,7 +244,7 @@ export const BillingSettings = () => {
                       <p className="text-sm text-orange-300">Get 17,000 more credits instantly for a one-time payment of $10.00.</p>
                     </div>
                     <Button
-                      onClick={handleUpgrade}
+                      onClick={handleUpgradeClick}
                       disabled={isChangingPlan}
                       className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
                     >
@@ -276,7 +282,7 @@ export const BillingSettings = () => {
               {/* Upgrade Plan Button for True Fan users */}
               {userSubscription.plan.name === 'True Fan' && (
                 <Button 
-                  onClick={handleUpgrade}
+                  onClick={handleUpgradeClick}
                   disabled={isChangingPlan}
                   className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
                 >
@@ -348,6 +354,40 @@ export const BillingSettings = () => {
         )}
       </div>
       
+      {/* Upgrade Confirmation Dialog */}
+      <AlertDialog open={showUpgradeConfirmation} onOpenChange={setShowUpgradeConfirmation}>
+        <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirm Your Plan Upgrade</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              <div className="space-y-3">
+                <p>You are upgrading from <strong>True Fan</strong> to <strong>The Whale</strong> plan.</p>
+                <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
+                  <p>• <strong>One-time charge:</strong> $10.00 (charged now)</p>
+                  <p>• <strong>Credits bonus:</strong> 17,000 credits added immediately</p>
+                  <p>• <strong>Next billing:</strong> $24.95/month starting next cycle</p>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Your subscription will continue with the new plan benefits and pricing.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-gray-600 text-white hover:bg-gray-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleUpgrade}
+              className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+              disabled={isChangingPlan}
+            >
+              {isChangingPlan ? 'Processing...' : 'Proceed to Upgrade'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Payment Modal Overlay */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
         <DialogContent className="bg-[#1a1a2e] border-gray-700">

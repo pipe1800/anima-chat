@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import { 
   getActivePlans, 
@@ -61,6 +62,8 @@ const Subscription = () => {
   const [loading, setLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
+  const [planToUpgradeTo, setPlanToUpgradeTo] = useState<Plan | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,9 +107,22 @@ const Subscription = () => {
     fetchData();
   }, [user, toast]);
 
-  const handleSubscriptionAction = async (targetPlan: Plan) => {
+  const handleSubscriptionAction = (targetPlan: Plan) => {
+    // Check if this is an upgrade case that needs confirmation
+    if (userSubscription && userSubscription.plan.name === 'True Fan' && targetPlan.name === 'The Whale') {
+      // Show confirmation dialog for True Fan → The Whale upgrade
+      setPlanToUpgradeTo(targetPlan);
+      setShowUpgradeConfirmation(true);
+    } else {
+      // For other cases (new subscriptions), proceed directly
+      processSubscriptionAction(targetPlan);
+    }
+  };
+
+  const processSubscriptionAction = async (targetPlan: Plan) => {
     try {
       setIsUpgrading(true);
+      setShowUpgradeConfirmation(false);
 
       let response;
       
@@ -332,6 +348,40 @@ const Subscription = () => {
           )}
         </div>
         
+        {/* Upgrade Confirmation Dialog */}
+        <AlertDialog open={showUpgradeConfirmation} onOpenChange={setShowUpgradeConfirmation}>
+          <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Confirm Your Plan Upgrade</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-300">
+                <div className="space-y-3">
+                  <p>You are upgrading from <strong>True Fan</strong> to <strong>The Whale</strong> plan.</p>
+                  <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
+                    <p>• <strong>One-time charge:</strong> $10.00 (charged now)</p>
+                    <p>• <strong>Credits bonus:</strong> 17,000 credits added immediately</p>
+                    <p>• <strong>Next billing:</strong> $24.95/month starting next cycle</p>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Your subscription will continue with the new plan benefits and pricing.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-gray-600 text-white hover:bg-gray-800">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => planToUpgradeTo && processSubscriptionAction(planToUpgradeTo)}
+                className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
+                disabled={isUpgrading}
+              >
+                {isUpgrading ? 'Processing...' : 'Proceed to Upgrade'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Payment Modal Overlay */}
         <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
           <DialogContent className="bg-[#1a1a2e] border-gray-700">
