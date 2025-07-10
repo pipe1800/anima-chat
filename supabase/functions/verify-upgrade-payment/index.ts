@@ -172,92 +172,89 @@ serve(async (req) => {
       logStep("Credits updated successfully", { newBalance });
     }
 
-    // Get the PayPal plan ID for the target plan
-    logStep("Getting target plan PayPal ID", { targetPlanName });
+    // Revise PayPal subscription if it exists
+    let paypalRevisionSuccessful = false;
     
-    if (!targetPlan.paypal_subscription_id) {
-      throw new Error(`Target plan ${targetPlanName} does not have a PayPal subscription ID configured`);
-    }
-    
-    const targetPayPalPlanId = targetPlan.paypal_subscription_id;
-    logStep("Target PayPal plan ID found", { targetPayPalPlanId });
-
-    // Revise the PayPal subscription using REST API
-    if (currentSub.paypal_subscription_id) {
-      logStep("Revising PayPal subscription", { 
+    if (currentSub.paypal_subscription_id && targetPlan.paypal_subscription_id) {
+      logStep("Starting PayPal subscription revision", { 
         currentSubscriptionId: currentSub.paypal_subscription_id,
-        newPlanId: targetPayPalPlanId
+        targetPlanId: targetPlan.paypal_subscription_id
       });
 
-      const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tokenData.access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'PayPal-Request-Id': `revise-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        },
-        body: JSON.stringify({
-          plan_id: targetPayPalPlanId,
-          application_context: {
-            return_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/upgrade-callback?subscription_id=${subscriptionId}&target_plan_id=${targetPlanId}`,
-            cancel_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/settings?tab=billing`
-          }
-        })
-      });
-
-      if (!reviseResponse.ok) {
-        const errorData = await reviseResponse.text();
-        logStep("PayPal subscription revision failed", { error: errorData, status: reviseResponse.status });
-        throw new Error(`Failed to revise PayPal subscription: ${errorData}`);
-      }
-
-      const reviseData = await reviseResponse.json();
-      logStep("PayPal subscription revision response", { reviseData });
-
-      // Find the approval link that the user needs to approve
-      const approvalLink = reviseData.links?.find((link: any) => link.rel === 'approve')?.href;
-      
-      if (approvalLink) {
-        logStep("Approval required for subscription revision", { approvalLink });
-        
-        // Return the approval URL for the user to approve the change
-        return new Response(JSON.stringify({ 
-          success: false,
-          requiresApproval: true,
-          approvalUrl: approvalLink,
-          message: "Please approve the subscription change on PayPal",
-          subscriptionId,
-          targetPlanId,
-          creditsToAdd: creditDifference
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+      try {
+        const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokenData.access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'PayPal-Request-Id': `revise-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          },
+          body: JSON.stringify({
+            plan_id: targetPlan.paypal_subscription_id,
+            application_context: {
+              return_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/upgrade-callback?subscription_id=${subscriptionId}&target_plan_id=${targetPlanId}`,
+              cancel_url: `https://44846289-50c5-405d-bf12-00bc4f98a009.lovableproject.com/settings?tab=billing`
+            }
+          })
         });
-      } else {
-        logStep("No approval link found - revision may be automatic", { reviseData });
-        // Update the subscription plan in our database
-        const { error: subscriptionUpdateError } = await supabaseClient
-          .from('subscriptions')
-          .update({ plan_id: targetPlanId })
-          .eq('id', subscriptionId);
 
-        if (subscriptionUpdateError) {
-          throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
+        if (reviseResponse.ok) {
+          const reviseData = await reviseResponse.json();
+          logStep("PayPal subscription revision successful", { reviseData });
+          
+          // Check if approval is required
+          const approvalLink = reviseData.links?.find((link: any) => link.rel === 'approve')?.href;
+          
+          if (approvalLink) {
+            logStep("PayPal subscription revision requires approval", { approvalLink });
+            
+            return new Response(JSON.stringify({ 
+              success: false,
+              requiresApproval: true,
+              approvalUrl: approvalLink,
+              message: "Please approve the subscription change on PayPal",
+              subscriptionId,
+              targetPlanId,
+              creditsToAdd: creditDifference
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          } else {
+            paypalRevisionSuccessful = true;
+            logStep("PayPal subscription revised successfully without approval");
+          }
+        } else {
+          const errorData = await reviseResponse.text();
+          logStep("PayPal subscription revision failed - continuing with database update", { 
+            error: errorData, 
+            status: reviseResponse.status 
+          });
         }
+      } catch (error) {
+        logStep("PayPal subscription revision error - continuing with database update", { 
+          error: error instanceof Error ? error.message : String(error) 
+        });
       }
     } else {
-      logStep("No PayPal subscription ID found, updating database only");
-      
-      // Update the subscription plan in our database
-      const { error: subscriptionUpdateError } = await supabaseClient
-        .from('subscriptions')
-        .update({ plan_id: targetPlanId })
-        .eq('id', subscriptionId);
+      logStep("Skipping PayPal subscription revision", { 
+        hasPaypalSubscriptionId: !!currentSub.paypal_subscription_id,
+        hasTargetPlanPaypalId: !!targetPlan.paypal_subscription_id
+      });
+    }
 
-      if (subscriptionUpdateError) {
-        throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
-      }
+    // Update the subscription plan in our database (always do this since payment was captured)
+    logStep("Updating subscription in database", { subscriptionId, targetPlanId });
+    
+    const { error: subscriptionUpdateError } = await supabaseClient
+      .from('subscriptions')
+      .update({ plan_id: targetPlanId })
+      .eq('id', subscriptionId);
+
+    if (subscriptionUpdateError) {
+      logStep("Database subscription update failed", { error: subscriptionUpdateError });
+      throw new Error(`Failed to update subscription in database: ${subscriptionUpdateError.message}`);
     }
 
     logStep("Upgrade completed successfully", { 
