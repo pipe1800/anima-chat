@@ -28,10 +28,13 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
   useEffect(() => {
     const fetchTags = async () => {
       try {
+        console.log('Starting to fetch tags...');
         const { data: tags, error } = await supabase
           .from('tags')
           .select('*')
           .order('name');
+        
+        console.log('Tag query result:', { tags, error });
         
         if (error) {
           console.error('Error fetching tags:', error);
@@ -39,8 +42,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious }: PersonalityStep
         }
         
         if (tags) {
-          console.log('Fetched tags:', tags.length, 'tags');
+          console.log('Fetched tags:', tags.length, 'tags', tags);
           setAvailableTags(tags);
+        } else {
+          console.log('No tags returned from query');
         }
       } catch (err) {
         console.error('Exception fetching tags:', err);
