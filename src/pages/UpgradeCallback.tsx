@@ -3,43 +3,36 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
-export const UpgradeVerification = () => {
+export const UpgradeCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
-  const [message, setMessage] = useState('Verifying your upgrade payment...');
+  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [message, setMessage] = useState('Completing your subscription upgrade...');
 
   useEffect(() => {
-    const verifyUpgrade = async () => {
-      const token = searchParams.get('token');
+    const completeUpgrade = async () => {
       const subscriptionId = searchParams.get('subscription_id');
       const targetPlanId = searchParams.get('target_plan_id');
-      const payerId = searchParams.get('PayerID');
+      const token = searchParams.get('token');
       
-      console.log('Upgrade verification parameters:', {
-        token,
+      console.log('Upgrade callback parameters:', {
         subscription_id: subscriptionId,
         target_plan_id: targetPlanId,
-        PayerID: payerId,
+        token,
         all_params: Object.fromEntries(searchParams.entries())
       });
 
-      if (!token || !subscriptionId || !targetPlanId) {
+      if (!subscriptionId || !targetPlanId) {
         setStatus('error');
-        setMessage('Missing verification parameters. Please try the upgrade again.');
+        setMessage('Missing upgrade parameters. Please contact support.');
         return;
       }
 
       try {
-        console.log('Calling verify-upgrade-payment function with:', {
-          orderId: token,
-          subscriptionId,
-          targetPlanId
-        });
+        console.log('Calling complete-subscription-upgrade function');
 
-        const { data, error } = await supabase.functions.invoke('verify-upgrade-payment', {
+        const { data, error } = await supabase.functions.invoke('complete-subscription-upgrade', {
           body: { 
-            orderId: token,
             subscriptionId,
             targetPlanId
           }
@@ -56,43 +49,32 @@ export const UpgradeVerification = () => {
           setStatus('success');
           const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
           
-          setMessage(`Upgrade successful! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}. Your PayPal subscription has been updated.`);
+          setMessage(`Upgrade complete! You've been upgraded to ${data.newPlan || 'your new plan'}${creditsText}. Your PayPal subscription has been updated.`);
           
           // Redirect to settings after 3 seconds
           setTimeout(() => {
             navigate('/settings?tab=billing');
           }, 3000);
-        } else if (data?.requiresApproval) {
-          setStatus('success');
-          setMessage('Payment processed! Please approve the subscription change on PayPal in the new tab, then return here.');
-          
-          // Open PayPal approval URL in new tab
-          window.open(data.approvalUrl, '_blank');
-          
-          // Redirect to settings after 5 seconds
-          setTimeout(() => {
-            navigate('/settings?tab=billing');
-          }, 5000);
         } else {
-          throw new Error('Upgrade verification failed');
+          throw new Error('Upgrade completion failed');
         }
       } catch (error) {
-        console.error('Upgrade verification error:', error);
+        console.error('Upgrade completion error:', error);
         setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Failed to verify upgrade payment');
+        setMessage(error instanceof Error ? error.message : 'Failed to complete upgrade');
       }
     };
 
-    verifyUpgrade();
+    completeUpgrade();
   }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0B1426] flex items-center justify-center p-4">
       <div className="bg-[#1a1a2e] rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-        {status === 'verifying' && (
+        {status === 'processing' && (
           <>
             <Loader2 className="w-16 h-16 animate-spin text-[#FF7A00] mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Processing Upgrade</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Completing Upgrade</h2>
             <p className="text-gray-300">{message}</p>
           </>
         )}

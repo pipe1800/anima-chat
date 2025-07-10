@@ -29,6 +29,7 @@ import PublicWorldInfoProfile from "./pages/PublicWorldInfoProfile";
 import NotFound from "./pages/NotFound";
 import { PayPalVerification } from "./components/PayPalVerification";
 import { UpgradeVerification } from "./components/UpgradeVerification";
+import { UpgradeCallback } from "./pages/UpgradeCallback";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,11 @@ const App = () => (
             <Route path="/upgrade-verification" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <UpgradeVerification />
+              </OnboardingGuard>
+            } />
+            <Route path="/upgrade-callback" element={
+              <OnboardingGuard requireOnboardingComplete={true}>
+                <UpgradeCallback />
               </OnboardingGuard>
             } />
             <Route path="*" element={<NotFound />} />

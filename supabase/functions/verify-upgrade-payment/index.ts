@@ -172,56 +172,90 @@ serve(async (req) => {
       logStep("Credits updated successfully", { newBalance });
     }
 
-    // Update the subscription plan
-    const { error: subscriptionUpdateError } = await supabaseClient
-      .from('subscriptions')
-      .update({ plan_id: targetPlanId })
-      .eq('id', subscriptionId);
-
-    if (subscriptionUpdateError) {
-      throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
+    // Get the PayPal plan ID for the target plan
+    logStep("Getting target plan PayPal ID", { targetPlanName });
+    
+    if (!targetPlan.paypal_subscription_id) {
+      throw new Error(`Target plan ${targetPlanName} does not have a PayPal subscription ID configured`);
     }
+    
+    const targetPayPalPlanId = targetPlan.paypal_subscription_id;
+    logStep("Target PayPal plan ID found", { targetPayPalPlanId });
 
-    // Cancel current PayPal subscription and create a new one
+    // Revise the PayPal subscription using REST API
     if (currentSub.paypal_subscription_id) {
-      logStep("Cancelling current PayPal subscription", { 
-        currentSubscriptionId: currentSub.paypal_subscription_id
+      logStep("Revising PayPal subscription", { 
+        currentSubscriptionId: currentSub.paypal_subscription_id,
+        newPlanId: targetPayPalPlanId
       });
 
-      // Cancel the current subscription
-      const cancelResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/cancel`, {
+      const reviseResponse = await fetch(`${paypalBaseUrl}/v1/billing/subscriptions/${currentSub.paypal_subscription_id}/revise`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          reason: "Upgraded to a different plan"
+          plan_id: targetPayPalPlanId
         })
       });
 
-      if (cancelResponse.ok) {
-        logStep("PayPal subscription cancelled successfully");
-        
-        // Clear the paypal_subscription_id since it's cancelled
-        const { error: clearSubError } = await supabaseClient
+      if (!reviseResponse.ok) {
+        const errorData = await reviseResponse.text();
+        logStep("PayPal subscription revision failed", { error: errorData, status: reviseResponse.status });
+        throw new Error(`Failed to revise PayPal subscription: ${errorData}`);
+      }
+
+      const reviseData = await reviseResponse.json();
+      logStep("PayPal subscription revision response", { reviseData });
+
+      // Find the approval link that the user needs to approve
+      const approvalLink = reviseData.links?.find((link: any) => link.rel === 'approve')?.href;
+      
+      if (!approvalLink) {
+        logStep("No approval link found in revision response", { reviseData });
+        // If no approval link, the revision might have been successful automatically
+        // Update our database and continue
+        const { error: subscriptionUpdateError } = await supabaseClient
           .from('subscriptions')
-          .update({ paypal_subscription_id: null })
+          .update({ plan_id: targetPlanId })
           .eq('id', subscriptionId);
 
-        if (clearSubError) {
-          logStep("Failed to clear PayPal subscription ID", { error: clearSubError });
+        if (subscriptionUpdateError) {
+          throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
         }
+        
+        logStep("Subscription updated successfully without approval required");
       } else {
-        const errorData = await cancelResponse.text();
-        logStep("PayPal subscription cancellation failed", { 
-          error: errorData,
-          status: cancelResponse.status 
+        logStep("Approval required for subscription revision", { approvalLink });
+        
+        // Return the approval URL for the user to approve the change
+        return new Response(JSON.stringify({ 
+          success: false,
+          requiresApproval: true,
+          approvalUrl: approvalLink,
+          message: "Please approve the subscription change on PayPal",
+          subscriptionId,
+          targetPlanId,
+          creditsToAdd: creditDifference
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
         });
-        // Continue anyway - the subscription plan was already updated in our database
       }
     } else {
-      logStep("No PayPal subscription to cancel");
+      logStep("No PayPal subscription ID found, updating database only");
+      
+      // Update the subscription plan in our database
+      const { error: subscriptionUpdateError } = await supabaseClient
+        .from('subscriptions')
+        .update({ plan_id: targetPlanId })
+        .eq('id', subscriptionId);
+
+      if (subscriptionUpdateError) {
+        throw new Error(`Failed to update subscription: ${subscriptionUpdateError.message}`);
+      }
     }
 
     logStep("Upgrade completed successfully", { 
