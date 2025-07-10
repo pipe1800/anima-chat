@@ -63,7 +63,7 @@ serve(async (req) => {
       throw new Error("No active subscription found");
     }
 
-    if (!currentSub.plan) {
+    if (!currentSub.plan || !Array.isArray(currentSub.plan) || currentSub.plan.length === 0) {
       throw new Error("Plan details could not be found for the current subscription");
     }
 
@@ -78,7 +78,7 @@ serve(async (req) => {
       throw new Error(`Target plan not found: ${targetPlanError?.message}`);
     }
 
-    const currentPlanName = currentSub.plan.name;
+    const currentPlanName = currentSub.plan[0].name;
     const targetPlanName = targetPlan.name;
 
     logStep("Plans identified", { 
