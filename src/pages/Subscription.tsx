@@ -113,23 +113,62 @@ const Subscription = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
-        body: { planId: plan.id }
+      // Check if this is an upgrade (user has active subscription and target plan is more expensive)
+      const isUpgrade = userSubscription && 
+                       userSubscription.plan && 
+                       plan.price_monthly > (userSubscription.plan.price_monthly || 0);
+
+      console.log('Subscription attempt:', {
+        currentPlan: userSubscription?.plan?.name,
+        targetPlan: planName,
+        isUpgrade,
+        hasSubscription: !!userSubscription
       });
 
-      if (error) {
-        console.error('PayPal subscription error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create subscription",
-          variant: "destructive"
+      if (isUpgrade) {
+        // Use upgrade flow for price difference
+        const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+          body: { targetPlanId: plan.id }
         });
-        return;
-      }
 
-      // Open PayPal approval URL in new tab
-      if (data?.approvalUrl) {
-        window.open(data.approvalUrl, '_blank');
+        if (error) {
+          console.error('PayPal upgrade error:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create upgrade payment",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Open PayPal payment URL for the difference
+        if (data?.approvalUrl) {
+          window.open(data.approvalUrl, '_blank');
+          toast({
+            title: "Upgrade Payment",
+            description: `Pay $${data.priceDifference} to upgrade and receive ${data.creditDifference.toLocaleString()} additional credits immediately.`,
+          });
+        }
+      } else {
+        // Use regular subscription flow for new subscriptions or downgrades
+        const { data, error } = await supabase.functions.invoke('create-paypal-subscription', {
+          body: { planId: plan.id }
+        });
+
+        if (error) {
+          console.error('PayPal subscription error:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create subscription",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Open PayPal approval URL in new tab
+        if (data?.approvalUrl) {
+          window.open(data.approvalUrl, '_blank');
+        }
       }
     } catch (error) {
       console.error('Subscription error:', error);
