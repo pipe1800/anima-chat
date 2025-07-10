@@ -49,7 +49,7 @@ const UpgradeVerification = () => {
           // Fallback if not in popup
           navigate('/settings?tab=billing');
         }
-      }, 2000);
+      }, 7000);
     };
 
     processUpgrade();
