@@ -143,7 +143,7 @@ serve(async (req) => {
         description: `Upgrade from ${currentPlanName} to ${targetPlanName}`
       }],
       application_context: {
-        return_url: `${req.headers.get("origin")}/upgrade-callback?subscription_id=${currentSub.id}&target_plan_id=${targetPlanId}`,
+        return_url: `${req.headers.get("origin")}/upgrade-verification?token={token}&subscription_id=${currentSub.id}&target_plan_id=${targetPlanId}&PayerID={PayerID}`,
         cancel_url: `${req.headers.get("origin")}/subscription?upgrade_cancelled=true`
       }
     };
