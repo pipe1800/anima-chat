@@ -33,6 +33,7 @@ export interface CharacterCreationData {
   };
   visibility: 'public' | 'unlisted' | 'private';
   nsfw_enabled?: boolean;
+  default_persona_id?: string | null;
 }
 
 export const createCharacter = async (characterData: CharacterCreationData) => {
@@ -46,7 +47,8 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
       name: characterData.name,
       short_description: characterData.description,
       avatar_url: characterData.avatar,
-      visibility: characterData.visibility
+      visibility: characterData.visibility,
+      default_persona_id: characterData.default_persona_id
     };
 
     const { data: character, error: characterError } = await supabase
@@ -107,7 +109,8 @@ export const updateCharacter = async (characterId: string, characterData: Charac
       name: characterData.name,
       short_description: characterData.description,
       avatar_url: characterData.avatar,
-      visibility: characterData.visibility
+      visibility: characterData.visibility,
+      default_persona_id: characterData.default_persona_id
     };
 
     const { data: character, error: characterError } = await supabase

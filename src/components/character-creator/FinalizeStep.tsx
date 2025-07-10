@@ -5,7 +5,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, MessageCircle, Heart, Sparkles, Globe, Link, Lock, Loader2 } from 'lucide-react';
+import { getUserPersonas, type Persona } from '@/lib/persona-operations';
 
 interface FinalizeStepProps {
   data: any;
@@ -21,12 +23,28 @@ type VisibilityType = 'public' | 'unlisted' | 'private';
 const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false, isEditing = false }: FinalizeStepProps) => {
   const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
   const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>(data.default_persona_id || '');
+
+  // Load user's personas
+  useEffect(() => {
+    const loadPersonas = async () => {
+      try {
+        const userPersonas = await getUserPersonas();
+        setPersonas(userPersonas);
+      } catch (error) {
+        console.error('Error loading personas:', error);
+      }
+    };
+    loadPersonas();
+  }, []);
 
   // Update form data when character data is loaded
   useEffect(() => {
     if (data) {
       setVisibility(data.visibility || 'public');
       setEnableNSFW(data.nsfw_enabled || false);
+      setSelectedPersonaId(data.default_persona_id || '');
     }
   }, [data]);
 
@@ -54,7 +72,8 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
   const handleFinalize = () => {
     onUpdate({
       visibility,
-      nsfw_enabled: enableNSFW
+      nsfw_enabled: enableNSFW,
+      default_persona_id: selectedPersonaId || null
     });
     onFinalize();
   };
@@ -207,6 +226,31 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
               </button>
             );
           })}
+        </div>
+
+        {/* Default Persona */}
+        <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 mb-6">
+          <div>
+            <Label className="text-white text-lg font-medium block mb-2">
+              Default Persona
+            </Label>
+            <p className="text-gray-400 text-sm mb-4">
+              Choose a persona that users will interact with by default when chatting with this character
+            </p>
+            <Select value={selectedPersonaId} onValueChange={setSelectedPersonaId}>
+              <SelectTrigger className="w-full bg-gray-700/50 border-gray-600 text-white">
+                <SelectValue placeholder="Select a persona (optional)" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectItem value="" className="text-gray-300">No default persona</SelectItem>
+                {personas.map((persona) => (
+                  <SelectItem key={persona.id} value={persona.id} className="text-white">
+                    {persona.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* NSFW Toggle */}
