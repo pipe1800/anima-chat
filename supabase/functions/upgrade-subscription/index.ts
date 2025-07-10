@@ -63,7 +63,7 @@ serve(async (req) => {
       throw new Error("No active subscription found");
     }
 
-    if (!currentSub.plan || !Array.isArray(currentSub.plan) || currentSub.plan.length === 0) {
+    if (!currentSub.plan || !Array.isArray(currentSub.plan) || currentSub.plan.length === 0 || !currentSub.plan[0]) {
       throw new Error("Plan details could not be found for the current subscription");
     }
 
