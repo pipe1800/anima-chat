@@ -18,7 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserSubscription } from '@/lib/supabase-queries';
+import { getUserActiveSubscription } from '@/lib/supabase-queries';
 
 interface AddonData {
   dynamicWorldInfo: boolean;
@@ -128,7 +128,8 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
       }
       
       try {
-        const { data: subscription } = await getUserSubscription(user.id);
+        const { data: subscription } = await getUserActiveSubscription(user.id);
+        console.log('AddonsStep - fetched subscription:', subscription);
         setUserPlan(subscription?.plan?.name || 'Guest Pass');
       } catch (error) {
         console.error('Error fetching subscription:', error);
@@ -147,9 +148,11 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const handleToggle = (key: keyof AddonData, value: boolean) => {
     // Don't allow enabling individual addons if user is on Guest Pass
     if (value && userPlan === 'Guest Pass') {
+      console.log('Blocking addon toggle for Guest Pass user');
       return;
     }
     
+    console.log('Addon toggle allowed for plan:', userPlan);
     const updatedAddons = { ...addons, [key]: value };
     setAddons(updatedAddons);
     onUpdate({ addons: updatedAddons });
@@ -169,9 +172,11 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const handleMasterToggle = (value: boolean) => {
     // Don't allow enabling if user is on Guest Pass (only Guest Pass is restricted)
     if (value && userPlan === 'Guest Pass') {
+      console.log('Blocking master toggle for Guest Pass user');
       return;
     }
     
+    console.log('Master toggle allowed for plan:', userPlan);
     setAddonsEnabled(value);
     
     // If turning off master switch, disable all addons
@@ -227,6 +232,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                       ⚠️ This feature is for paid subscribers only. Upgrade your plan to unlock character add-ons.
                     </p>
                   )}
+                  <p className="text-xs text-gray-500 mt-1">Current plan: {userPlan}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <Switch
