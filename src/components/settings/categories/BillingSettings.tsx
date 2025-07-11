@@ -8,7 +8,7 @@ import { CreditCard, Loader2, Crown, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getActivePlans, getUserActiveSubscription } from '@/lib/supabase-queries';
+import { useUserSubscription, useAvailablePlans } from '@/hooks/useProfile';
 
 interface Plan {
   id: string;
@@ -30,50 +30,23 @@ interface UserSubscription {
 export const BillingSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null);
-  const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showUpgradeConfirmation, setShowUpgradeConfirmation] = useState(false);
 
-  const fetchSubscriptionData = async () => {
-    if (!user) return;
+  const { 
+    data: userSubscription, 
+    isLoading: subscriptionLoading,
+    refetch: refetchSubscription 
+  } = useUserSubscription();
+  
+  const { 
+    data: availablePlans = [], 
+    isLoading: plansLoading 
+  } = useAvailablePlans();
 
-    try {
-      setLoading(true);
-      
-      // Fetch user's active subscription
-      const subRes = await getUserActiveSubscription(user.id);
-      if (subRes.error) {
-        console.error('Error fetching subscription:', subRes.error);
-      } else {
-        setUserSubscription(subRes.data);
-      }
-
-      // Fetch available plans
-      const plansRes = await getActivePlans();
-      if (plansRes.error) {
-        console.error('Error fetching plans:', plansRes.error);
-      } else {
-        setAvailablePlans(plansRes.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching subscription data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load subscription data",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSubscriptionData();
-  }, [user]);
+  const loading = subscriptionLoading || plansLoading;
 
   const handleUpgradeClick = () => {
     setShowUpgradeConfirmation(true);
@@ -128,7 +101,7 @@ export const BillingSettings = () => {
             setShowPaymentModal(false);
             setIsChangingPlan(false);
             // Refresh subscription data to update status
-            fetchSubscriptionData();
+            refetchSubscription();
           }
         }, 1000);
       } else {
@@ -161,7 +134,7 @@ export const BillingSettings = () => {
           description: "Your subscription has been cancelled successfully.",
         });
         // Refresh the subscription data
-        await fetchSubscriptionData();
+        await refetchSubscription();
       }
     } catch (error) {
       console.error('Cancellation error:', error);
@@ -224,15 +197,15 @@ export const BillingSettings = () => {
             <div className="bg-gray-800/50 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  {userSubscription.plan.name === 'The Whale' ? (
+                  {userSubscription.plans.name === 'The Whale' ? (
                     <Crown className="w-6 h-6 text-[#FF7A00]" />
                   ) : (
                     <Zap className="w-6 h-6 text-[#FF7A00]" />
                   )}
                   <div>
-                    <h4 className="text-white font-medium">{userSubscription.plan.name}</h4>
+                    <h4 className="text-white font-medium">{userSubscription.plans.name}</h4>
                     <p className="text-gray-400 text-sm">
-                      {userSubscription.plan.monthly_credits_allowance.toLocaleString()} credits/month
+                      {userSubscription.plans.monthly_credits_allowance.toLocaleString()} credits/month
                     </p>
                   </div>
                 </div>
@@ -245,12 +218,12 @@ export const BillingSettings = () => {
                   Next billing date: {formatDate(userSubscription.current_period_end)}
                 </span>
                 <span className="text-white font-semibold">
-                  ${userSubscription.plan.price_monthly}/month
+                  ${userSubscription.plans.price_monthly}/month
                 </span>
               </div>
 
               {/* Show upgrade button only if the current plan is 'True Fan' */}
-              {userSubscription.plan.name === 'True Fan' && (
+              {userSubscription.plans.name === 'True Fan' && (
                 <>
                   <Separator className="bg-gray-700 my-4" />
                   <div className="bg-orange-900/20 border border-orange-700/30 rounded-lg p-4 flex items-center justify-between">
@@ -295,7 +268,7 @@ export const BillingSettings = () => {
           {userSubscription && userSubscription.status === 'active' && (
             <div className="mt-4 flex gap-3">
               {/* Upgrade Plan Button for True Fan users */}
-              {userSubscription.plan.name === 'True Fan' && (
+              {userSubscription.plans.name === 'True Fan' && (
                 <Button 
                   onClick={handleUpgradeClick}
                   disabled={isChangingPlan}
@@ -329,9 +302,9 @@ export const BillingSettings = () => {
                       <div>
                         <p className="font-medium mb-2">If you cancel your membership, you will lose access to the following benefits:</p>
                         <div className="bg-gray-800/50 rounded-lg p-3">
-                          {userSubscription.plan.features?.features && Array.isArray(userSubscription.plan.features.features) ? (
+                          {userSubscription.plans.features?.features && Array.isArray(userSubscription.plans.features.features) ? (
                             <ul className="space-y-1">
-                              {userSubscription.plan.features.features.map((feature: string, idx: number) => (
+                              {userSubscription.plans.features.features.map((feature: string, idx: number) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-red-400 mt-1">•</span>
                                   <span className="text-sm">{feature}</span>

@@ -6,14 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Camera } from 'lucide-react';
-import { useCurrentUser } from '@/hooks/useProfile';
-import { updateProfile } from '@/lib/supabase-queries';
+import { useCurrentUser, useUpdateProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 
 export const ProfileSettings = () => {
   const { user, profile, loading } = useCurrentUser();
+  const updateProfileMutation = useUpdateProfile();
   const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Initialize form data with current profile data
   const [originalData] = useState({
@@ -85,9 +84,8 @@ export const ProfileSettings = () => {
       return;
     }
 
-    setIsSaving(true);
     try {
-      const { data, error } = await updateProfile(user.id, {
+      const { data, error } = await updateProfileMutation.mutateAsync({
         username: formData.username,
         bio: formData.bio,
         avatar_url: formData.avatar
@@ -107,8 +105,6 @@ export const ProfileSettings = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('An unexpected error occurred');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -223,16 +219,16 @@ export const ProfileSettings = () => {
         <div className="flex justify-end pt-4">
           <Button
             onClick={handleSaveChanges}
-            disabled={!hasChanges || isSaving}
+            disabled={!hasChanges || updateProfileMutation.isPending}
             className={`
               px-6 py-2 font-medium transition-all
-              ${hasChanges && !isSaving
+              ${hasChanges && !updateProfileMutation.isPending
                 ? 'bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white' 
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
               }
             `}
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>

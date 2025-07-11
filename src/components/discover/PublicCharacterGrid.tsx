@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -10,7 +10,7 @@ import {
   Loader2,
   Eye
 } from 'lucide-react';
-import { getPublicCharacters } from '@/lib/supabase-queries';
+import { usePublicCharacters } from '@/hooks/useCharacters';
 
 interface PublicCharacterGridProps {
   searchQuery: string;
@@ -32,31 +32,11 @@ type PublicCharacter = {
 
 export function PublicCharacterGrid({ searchQuery, sortBy, filterBy }: PublicCharacterGridProps) {
   const navigate = useNavigate();
-  const [characters, setCharacters] = useState<PublicCharacter[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCharacters = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await getPublicCharacters(50, 0);
-        if (error) {
-          console.error('Error fetching characters:', error);
-          setError('Failed to load characters');
-        } else {
-          setCharacters(data);
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Failed to load characters');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCharacters();
-  }, []);
+  const { 
+    data: characters = [], 
+    isLoading: loading, 
+    error 
+  } = usePublicCharacters();
 
   const handleSignupToChat = () => {
     navigate('/auth?mode=signup');
@@ -102,7 +82,7 @@ export function PublicCharacterGrid({ searchQuery, sortBy, filterBy }: PublicCha
   if (error) {
     return (
       <div className="text-center py-16">
-        <div className="text-red-400 text-lg mb-2">{error}</div>
+        <div className="text-red-400 text-lg mb-2">{error.message}</div>
         <div className="text-gray-500 text-sm">Please try again later</div>
       </div>
     );
