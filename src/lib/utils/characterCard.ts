@@ -20,15 +20,15 @@ function parsePNGChunks(buffer: ArrayBuffer) {
 
   while (offset < buffer.byteLength) {
     const length = view.getUint32(offset);
-    const type = new TextDecoder().decode(buffer.slice(offset + 4, offset + 8));
+    const type = new TextDecoder('utf-8').decode(buffer.slice(offset + 4, offset + 8));
     const data = buffer.slice(offset + 8, offset + 8 + length);
     
     if (type === 'tEXt') {
       const textData = new Uint8Array(data);
       const nullIndex = textData.findIndex(byte => byte === 0);
       if (nullIndex !== -1) {
-        const keyword = new TextDecoder().decode(textData.slice(0, nullIndex));
-        const text = new TextDecoder().decode(textData.slice(nullIndex + 1));
+        const keyword = new TextDecoder('utf-8').decode(textData.slice(0, nullIndex));
+        const text = new TextDecoder('utf-8').decode(textData.slice(nullIndex + 1));
         chunks[keyword] = text;
       }
     }
