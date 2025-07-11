@@ -98,3 +98,44 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
     throw new Error(`Unexpected error while parsing character card: ${String(error)}`);
   }
 }
+
+/**
+ * Parses raw example dialogue string into structured array
+ * @param rawDialogue - The raw example dialogue string from character card
+ * @returns Array of dialogue objects with user and char keys
+ */
+export function parseExampleDialogue(rawDialogue: string): Array<{ user: string; char: string }> {
+  if (!rawDialogue) return [];
+  
+  // Clean the string by removing 'START' and trimming whitespace
+  const cleanedDialogue = rawDialogue.replace(/START/gi, '').trim();
+  
+  // Split by lines and filter out empty lines
+  const lines = cleanedDialogue.split('\n').filter(line => line.trim());
+  
+  const dialogues: Array<{ user: string; char: string }> = [];
+  
+  // Parse dialogue pairs
+  for (let i = 0; i < lines.length; i += 2) {
+    const userLine = lines[i];
+    const charLine = lines[i + 1];
+    
+    if (userLine && charLine) {
+      // Extract user dialogue (remove common prefixes like {{user}}:, User:, etc.)
+      const user = userLine
+        .replace(/^({{user}}:|User:|You:)\s*/i, '')
+        .trim();
+      
+      // Extract character dialogue (remove common prefixes like {{char}}:, Character:, etc.)
+      const char = charLine
+        .replace(/^({{char}}:|Character:|Char:)\s*/i, '')
+        .trim();
+      
+      if (user && char) {
+        dialogues.push({ user, char });
+      }
+    }
+  }
+  
+  return dialogues;
+}
