@@ -39,8 +39,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
       const { data, error } = await supabase.from('tags').select('*').order('name');
       if (error) {
         console.error('Error fetching tags:', error);
+        setAllTags([]);
       } else {
-        setAllTags(data || []);
+        // Ensure data is cast to Tag[]
+        setAllTags((data as Tag[]) || []);
       }
       setIsLoading(false);
     };
