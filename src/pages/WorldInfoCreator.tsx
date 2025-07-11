@@ -1413,8 +1413,7 @@ const WorldInfoCreator = () => {
           className="hidden"
         />
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default WorldInfoCreator;
