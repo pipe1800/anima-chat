@@ -697,54 +697,54 @@ const WorldInfoCreator = () => {
                            >
                              <CardContent className="p-6 pb-16">
                                <div className="flex items-start justify-between mb-4">
-                                 <div className="flex-1">
-                                   <div className="flex items-center gap-3 mb-2">
-                                     <h3 className="text-white font-semibold text-lg line-clamp-1">
-                                       {worldInfo.name}
-                                     </h3>
-                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                       worldInfo.visibility === 'public' 
-                                         ? 'bg-green-500/20 text-green-400' 
-                                         : worldInfo.visibility === 'unlisted'
-                                         ? 'bg-yellow-500/20 text-yellow-400'
-                                         : 'bg-gray-500/20 text-gray-400'
-                                     }`}>
-                                       {worldInfo.visibility}
-                                     </span>
-                                   </div>
-                                   <p className="text-gray-400 text-sm line-clamp-2 mb-3">
-                                     {worldInfo.short_description || "No description available"}
-                                   </p>
-                                   
-                                   {/* Stats */}
-                                   <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                                     <span className="flex items-center gap-1">
-                                       <FileText className="w-3 h-3" />
-                                       {worldInfo.entries?.length || worldInfo.entriesCount || 0} entries
-                                     </span>
-                                     <span className="flex items-center gap-1">
-                                       <Heart className="w-3 h-3" />
-                                       {worldInfo.likesCount || 0} likes
-                                     </span>
-                                     <span>{worldInfo.interaction_count} uses</span>
-                                   </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <h3 className="text-white font-semibold text-xl line-clamp-1">
+                                        {worldInfo.name}
+                                      </h3>
+                                      <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                        worldInfo.visibility === 'public' 
+                                          ? 'bg-green-500/20 text-green-400' 
+                                          : worldInfo.visibility === 'unlisted'
+                                          ? 'bg-yellow-500/20 text-yellow-400'
+                                          : 'bg-gray-500/20 text-gray-400'
+                                      }`}>
+                                        {worldInfo.visibility}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-400 text-base line-clamp-2 mb-3">
+                                      {worldInfo.short_description || "No description available"}
+                                    </p>
+                                    
+                                    {/* Stats */}
+                                    <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
+                                      <span className="flex items-center gap-1">
+                                        <FileText className="w-4 h-4" />
+                                        {worldInfo.entriesCount || 0} entries
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Heart className="w-4 h-4" />
+                                        {worldInfo.likesCount || 0} likes
+                                      </span>
+                                      <span>{worldInfo.interaction_count} uses</span>
+                                    </div>
 
-                                   {/* Tags */}
-                                   {worldInfo.tags && worldInfo.tags.length > 0 && (
-                                     <div className="flex flex-wrap gap-1 mb-3">
-                                       {worldInfo.tags.slice(0, 3).map((tag) => (
-                                         <Badge key={tag.id} variant="secondary" className="text-xs">
-                                           {tag.name}
-                                         </Badge>
-                                       ))}
-                                       {worldInfo.tags.length > 3 && (
-                                         <Badge variant="secondary" className="text-xs">
-                                           +{worldInfo.tags.length - 3} more
-                                         </Badge>
-                                       )}
-                                     </div>
-                                   )}
-                                 </div>
+                                    {/* Tags */}
+                                    {worldInfo.tags && worldInfo.tags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mb-3">
+                                        {worldInfo.tags.slice(0, 3).map((tag) => (
+                                          <Badge key={tag.id} variant="secondary" className="text-sm">
+                                            {tag.name}
+                                          </Badge>
+                                        ))}
+                                        {worldInfo.tags.length > 3 && (
+                                          <Badge variant="secondary" className="text-sm">
+                                            +{worldInfo.tags.length - 3} more
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                  <AlertDialog>
                                    <AlertDialogTrigger asChild>
                                      <Button
@@ -776,32 +776,17 @@ const WorldInfoCreator = () => {
                                  </AlertDialog>
                                </div>
                                
-                               {/* Action Buttons - Bottom Right */}
-                               <div className="absolute bottom-4 right-4 flex gap-2">
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => {
-                                     setEditName(worldInfo.name);
-                                     setEditDescription(worldInfo.short_description || '');
-                                     setEditVisibility(worldInfo.visibility as any);
-                                     setEditingWorldInfo(worldInfo);
-                                     setIsEditing(true);
-                                     setShowWorldInfoList(false);
-                                   }}
-                                   className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                                 >
-                                   <Edit2 className="w-4 h-4" />
-                                 </Button>
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => handleSelectWorldInfo(worldInfo)}
-                                   className="border-primary/50 text-primary hover:bg-primary/10"
-                                 >
-                                   View
-                                 </Button>
-                               </div>
+                                {/* Action Button - Bottom Right */}
+                                <div className="absolute bottom-4 right-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSelectWorldInfo(worldInfo)}
+                                    className="border-primary/50 text-primary hover:bg-primary/10"
+                                  >
+                                    View
+                                  </Button>
+                                </div>
                              </CardContent>
                            </Card>
                          ))}
@@ -830,54 +815,54 @@ const WorldInfoCreator = () => {
                            >
                              <CardContent className="p-6 pb-16">
                                <div className="flex items-start justify-between mb-4">
-                                 <div className="flex-1">
-                                   <div className="flex items-center gap-3 mb-2">
-                                     <h3 className="text-white font-semibold text-lg line-clamp-1">
-                                       {worldInfo.name}
-                                     </h3>
-                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                       worldInfo.visibility === 'public' 
-                                         ? 'bg-green-500/20 text-green-400' 
-                                         : worldInfo.visibility === 'unlisted'
-                                         ? 'bg-yellow-500/20 text-yellow-400'
-                                         : 'bg-gray-500/20 text-gray-400'
-                                     }`}>
-                                       {worldInfo.visibility}
-                                     </span>
-                                   </div>
-                                   <p className="text-gray-400 text-sm line-clamp-2 mb-3">
-                                     {worldInfo.short_description || "No description available"}
-                                   </p>
-                                   
-                                   {/* Stats */}
-                                   <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                                     <span className="flex items-center gap-1">
-                                       <FileText className="w-3 h-3" />
-                                       {worldInfo.entries?.length || worldInfo.entriesCount || 0} entries
-                                     </span>
-                                     <span className="flex items-center gap-1">
-                                       <Heart className="w-3 h-3" />
-                                       {worldInfo.likesCount || 0} likes
-                                     </span>
-                                     <span>by @{worldInfo.creator?.username || 'Unknown'}</span>
-                                   </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <h3 className="text-white font-semibold text-xl line-clamp-1">
+                                        {worldInfo.name}
+                                      </h3>
+                                      <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                        worldInfo.visibility === 'public' 
+                                          ? 'bg-green-500/20 text-green-400' 
+                                          : worldInfo.visibility === 'unlisted'
+                                          ? 'bg-yellow-500/20 text-yellow-400'
+                                          : 'bg-gray-500/20 text-gray-400'
+                                      }`}>
+                                        {worldInfo.visibility}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-400 text-base line-clamp-2 mb-3">
+                                      {worldInfo.short_description || "No description available"}
+                                    </p>
+                                    
+                                    {/* Stats */}
+                                    <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
+                                      <span className="flex items-center gap-1">
+                                        <FileText className="w-4 h-4" />
+                                        {worldInfo.entriesCount || 0} entries
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Heart className="w-4 h-4" />
+                                        {worldInfo.likesCount || 0} likes
+                                      </span>
+                                      <span>by @{worldInfo.creator?.username || 'Unknown'}</span>
+                                    </div>
 
-                                   {/* Tags */}
-                                   {worldInfo.tags && worldInfo.tags.length > 0 && (
-                                     <div className="flex flex-wrap gap-1 mb-3">
-                                       {worldInfo.tags.slice(0, 3).map((tag) => (
-                                         <Badge key={tag.id} variant="secondary" className="text-xs">
-                                           {tag.name}
-                                         </Badge>
-                                       ))}
-                                       {worldInfo.tags.length > 3 && (
-                                         <Badge variant="secondary" className="text-xs">
-                                           +{worldInfo.tags.length - 3} more
-                                         </Badge>
-                                       )}
-                                     </div>
-                                   )}
-                                 </div>
+                                    {/* Tags */}
+                                    {worldInfo.tags && worldInfo.tags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mb-3">
+                                        {worldInfo.tags.slice(0, 3).map((tag) => (
+                                          <Badge key={tag.id} variant="secondary" className="text-sm">
+                                            {tag.name}
+                                          </Badge>
+                                        ))}
+                                        {worldInfo.tags.length > 3 && (
+                                          <Badge variant="secondary" className="text-sm">
+                                            +{worldInfo.tags.length - 3} more
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                  <Button
                                    variant="ghost"
                                    size="sm"
