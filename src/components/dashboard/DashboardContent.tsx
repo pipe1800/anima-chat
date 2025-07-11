@@ -324,61 +324,51 @@ export function DashboardContent() {
                       formattedMyCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80"
                         >
-                          {/* Avatar as background */}
-                          <div className="absolute inset-0 opacity-20">
+                          <CardContent className="p-0 relative h-full">
                             <img 
                               src={character.image} 
                               alt={character.name}
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover"
                             />
-                          </div>
-                          <CardContent className="p-4 text-center relative z-10">
-                            <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
-                              <AvatarImage 
-                                src={character.image} 
-                                alt={character.name}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-gray-700 text-white font-bold text-lg">
-                                {character.avatar}
-                              </AvatarFallback>
-                            </Avatar>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                             
-                            <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
-                              {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
-                            </h3>
-                            
-                            <div className="flex items-center justify-center space-x-4 text-sm mb-3">
-                              <div className="flex items-center space-x-1 text-gray-300">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>{character.totalChats}</span>
+                            <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
+                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                              </h3>
+                              
+                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span>{character.totalChats}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <Heart className="w-4 h-4" />
+                                  <span>{character.likesCount}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-1 text-gray-300">
-                                <Heart className="w-4 h-4" />
-                                <span>{character.likesCount}</span>
+                              
+                              <div className="flex gap-2 justify-center">
+                                <Button
+                                  size="sm"
+                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                  onClick={() => handleStartChat(character.originalCharacter)}
+                                >
+                                  <MessageCircle className="w-3 h-3 mr-1" />
+                                  New Chat
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                                  onClick={() => handleEditCharacter(character.originalCharacter)}
+                                >
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
                               </div>
-                            </div>
-                            
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                size="sm"
-                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                onClick={() => handleStartChat(character.originalCharacter)}
-                              >
-                                <MessageCircle className="w-3 h-3 mr-1" />
-                                New Chat
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
-                                onClick={() => handleEditCharacter(character.originalCharacter)}
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                Edit
-                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -402,56 +392,46 @@ export function DashboardContent() {
                       formattedFavoriteCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80"
                         >
-                          {/* Avatar as background */}
-                          <div className="absolute inset-0 opacity-20">
+                          <CardContent className="p-0 relative h-full">
                             <img 
                               src={character.image} 
                               alt={character.name}
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover"
                             />
-                          </div>
-                          <CardContent className="p-4 text-center relative z-10">
-                            <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-yellow-600">
-                              <AvatarImage 
-                                src={character.image} 
-                                alt={character.name}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-yellow-700 text-white font-bold text-lg">
-                                {character.avatar}
-                              </AvatarFallback>
-                            </Avatar>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                             
-                            <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
-                              {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
-                            </h3>
-                            
-                            <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
-                              by @{character.creatorUsername}
-                            </p>
-                            
-                            <div className="flex items-center justify-center space-x-4 text-sm mb-3">
-                              <div className="flex items-center space-x-1 text-gray-300">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>{character.totalChats}</span>
+                            <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
+                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                              </h3>
+                              
+                              <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
+                                by @{character.creatorUsername}
+                              </p>
+                              
+                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span>{character.totalChats}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <Heart className="w-4 h-4" />
+                                  <span>{character.likesCount}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-1 text-gray-300">
-                                <Heart className="w-4 h-4" />
-                                <span>{character.likesCount}</span>
+                              
+                              <div className="flex gap-2 justify-center">
+                                <Button
+                                  size="sm"
+                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                  onClick={() => handleStartChat(character.originalCharacter)}
+                                >
+                                  <MessageCircle className="w-3 h-3 mr-1" />
+                                  New Chat
+                                </Button>
                               </div>
-                            </div>
-                            
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                size="sm"
-                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                onClick={() => handleStartChat(character.originalCharacter)}
-                              >
-                                <MessageCircle className="w-3 h-3 mr-1" />
-                                New Chat
-                              </Button>
                             </div>
                           </CardContent>
                         </Card>
