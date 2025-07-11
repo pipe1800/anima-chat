@@ -5,7 +5,7 @@ import {
   getUserCharacters, 
   getUserCredits, 
   getUserSubscription,
-  getDailyMessageCount,
+  getMonthlyCreditsUsage,
   getUserFavorites
 } from '@/lib/supabase-queries';
 
@@ -18,13 +18,13 @@ export const useDashboardData = () => {
     queryFn: async () => {
       if (!userId) throw new Error('User not authenticated');
 
-      const [chatsResult, charactersResult, favoritesResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
+      const [chatsResult, charactersResult, favoritesResult, creditsResult, subscriptionResult, creditsUsageResult] = await Promise.all([
         getUserChats(userId),
         getUserCharacters(userId),
         getUserFavorites(userId),
         getUserCredits(userId),
         getUserSubscription(userId),
-        getDailyMessageCount(userId)
+        getMonthlyCreditsUsage(userId)
       ]);
 
       return {
@@ -33,14 +33,14 @@ export const useDashboardData = () => {
         favorites: favoritesResult.data || [],
         credits: creditsResult.data?.balance || 0,
         subscription: subscriptionResult.data,
-        messagesUsed: messageCountResult.data?.count || 0,
+        creditsUsed: creditsUsageResult.data?.used || 0,
         errors: {
           chats: chatsResult.error,
           characters: charactersResult.error,
           favorites: favoritesResult.error,
           credits: creditsResult.error,
           subscription: subscriptionResult.error,
-          messageCount: messageCountResult.error
+          creditsUsage: creditsUsageResult.error
         }
       };
     },
@@ -122,21 +122,21 @@ export const useUserSubscription = () => {
   });
 };
 
-export const useDailyMessageCount = () => {
+export const useMonthlyCreditsUsage = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
   return useQuery({
-    queryKey: ['user', 'daily-messages', userId],
+    queryKey: ['user', 'monthly-credits-usage', userId],
     queryFn: async () => {
       if (!userId) throw new Error('User not authenticated');
-      const result = await getDailyMessageCount(userId);
+      const result = await getMonthlyCreditsUsage(userId);
       if (result.error) throw result.error;
-      return result.data?.count || 0;
+      return result.data?.used || 0;
     },
     enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minute - updates frequently during active use
-    gcTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -175,13 +175,13 @@ export const useDashboardMutations = () => {
     queryClient.invalidateQueries({ queryKey: ['user', 'credits', userId] });
   };
 
-  const invalidateMessageCount = () => {
-    queryClient.invalidateQueries({ queryKey: ['user', 'daily-messages', userId] });
+  const invalidateCreditsUsage = () => {
+    queryClient.invalidateQueries({ queryKey: ['user', 'monthly-credits-usage', userId] });
   };
 
   return {
     invalidateDashboard,
     invalidateCredits,
-    invalidateMessageCount,
+    invalidateCreditsUsage,
   };
 };

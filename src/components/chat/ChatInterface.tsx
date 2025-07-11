@@ -3,15 +3,15 @@ import { Send, Plus, Pencil, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { MessageLimitToast } from './MessageLimitToast';
-import { DailyLimitModal } from './DailyLimitModal';
+import { InsufficientCreditsModal } from './InsufficientCreditsModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   createChat, 
   createMessage, 
   getChatMessages, 
-  getDailyMessageCount,
+  consumeCredits,
+  getUserCredits,
   getUserSubscription,
   getCharacterDetails
 } from '@/lib/supabase-queries';
@@ -50,12 +50,9 @@ const ChatInterface = ({
   const [characterGreeting, setCharacterGreeting] = useState<string>('');
   const [loading, setLoading] = useState(true);
   
-  // Daily usage tracking - now using real data
-  const [messagesUsed, setMessagesUsed] = useState(0);
-  const [dailyLimit, setDailyLimit] = useState(75);
-  const [isGuestPass, setIsGuestPass] = useState(true);
-  const [showLimitToast, setShowLimitToast] = useState(false);
-  const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
+  // Credit tracking
+  const [creditsBalance, setCreditsBalance] = useState(0);
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -70,21 +67,15 @@ const ChatInterface = ({
       try {
         setLoading(true);
 
-        // Get user's daily message count and subscription
-        const [messageCountResult, subscriptionResult, characterDetailsResult] = await Promise.all([
-          getDailyMessageCount(user.id),
+        // Get user's credits, subscription and character details
+        const [creditsResult, subscriptionResult, characterDetailsResult] = await Promise.all([
+          getUserCredits(user.id),
           getUserSubscription(user.id),
           getCharacterDetails(character.id)
         ]);
 
-        // Set message count and daily limit
-        setMessagesUsed(messageCountResult.data?.count || 0);
-        
-        // Determine if user is on guest pass and set limits
-        const userTier = subscriptionResult.data?.plan?.name || "Guest Pass";
-        const isGuest = userTier === "Guest Pass";
-        setIsGuestPass(isGuest);
-        setDailyLimit(isGuest ? 75 : 999999);
+        // Set credits balance
+        setCreditsBalance(creditsResult.data?.balance || 0);
 
         // Set character greeting
         const greeting = characterDetailsResult.data?.definition?.[0]?.greeting || 
@@ -134,9 +125,7 @@ const ChatInterface = ({
         }
 
         console.log('Chat initialized:', { 
-          messagesUsed: messageCountResult.data?.count, 
-          userTier, 
-          isGuest,
+          creditsBalance: creditsResult.data?.balance, 
           existingChatId,
           greeting 
         });
@@ -154,14 +143,6 @@ const ChatInterface = ({
     loadInitialData();
   }, [user, character, existingChatId]);
 
-  // Show toast when user has exactly 10 messages remaining
-  useEffect(() => {
-    const messagesRemaining = dailyLimit - messagesUsed;
-    if (isGuestPass && messagesRemaining === 10 && messagesUsed > 0) {
-      setShowLimitToast(true);
-    }
-  }, [messagesUsed, dailyLimit, isGuestPass]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth'
@@ -172,9 +153,9 @@ const ChatInterface = ({
     e.preventDefault();
     if (!inputValue.trim() || !user) return;
 
-    // Check if user has reached their daily limit
-    if (isGuestPass && messagesUsed >= dailyLimit) {
-      setShowDailyLimitModal(true);
+    // Check if user has enough credits (need at least 1 credit per message)
+    if (creditsBalance < 1) {
+      setShowInsufficientCreditsModal(true);
       return;
     }
 
@@ -230,9 +211,6 @@ const ChatInterface = ({
         return;
       }
 
-      // Update message count
-      setMessagesUsed(prev => prev + 1);
-
       // Handle first message achievement
       if (isFirstMessage) {
         setIsFirstMessage(false);
@@ -255,12 +233,19 @@ const ChatInterface = ({
         };
         setMessages(prev => [...prev, aiResponse]);
 
-        // Save AI response to database
+        // Save AI response to database and consume credits
         try {
           await createMessage(chatId, user.id, aiResponse.content, true);
-          console.log('AI response saved to database');
+          
+          // Consume 1 credit for the AI response
+          const { data: consumeSuccess } = await consumeCredits(user.id, 1);
+          if (consumeSuccess) {
+            setCreditsBalance(prev => prev - 1);
+          }
+          
+          console.log('AI response saved and credits consumed');
         } catch (error) {
-          console.error('Error saving AI response:', error);
+          console.error('Error saving AI response or consuming credits:', error);
         }
       }, 2000);
 
@@ -291,12 +276,8 @@ const ChatInterface = ({
     console.log('Navigate to upgrade page');
   };
 
-  const handleDismissToast = () => {
-    setShowLimitToast(false);
-  };
-
-  const handleCloseDailyLimitModal = () => {
-    setShowDailyLimitModal(false);
+  const handleCloseInsufficientCreditsModal = () => {
+    setShowInsufficientCreditsModal(false);
   };
 
   if (loading) {
@@ -307,23 +288,13 @@ const ChatInterface = ({
     );
   }
 
-  const messagesRemaining = dailyLimit - messagesUsed;
-
   return (
     <div className="flex flex-col h-full">
-      {/* Message Limit Toast */}
-      {showLimitToast && (
-        <MessageLimitToast
-          messagesRemaining={messagesRemaining}
-          onDismiss={handleDismissToast}
-          onUpgrade={handleUpgrade}
-        />
-      )}
-
-      {/* Daily Limit Modal */}
-      <DailyLimitModal
-        isOpen={showDailyLimitModal}
-        onClose={handleCloseDailyLimitModal}
+      {/* Insufficient Credits Modal */}
+      <InsufficientCreditsModal
+        isOpen={showInsufficientCreditsModal}
+        onClose={handleCloseInsufficientCreditsModal}
+        currentBalance={creditsBalance}
         onUpgrade={handleUpgrade}
       />
 
@@ -360,25 +331,23 @@ const ChatInterface = ({
             onChange={e => setInputValue(e.target.value)}
             placeholder={`Message ${character.name}...`}
             className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif]"
-            disabled={isGuestPass && messagesUsed >= dailyLimit}
+            disabled={creditsBalance < 1}
           />
           <Button
             type="submit"
             className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"
-            disabled={!inputValue.trim() || (isGuestPass && messagesUsed >= dailyLimit)}
+            disabled={!inputValue.trim() || creditsBalance < 1}
           >
             <Send className="w-5 h-5" />
           </Button>
         </form>
         
-        {/* Message count indicator for Guest Pass users */}
-        {isGuestPass && (
-          <div className="mt-2 text-center">
-            <p className="text-gray-400 text-xs">
-              {messagesUsed} / {dailyLimit} messages used today
-            </p>
-          </div>
-        )}
+        {/* Credit balance indicator */}
+        <div className="mt-2 text-center">
+          <p className="text-gray-400 text-xs">
+            {creditsBalance.toLocaleString()} credits remaining
+          </p>
+        </div>
       </div>
     </div>
   );

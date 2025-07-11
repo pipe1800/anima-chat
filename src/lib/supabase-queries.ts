@@ -542,26 +542,38 @@ export const createMessage = async (chatId: string, authorId: string, content: s
 }
 
 /**
- * Get user's daily message count
+ * Consume credits for a user
  */
-export const getDailyMessageCount = async (userId: string) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+export async function consumeCredits(userId: string, credits: number): Promise<{ data: boolean | null, error: any }> {
+  const { data, error } = await supabase
+    .rpc('consume_credits', { 
+      user_id_param: userId,
+      credits_to_consume: credits 
+    })
 
-  const { count, error } = await supabase
+  return { data, error }
+}
+
+/**
+ * Get monthly credit usage for a user
+ */
+export async function getMonthlyCreditsUsage(userId: string): Promise<{ data: { used: number } | null, error: any }> {
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+  
+  const { data, error } = await supabase
     .from('messages')
-    .select('id', { count: 'exact' })
+    .select('token_cost')
     .eq('author_id', userId)
-    .eq('is_ai_message', false)
-    .gte('created_at', today.toISOString())
-    .lt('created_at', tomorrow.toISOString())
+    .eq('is_ai_message', true)
+    .gte('created_at', startOfMonth.toISOString())
 
-  return { 
-    data: { count: count || 0 }, 
-    error 
-  }
+  if (error) return { data: null, error }
+  
+  const totalUsed = data?.reduce((sum, message) => sum + (message.token_cost || 1), 0) || 0
+  
+  return { data: { used: totalUsed }, error: null }
 }
 
 // =============================================================================

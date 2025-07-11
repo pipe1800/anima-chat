@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { DailyUsageWidget } from './DailyUsageWidget';
+import { MonthlyCreditsWidget } from './MonthlyCreditsWidget';
 import DiscordCTA from '../DiscordCTA';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -44,10 +44,8 @@ export function DashboardContent() {
   const favoriteCharacters = dashboardData?.favorites || [];
   const userCredits = dashboardData?.credits || 0;
   const subscription = dashboardData?.subscription;
-  const messagesUsed = dashboardData?.messagesUsed || 0;
-
-  // Set daily limits based on subscription
-  const dailyLimit = subscription?.plan?.name === 'Guest Pass' ? 75 : 999999;
+  const creditsUsed = dashboardData?.creditsUsed || 0;
+  const monthlyAllowance = subscription?.plan?.monthly_credits_allowance || 1000;
 
   const handleStartChat = (character: any) => {
     navigate('/chat', { state: { selectedCharacter: character } });
@@ -228,10 +226,12 @@ export function DashboardContent() {
           </Card>
         </div>
 
-        {/* Daily Usage Widget */}
-        {isGuestPass && (
-          <DailyUsageWidget messagesUsed={messagesUsed} dailyLimit={dailyLimit} />
-        )}
+        {/* Monthly Credits Widget */}
+        <MonthlyCreditsWidget 
+          creditsUsed={creditsUsed} 
+          currentBalance={userCredits} 
+          monthlyAllowance={monthlyAllowance} 
+        />
 
         {/* Your Dashboard sections - moved above Daily Quest */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">

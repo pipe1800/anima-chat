@@ -830,6 +830,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_monthly_credits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      consume_credits: {
+        Args: { user_id_param: string; credits_to_consume: number }
+        Returns: boolean
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
