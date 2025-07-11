@@ -106,41 +106,31 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
 
 /**
  * Parses raw example dialogue string into structured array
- * @param rawDialogue - The raw example dialogue string from character card
+ * @param dialogueString - The raw example dialogue string from character card
  * @returns Array of dialogue objects with user and char keys
  */
-export function parseExampleDialogue(rawDialogue: any): Array<{ user: string; char: string }> {
-  // Handle cases where input is undefined or not a string
-  if (!rawDialogue || typeof rawDialogue !== 'string') {
+export function parseExampleDialogue(dialogueString: string | undefined): Array<{ user: string; char: string }> {
+  if (!dialogueString || typeof dialogueString !== 'string') {
     return [];
   }
+
+  const turns = [];
+  // Clean the string: remove START token, trim whitespace, and normalize line breaks.
+  const cleanedString = dialogueString.replace(/START/g, '').trim().replace(/\r\n/g, '\n');
   
-  // Clean the input string by removing any "START" tokens and trimming whitespace
-  const cleanedDialogue = rawDialogue.replace(/START/gi, '').trim();
-  
-  if (!cleanedDialogue) {
-    return [];
-  }
-  
-  // Split the string into turns based on the {{user}}: marker
-  const turns = cleanedDialogue.split(/(?={{user}}:)/i).filter(turn => turn.trim());
-  
-  const dialogues: Array<{ user: string; char: string }> = [];
-  
-  for (const turn of turns) {
-    // Look for {{user}}: and {{char}}: patterns
-    const userMatch = turn.match(/{{user}}:\s*(.*?)(?={{char}}:|$)/is);
-    const charMatch = turn.match(/{{char}}:\s*(.*?)$/is);
-    
-    if (userMatch && charMatch) {
-      const user = userMatch[1].trim();
-      const char = charMatch[1].trim();
-      
-      if (user && char) {
-        dialogues.push({ user, char });
-      }
+  // Split the dialogue by the {{user}}: marker to isolate each turn.
+  const userTurns = cleanedString.split('{{user}}:').filter(turn => turn.trim() !== '');
+
+  for (const turn of userTurns) {
+    // Within each turn, split by {{char}}: to separate the user message from the char response.
+    const parts = turn.split('{{char}}:');
+    if (parts.length === 2) {
+      turns.push({
+        user: parts[0].trim(),
+        char: parts[1].trim(),
+      });
     }
   }
-  
-  return dialogues;
+
+  return turns;
 }
