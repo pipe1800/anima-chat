@@ -114,23 +114,35 @@ export function parseExampleDialogue(dialogueString: string | undefined): Array<
     return [];
   }
 
-  const turns = [];
-  // Clean the string: remove START token, trim whitespace, and normalize line breaks.
-  const cleanedString = dialogueString.replace(/START/g, '').trim().replace(/\r\n/g, '\n');
+  const lines = dialogueString.split('\n').filter(line => line.trim() !== '' && !line.trim().toUpperCase().includes('START'));
   
-  // Split the dialogue by the {{user}}: marker to isolate each turn.
-  const userTurns = cleanedString.split('{{user}}:').filter(turn => turn.trim() !== '');
+  const pairs: Array<{ user: string; char: string }> = [];
+  let currentUserMessage = '';
 
-  for (const turn of userTurns) {
-    // Within each turn, split by {{char}}: to separate the user message from the char response.
-    const parts = turn.split('{{char}}:');
-    if (parts.length === 2) {
-      turns.push({
-        user: parts[0].trim(),
-        char: parts[1].trim(),
-      });
+  for (const line of lines) {
+    if (line.includes('{{user}}:')) {
+      // If we have a pending user message, it means the last turn was just a user message.
+      // So we pair it with an empty char response.
+      if (currentUserMessage) {
+        pairs.push({ user: currentUserMessage, char: '' });
+      }
+      currentUserMessage = line.replace('{{user}}:', '').trim();
+    } else if (line.includes('{{char}}:')) {
+      // If we have a pending user message, we can form a complete pair.
+      if (currentUserMessage) {
+        pairs.push({
+          user: currentUserMessage,
+          char: line.replace('{{char}}:', '').trim()
+        });
+        currentUserMessage = ''; // Reset for the next turn
+      }
     }
   }
 
-  return turns;
+  // If there's a leftover user message at the end, add it with an empty char response.
+  if (currentUserMessage) {
+    pairs.push({ user: currentUserMessage, char: '' });
+  }
+
+  return pairs;
 }
