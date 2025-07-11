@@ -31,7 +31,7 @@ const mainItems = [
   { title: "Subscription", url: "/subscription", icon: Crown },
 ];
 
-export function AppSidebar() {
+const AppSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
@@ -140,4 +140,6 @@ export function AppSidebar() {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(AppSidebar);
