@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   MessageCircle, 
@@ -20,15 +20,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserCredits } from '@/lib/supabase-queries';
-import { useState, useEffect } from 'react';
+import { useUserSubscription } from '@/hooks/useProfile';
 
-const mainItems = [
+const baseMainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
   { title: "World Infos", url: "/world-info-creator", icon: BookOpen },
   { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Discover Characters", url: "/discover", icon: Compass },
+  { title: "Discover", url: "/discover", icon: Compass },
   { title: "Profile", url: "/profile", icon: User },
-  { title: "Subscription", url: "/subscription", icon: Crown },
 ];
 
 const AppSidebar = () => {
@@ -37,6 +36,30 @@ const AppSidebar = () => {
   const { user, profile, signOut, loading } = useAuth();
   const [userCredits, setUserCredits] = useState(0);
   const currentPath = location.pathname;
+  const { data: userSubscription } = useUserSubscription();
+
+  // Memoize the logo image to prevent reloading
+  const logoImage = useMemo(() => (
+    <img 
+      src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+      alt="Anima AI Chat" 
+      className="h-16 w-auto"
+    />
+  ), []);
+
+  // Create main items with dynamic subscription icon
+  const mainItems = useMemo(() => {
+    const hasActiveSubscription = userSubscription?.status === 'active';
+    return [
+      ...baseMainItems,
+      { 
+        title: "Subscription", 
+        url: "/subscription", 
+        icon: Crown,
+        isActive: hasActiveSubscription 
+      },
+    ];
+  }, [userSubscription?.status]);
 
   useEffect(() => {
     const fetchCredits = async () => {
@@ -66,7 +89,7 @@ const AppSidebar = () => {
   };
 
   const getNavClasses = (active: boolean) => 
-    `flex items-center justify-start w-full space-x-2 px-3 py-2 transition-all duration-200 text-sm ${
+    `flex items-center justify-start w-full space-x-3 px-4 py-3 transition-all duration-200 text-base ${
       active 
         ? 'bg-[#FF7A00]/20 text-[#FF7A00] border-r-2 border-[#FF7A00]' 
         : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
@@ -104,37 +127,43 @@ const AppSidebar = () => {
         <div className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
           <div className="flex items-center justify-center px-4 py-4">
-            <img 
-              src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-              alt="Anima AI Chat" 
-              className="h-16 w-auto"
-            />
+            {logoImage}
           </div>
         </div>
 
         <div className="px-2 py-4 flex-1">
-          <div className="space-y-2">
-            {mainItems.map((item) => (
-              <NavLink 
-                key={item.title}
-                to={item.url} 
-                className={getNavClasses(isActive(item.url))}
-              >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="font-medium text-sm">{item.title}</span>
-              </NavLink>
-            ))}
+          <div className="space-y-3">
+            {mainItems.map((item) => {
+              const IconComponent = item.icon;
+              const isSubscriptionItem = item.title === "Subscription";
+              const hasActiveSubscription = (item as any).isActive;
+              
+              return (
+                <NavLink 
+                  key={item.title}
+                  to={item.url} 
+                  className={getNavClasses(isActive(item.url))}
+                >
+                  {isSubscriptionItem && hasActiveSubscription ? (
+                    <Crown className="w-5 h-5 flex-shrink-0 fill-yellow-500 text-yellow-500" />
+                  ) : (
+                    <IconComponent className="w-5 h-5 flex-shrink-0" />
+                  )}
+                  <span className="font-medium">{item.title}</span>
+                </NavLink>
+              );
+            })}
           </div>
         </div>
 
         <div className="border-t border-gray-700/50 p-4">
           <Button 
             variant="ghost" 
-            className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-3 space-x-3"
             onClick={handleLogout}
           >
-            <PowerOff className="w-4 h-4 flex-shrink-0" />
-            <span className="ml-3 font-medium text-sm">Logout</span>
+            <PowerOff className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium">Logout</span>
           </Button>
         </div>
       </div>
