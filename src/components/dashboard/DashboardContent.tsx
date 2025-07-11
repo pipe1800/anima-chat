@@ -324,7 +324,7 @@ export function DashboardContent() {
                       formattedMyCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-92 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
@@ -334,23 +334,9 @@ export function DashboardContent() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                             
-                            <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
-                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
-                              </h3>
-                              
-                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
-                                <div className="flex items-center space-x-1 text-gray-300">
-                                  <MessageCircle className="w-4 h-4" />
-                                  <span>{character.totalChats}</span>
-                                </div>
-                                <div className="flex items-center space-x-1 text-gray-300">
-                                  <Heart className="w-4 h-4" />
-                                  <span>{character.likesCount}</span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex gap-2 justify-center">
+                            {/* Middle section with buttons - hidden by default, shown on hover */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <div className="flex gap-2">
                                 <Button
                                   size="sm"
                                   className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
@@ -369,6 +355,28 @@ export function DashboardContent() {
                                   Edit
                                 </Button>
                               </div>
+                            </div>
+                            
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
+                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                              </h3>
+                              
+                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span>{character.totalChats}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-gray-300">
+                                  <Heart className="w-4 h-4" />
+                                  <span>{character.likesCount}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Description preview - 3 lines */}
+                              <p className="text-gray-300 text-xs leading-tight line-clamp-3 mb-0">
+                                {character.originalCharacter.short_description || "No description available for this character."}
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
@@ -392,7 +400,7 @@ export function DashboardContent() {
                       formattedFavoriteCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-92 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
@@ -402,7 +410,19 @@ export function DashboardContent() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                             
-                            <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                            {/* Middle section with button - hidden by default, shown on hover */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <Button
+                                size="sm"
+                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                                onClick={() => handleStartChat(character.originalCharacter)}
+                              >
+                                <MessageCircle className="w-3 h-3 mr-1" />
+                                New Chat
+                              </Button>
+                            </div>
+                            
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
                               <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
                                 {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
                               </h3>
@@ -422,16 +442,10 @@ export function DashboardContent() {
                                 </div>
                               </div>
                               
-                              <div className="flex gap-2 justify-center">
-                                <Button
-                                  size="sm"
-                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                  onClick={() => handleStartChat(character.originalCharacter)}
-                                >
-                                  <MessageCircle className="w-3 h-3 mr-1" />
-                                  New Chat
-                                </Button>
-                              </div>
+                              {/* Description preview - 3 lines */}
+                              <p className="text-gray-300 text-xs leading-tight line-clamp-3 mb-0">
+                                {character.originalCharacter.short_description || "No description available for this character."}
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
