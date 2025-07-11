@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen, Image, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen, Image, Loader2, ArrowLeft, Heart, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import {
@@ -106,6 +106,7 @@ const WorldInfoCreator = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const [worldInfos, setWorldInfos] = useState<WorldInfo[]>([]);
+  const [collectedWorldInfos, setCollectedWorldInfos] = useState<WorldInfo[]>([]);
   const [selectedWorldInfo, setSelectedWorldInfo] = useState<WorldInfo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -320,7 +321,7 @@ const WorldInfoCreator = () => {
     }
   };
 
-  const handleDeleteWorldInfo = async (worldInfoId: string) => {
+  const handleDeleteWorldInfo = async (worldInfoId: string, worldInfoName?: string) => {
     try {
       await deleteWorldInfo(worldInfoId);
       await fetchWorldInfos();
@@ -331,7 +332,7 @@ const WorldInfoCreator = () => {
       
       toast({
         title: "Success",
-        description: "World Info deleted successfully"
+        description: `"${worldInfoName || 'World Info'}" deleted successfully`
       });
     } catch (error) {
       console.error('Error deleting world info:', error);
@@ -654,7 +655,7 @@ const WorldInfoCreator = () => {
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     <span className="ml-2 text-gray-400">Loading world infos...</span>
                   </div>
-                ) : worldInfos.length === 0 ? (
+                ) : worldInfos.length === 0 && collectedWorldInfos.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-300 mb-2">No World Infos Yet</h3>
@@ -668,45 +669,158 @@ const WorldInfoCreator = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {worldInfos.map((worldInfo) => (
-                      <Card
-                        key={worldInfo.id}
-                        className="cursor-pointer transition-all duration-200 border border-gray-700 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 bg-gray-800/50 hover:bg-gray-800 group"
-                        onClick={() => handleSelectWorldInfo(worldInfo)}
-                      >
-                        <CardHeader className="p-4">
-                          <div className="flex flex-col space-y-3">
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="w-12 h-12">
-                                <AvatarImage src={worldInfo.avatar_url || ''} alt={worldInfo.name} />
-                                <AvatarFallback className="bg-primary/20 text-primary">
-                                  <BookOpen className="w-6 h-6" />
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-white truncate group-hover:text-primary transition-colors">
-                                  {worldInfo.name}
-                                </h3>
-                                <div className="flex items-center justify-between mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {worldInfo.visibility}
-                                  </Badge>
-                                  <span className="text-xs text-gray-500">
-                                    {worldInfo.interaction_count} uses
-                                  </span>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Created by User Column */}
+                    <div>
+                      <h2 className="text-white text-xl font-semibold mb-6 flex items-center">
+                        <BookOpen className="w-5 h-5 mr-2" />
+                        My World Infos ({worldInfos.length})
+                      </h2>
+                      <div className="space-y-4">
+                        {worldInfos.map((worldInfo) => (
+                          <Card
+                            key={worldInfo.id}
+                            className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg cursor-pointer"
+                            onClick={() => handleSelectWorldInfo(worldInfo)}
+                          >
+                            <CardContent className="p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-white font-semibold text-lg line-clamp-1">
+                                      {worldInfo.name}
+                                    </h3>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      worldInfo.visibility === 'public' 
+                                        ? 'bg-green-500/20 text-green-400' 
+                                        : worldInfo.visibility === 'unlisted'
+                                        ? 'bg-yellow-500/20 text-yellow-400'
+                                        : 'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {worldInfo.visibility}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                                    {worldInfo.short_description || "No description available"}
+                                  </p>
+                                  
+                                  {/* Stats */}
+                                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                                    <span className="flex items-center gap-1">
+                                      <FileText className="w-3 h-3" />
+                                      {worldInfo.entries?.length || 0} entries
+                                    </span>
+                                    <span>{worldInfo.interaction_count} uses</span>
+                                    <span>{new Date(worldInfo.created_at).toLocaleDateString()}</span>
+                                  </div>
                                 </div>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete World Info</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete "{worldInfo.name}"? This action cannot be undone and will delete all associated entries.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteWorldInfo(worldInfo.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
-                            </div>
-                            {worldInfo.short_description && (
-                              <p className="text-sm text-gray-400 line-clamp-2">
-                                {worldInfo.short_description}
-                              </p>
-                            )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {worldInfos.length === 0 && (
+                          <div className="text-center py-12 text-gray-500">
+                            <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>No world infos created yet</p>
+                            <p className="text-sm">Click "Create New" to get started</p>
                           </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* User's Collection Column */}
+                    <div>
+                      <h2 className="text-white text-xl font-semibold mb-6 flex items-center">
+                        <Heart className="w-5 h-5 mr-2" />
+                        My Collection ({collectedWorldInfos.length})
+                      </h2>
+                      <div className="space-y-4">
+                        {collectedWorldInfos.map((worldInfo) => (
+                          <Card
+                            key={worldInfo.id}
+                            className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg cursor-pointer"
+                            onClick={() => handleSelectWorldInfo(worldInfo)}
+                          >
+                            <CardContent className="p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-white font-semibold text-lg line-clamp-1">
+                                      {worldInfo.name}
+                                    </h3>
+                                    <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs font-medium">
+                                      added
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                                    {worldInfo.short_description || "No description available"}
+                                  </p>
+                                  
+                                  {/* Stats */}
+                                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                                    <span className="flex items-center gap-1">
+                                      <FileText className="w-3 h-3" />
+                                      {worldInfo.entries?.length || 0} entries
+                                    </span>
+                                    <span>{worldInfo.interaction_count} uses</span>
+                                    <span>by @{worldInfo.creator_id || 'Unknown'}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Remove from collection logic would go here
+                                  }}
+                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {collectedWorldInfos.length === 0 && (
+                          <div className="text-center py-12 text-gray-500">
+                            <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>No world infos in collection</p>
+                            <p className="text-sm">Discover and add world infos from the community</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
