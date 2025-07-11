@@ -1,59 +1,100 @@
-import { get, set, text } from 'png-itxt';
-import { Buffer } from 'buffer';
-
-// Helper function to convert a File to a Buffer
-const toBuffer = (file: File): Promise<Buffer> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result instanceof ArrayBuffer) {
-        resolve(Buffer.from(reader.result));
-      } else {
-        reject(new Error('Failed to read file as ArrayBuffer.'));
-      }
-    };
-    reader.onerror = (error) => {
-      reject(error);
-    };
-    reader.readAsArrayBuffer(file);
-  });
-};
+export interface CharacterCardData {
+  name?: string;
+  description?: string;
+  personality?: string;
+  scenario?: string;
+  first_mes?: string;
+  mes_example?: string;
+  [key: string]: any;
+}
 
 /**
- * Parses a PNG character card to extract its character data.
- * This function now correctly handles tEXt, zTXt, and iTXt chunks.
- * @param {File} file The PNG file uploaded by the user.
- * @returns {Promise<any>} A promise that resolves to the parsed character JSON object.
+ * Parses PNG chunks to find text data
+ * @param buffer - The PNG file as ArrayBuffer
+ * @returns Object containing text chunks
  */
-export const parseCharacterCard = async (file: File): Promise<any> => {
-  if (!file || file.type !== 'image/png') {
-    throw new Error('File is not a valid PNG image.');
+function parsePNGChunks(buffer: ArrayBuffer) {
+  const view = new DataView(buffer);
+  let offset = 8; // Skip PNG signature
+  const chunks: { [key: string]: string } = {};
+
+  while (offset < buffer.byteLength) {
+    const length = view.getUint32(offset);
+    const type = new TextDecoder().decode(buffer.slice(offset + 4, offset + 8));
+    const data = buffer.slice(offset + 8, offset + 8 + length);
+    
+    if (type === 'tEXt') {
+      const textData = new Uint8Array(data);
+      const nullIndex = textData.findIndex(byte => byte === 0);
+      if (nullIndex !== -1) {
+        const keyword = new TextDecoder().decode(textData.slice(0, nullIndex));
+        const text = new TextDecoder().decode(textData.slice(nullIndex + 1));
+        chunks[keyword] = text;
+      }
+    }
+    
+    offset += 12 + length; // length + type + data + crc
   }
+  
+  return chunks;
+}
 
+/**
+ * Parses a PNG character card file to extract embedded character data
+ * @param file - The PNG file containing character card data
+ * @returns Promise<CharacterCardData> - The parsed character data
+ * @throws Error if file is invalid or parsing fails
+ */
+export async function parseCharacterCard(file: File): Promise<CharacterCardData> {
   try {
-    const buffer = await toBuffer(file);
-    const textChunk = get(buffer, 'chara');
-
-    if (!textChunk) {
-      throw new Error('No character data found in the PNG file. The card may be a simple image.');
+    // Validate file type
+    if (!file.type.includes('png')) {
+      throw new Error('File must be a PNG image');
     }
 
-    // The data is Base64 encoded JSON. Decode it.
-    const jsonString = Buffer.from(textChunk.value, 'base64').toString('utf8');
+    // Read file as array buffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Parse PNG chunks
+    const chunks = parsePNGChunks(arrayBuffer);
+    
+    // Look for the 'chara' text chunk
+    if (!chunks.chara) {
+      throw new Error('No character data found in PNG file. This does not appear to be a character card.');
+    }
 
+    // Decode the Base64 string
+    let decodedData: string;
     try {
-      const parsedData = JSON.parse(jsonString);
-      console.log('Successfully parsed character data:', parsedData);
-      return parsedData;
-    } catch (e) {
-      throw new Error('Failed to parse character data. The data chunk may be corrupt.');
+      decodedData = atob(chunks.chara);
+    } catch (error) {
+      throw new Error('Failed to decode character data. The embedded data may be corrupted.');
     }
+
+    // Parse the JSON
+    let characterData: CharacterCardData;
+    try {
+      characterData = JSON.parse(decodedData);
+    } catch (error) {
+      throw new Error('Failed to parse character data as JSON. The data format may be invalid.');
+    }
+
+    // Validate that we have some essential character data
+    if (!characterData || typeof characterData !== 'object') {
+      throw new Error('Invalid character data format.');
+    }
+
+    console.log('Successfully parsed character data:', characterData);
+    return characterData;
+
   } catch (error) {
     console.error("Error parsing character card:", error);
-    // Rethrow a more user-friendly error message.
-    if (error instanceof Error && error.message.includes('Not a PNG')) {
-       throw new Error('File is not a valid PNG or is corrupted.');
+    // Re-throw with more context if it's already our custom error
+    if (error instanceof Error) {
+      throw error;
     }
-    throw error;
+    
+    // Handle unexpected errors
+    throw new Error(`Unexpected error while parsing character card: ${String(error)}`);
   }
-};
+}

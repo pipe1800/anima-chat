@@ -11,7 +11,7 @@ import CreationStepsHeader from '@/components/character-creator/CreationStepsHea
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
 import { getCharacterDetails } from '@/lib/supabase-queries';
 import { useToast } from '@/hooks/use-toast';
-import { parseCharacterCard } from '@/lib/utils/characterCard';
+import { parseCharacterCard, type CharacterCardData } from '@/lib/utils/characterCard';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Tag = Tables<'tags'>;
@@ -178,7 +178,7 @@ const CharacterCreator = () => {
         description: "Reading character data from PNG file...",
       });
 
-      const cardData = await parseCharacterCard(file);
+      const cardData: CharacterCardData = await parseCharacterCard(file);
 
       // Map character card data to our form structure
       const mappedData = {
