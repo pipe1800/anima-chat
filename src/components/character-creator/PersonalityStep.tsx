@@ -87,7 +87,7 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
     onUpdate({
       personality: {
         core_personality: corePersonality,
-        tags: selectedTags,
+        tags: selectedTags.map(tag => tag.name), // Convert tag objects to tag names
         knowledge_base: knowledgeBase,
         scenario_definition: scenarioDefinition
       }
