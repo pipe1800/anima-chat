@@ -20,23 +20,27 @@ interface DialoguePair {
 
 interface DialogueFormData {
   greeting: string;
-  example_dialogues: DialoguePair[];
+  definition: {
+    example_dialogue: DialoguePair[];
+  };
 }
 
 const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps) => {
   const formMethods = useForm<DialogueFormData>({
     defaultValues: {
       greeting: data.dialogue?.greeting || '',
-      example_dialogues: data.dialogue?.example_dialogues?.length > 0 
-        ? data.dialogue.example_dialogues 
-        : [{ user: '', character: '' }]
+      definition: {
+        example_dialogue: data.dialogue?.example_dialogues?.length > 0 
+          ? data.dialogue.example_dialogues 
+          : [{ user: '', character: '' }]
+      }
     }
   });
 
   const { control, handleSubmit, watch, reset } = formMethods;
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "example_dialogues"
+    name: "definition.example_dialogue"
   });
 
   const watchedValues = watch();
@@ -46,9 +50,11 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
     if (data.dialogue) {
       reset({
         greeting: data.dialogue.greeting || '',
-        example_dialogues: data.dialogue.example_dialogues?.length > 0 
-          ? data.dialogue.example_dialogues 
-          : [{ user: '', character: '' }]
+        definition: {
+          example_dialogue: data.dialogue.example_dialogues?.length > 0 
+            ? data.dialogue.example_dialogues 
+            : [{ user: '', character: '' }]
+        }
       });
     }
   }, [data, reset]);
@@ -64,7 +70,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
   };
 
   const handleNext = () => {
-    const validDialoguePairs = watchedValues.example_dialogues.filter(pair => 
+    const validDialoguePairs = watchedValues.definition.example_dialogue.filter(pair => 
       pair.user.trim() && pair.character.trim()
     );
     
@@ -77,7 +83,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
     onNext();
   };
 
-  const isValid = watchedValues.greeting?.trim() && watchedValues.example_dialogues?.some(pair => pair.user?.trim() && pair.character?.trim());
+  const isValid = watchedValues.greeting?.trim() && watchedValues.definition?.example_dialogue?.some(pair => pair.user?.trim() && pair.character?.trim());
 
   return (
     <FormProvider {...formMethods}>
@@ -161,7 +167,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       </div>
                       <Textarea
                         placeholder="What the user might say..."
-                        {...formMethods.register(`example_dialogues.${index}.user`)}
+                        {...formMethods.register(`definition.example_dialogue.${index}.user`)}
                         rows={3}
                         className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none text-sm"
                       />
@@ -177,7 +183,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       </div>
                       <Textarea
                         placeholder="How your character responds..."
-                        {...formMethods.register(`example_dialogues.${index}.character`)}
+                        {...formMethods.register(`definition.example_dialogue.${index}.character`)}
                         rows={3}
                         className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none text-sm"
                       />
