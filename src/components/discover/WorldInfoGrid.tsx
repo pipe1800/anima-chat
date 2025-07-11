@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   TrendingUp,
   Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getPublicWorldInfos } from '@/lib/supabase-queries';
+import { usePublicWorldInfos } from '@/hooks/useWorldInfos';
 import { WorldInfoCard } from './WorldInfoCard';
 
 interface WorldInfoGridProps {
@@ -26,31 +26,12 @@ type PublicWorldInfo = {
 };
 
 export function WorldInfoGrid({ searchQuery, sortBy, filterBy }: WorldInfoGridProps) {
-  const [worldInfos, setWorldInfos] = useState<PublicWorldInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchWorldInfos = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await getPublicWorldInfos(50, 0);
-        if (error) {
-          console.error('Error fetching world infos:', error);
-          setError('Failed to load world infos');
-        } else {
-          setWorldInfos(data);
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Failed to load world infos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWorldInfos();
-  }, []);
+  // Use React Query hook for public world infos
+  const { 
+    data: worldInfos = [], 
+    isLoading: loading, 
+    error 
+  } = usePublicWorldInfos();
 
   // Filter and sort world infos based on props
   const filteredWorldInfos = worldInfos.filter(worldInfo => {

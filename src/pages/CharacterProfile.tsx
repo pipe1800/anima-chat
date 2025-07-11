@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -18,6 +18,7 @@ import {
   Loader2,
   TrendingUp
 } from 'lucide-react';
+import { useCharacterProfile, useCharacterLikeStatus, useToggleCharacterLike } from '@/hooks/useCharacterProfile';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CharacterData {
@@ -45,89 +46,21 @@ interface CharacterData {
 export default function CharacterProfile() {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
-  const [character, setCharacter] = useState<CharacterData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
+  
+  // Use React Query hooks for optimized data fetching
+  const { 
+    data: character, 
+    isLoading: loading, 
+    error: characterError 
+  } = useCharacterProfile(characterId);
+  
+  const { 
+    data: isLiked = false 
+  } = useCharacterLikeStatus(characterId);
+  
+  const toggleLikeMutation = useToggleCharacterLike();
 
-  useEffect(() => {
-    const fetchCharacterData = async () => {
-      if (!characterId) {
-        setError('Character ID not provided');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        // Fetch character with definitions
-        const { data: characterData, error: characterError } = await supabase
-          .from('characters')
-          .select(`
-            *,
-            character_definitions(*)
-          `)
-          .eq('id', characterId)
-          .eq('visibility', 'public')
-          .single();
-
-        if (characterError) {
-          console.error('Error fetching character:', characterError);
-          setError('Character not found or not public');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch creator profile separately
-        const { data: creatorProfile } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', characterData.creator_id)
-          .single();
-
-        // Get chat count
-        const { count: chatCount } = await supabase
-          .from('chats')
-          .select('*', { count: 'exact' })
-          .eq('character_id', characterId);
-
-        // Get likes count
-        const { count: likesCount } = await supabase
-          .from('character_likes')
-          .select('*', { count: 'exact' })
-          .eq('character_id', characterId);
-
-        // Check if current user has liked this character
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: userLike } = await supabase
-            .from('character_likes')
-            .select('id')
-            .eq('character_id', characterId)
-            .eq('user_id', user.id)
-            .single();
-          
-          setIsLiked(!!userLike);
-        }
-
-        setCharacter({
-          ...characterData,
-          creator: creatorProfile || { username: 'Unknown', avatar_url: null },
-          actual_chat_count: chatCount || 0,
-          likes_count: likesCount || 0
-        });
-
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Failed to load character');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCharacterData();
-  }, [characterId]);
+  const error = characterError?.message || null;
 
   const handleStartChat = () => {
     if (character) {
@@ -138,41 +71,18 @@ export default function CharacterProfile() {
   const handleLike = async () => {
     if (!character) return;
 
+    // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate('/auth');
       return;
     }
 
-    try {
-      if (isLiked) {
-        // Remove like
-        await supabase
-          .from('character_likes')
-          .delete()
-          .eq('character_id', character.id)
-          .eq('user_id', user.id);
-        
-        setIsLiked(false);
-        setCharacter(prev => prev ? {
-          ...prev,
-          likes_count: Math.max(0, (prev.likes_count || 0) - 1)
-        } : null);
-      } else {
-        // Add like
-        await supabase
-          .from('character_likes')
-          .insert([{ character_id: character.id, user_id: user.id }]);
-        
-        setIsLiked(true);
-        setCharacter(prev => prev ? {
-          ...prev,
-          likes_count: (prev.likes_count || 0) + 1
-        } : null);
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
+    // Use the optimized mutation
+    toggleLikeMutation.mutate({
+      characterId: character.id,
+      isLiked: isLiked
+    });
   };
 
   if (loading) {

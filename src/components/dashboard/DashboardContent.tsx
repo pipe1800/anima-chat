@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -8,14 +8,7 @@ import { DailyUsageWidget } from './DailyUsageWidget';
 import DiscordCTA from '../DiscordCTA';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  getUserChats, 
-  getUserCharacters, 
-  getUserCredits, 
-  getUserSubscription,
-  getDailyMessageCount,
-  getUserFavorites
-} from '@/lib/supabase-queries';
+import { useDashboardData } from '@/hooks/useDashboard';
 import { 
   MessageCircle, 
   Trophy, 
@@ -37,73 +30,24 @@ import {
 export function DashboardContent() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [recentChats, setRecentChats] = useState([]);
-  const [myCharacters, setMyCharacters] = useState([]);
-  const [favoriteCharacters, setFavoriteCharacters] = useState([]);
-  const [userCredits, setUserCredits] = useState(0);
-  const [subscription, setSubscription] = useState(null);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [messagesUsed, setMessagesUsed] = useState(0);
-  const [dailyLimit, setDailyLimit] = useState(75);
+  
+  // Use React Query hook for dashboard data
+  const { 
+    data: dashboardData, 
+    isLoading: dataLoading, 
+    error: dashboardError 
+  } = useDashboardData();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user || authLoading) {
-        return;
-      }
+  // Extract data with fallbacks
+  const recentChats = dashboardData?.chats || [];
+  const myCharacters = dashboardData?.characters || [];
+  const favoriteCharacters = dashboardData?.favorites || [];
+  const userCredits = dashboardData?.credits || 0;
+  const subscription = dashboardData?.subscription;
+  const messagesUsed = dashboardData?.messagesUsed || 0;
 
-      try {
-        setDataLoading(true);
-
-        const [chatsResult, charactersResult, favoritesResult, creditsResult, subscriptionResult, messageCountResult] = await Promise.all([
-          getUserChats(user.id),
-          getUserCharacters(user.id),
-          getUserFavorites(user.id),
-          getUserCredits(user.id),
-          getUserSubscription(user.id),
-          getDailyMessageCount(user.id)
-        ]);
-
-        console.log('Dashboard data results:', {
-          chats: chatsResult.data?.length,
-          characters: charactersResult.data?.length,
-          favorites: favoritesResult.data?.length,
-          favoritesError: favoritesResult.error,
-          favoritesData: favoritesResult.data
-        });
-
-        setRecentChats(chatsResult.data || []);
-        setMyCharacters(charactersResult.data || []);
-        setFavoriteCharacters(favoritesResult.data || []);
-        setUserCredits(creditsResult.data?.balance || 0);
-        setSubscription(subscriptionResult.data);
-        setMessagesUsed(messageCountResult.data?.count || 0);
-
-        // Set daily limits based on subscription
-        if (subscriptionResult.data?.plan) {
-          const plan = subscriptionResult.data.plan;
-          if (plan.name === 'Guest Pass') {
-            setDailyLimit(75);
-          } else {
-            setDailyLimit(999999);
-          }
-        } else {
-          setDailyLimit(75);
-        }
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-
-    if (user && !authLoading) {
-      fetchDashboardData();
-    } else if (!authLoading && !user) {
-      setDataLoading(false);
-    }
-  }, [user, authLoading]);
+  // Set daily limits based on subscription
+  const dailyLimit = subscription?.plan?.name === 'Guest Pass' ? 75 : 999999;
 
   const handleStartChat = (character: any) => {
     navigate('/chat', { state: { selectedCharacter: character } });
@@ -127,7 +71,7 @@ export function DashboardContent() {
     });
   };
 
-  if (authLoading) {
+  if (authLoading || dataLoading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading your dashboard...</div>
@@ -139,6 +83,17 @@ export function DashboardContent() {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Please sign in to access your ANIMA dashboard.</div>
+      </div>
+    );
+  }
+
+  if (dashboardError) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 text-lg mb-2">Failed to load dashboard data</div>
+          <div className="text-gray-400 text-sm">Please refresh the page to try again</div>
+        </div>
       </div>
     );
   }
@@ -155,8 +110,8 @@ export function DashboardContent() {
       avatar: chat.character?.name?.charAt(0) || 'U',
       image: chat.character?.avatar_url || "/placeholder.svg"
     },
-    lastMessage: chat.lastMessage || "No messages yet",
-    lastMessageIsAI: chat.lastMessageIsAI || false,
+    lastMessage: "No messages yet", // Will be enhanced later
+    lastMessageIsAI: false,
     timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString(),
     originalChat: chat
   }));
@@ -166,8 +121,8 @@ export function DashboardContent() {
     name: character.name,
     avatar: character.name.charAt(0),
     image: character.avatar_url || "/placeholder.svg",
-    totalChats: character.actual_chat_count || 0,
-    likesCount: character.likes_count || 0,
+    totalChats: character.interaction_count || 0,
+    likesCount: 0, // Will be enhanced later
     originalCharacter: character
   }));
 
@@ -284,11 +239,6 @@ export function DashboardContent() {
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
           <CardContent>
-            {dataLoading ? (
-              <div className="text-center py-8">
-                <div className="text-white">Loading your data...</div>
-              </div>
-            ) : (
               <Tabs defaultValue="recent-chats" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-[#121212] border border-gray-700/50">
                   <TabsTrigger 
@@ -505,7 +455,6 @@ export function DashboardContent() {
                   </div>
                 </TabsContent>
               </Tabs>
-            )}
           </CardContent>
         </Card>
 
