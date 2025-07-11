@@ -35,8 +35,8 @@ const ForgotPassword = () => {
         <div className="absolute top-6 left-6 z-20">
           <Link to="/" className="cursor-pointer">
             <img 
-              src="/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png" 
-              alt="Anima Chat" 
+              src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+              alt="Anima AI Chat" 
               className="h-16 w-auto hover:opacity-80 transition-opacity"
             />
           </Link>
@@ -167,8 +167,8 @@ const ForgotPassword = () => {
       <div className="absolute top-6 left-6 z-20">
         <Link to="/" className="cursor-pointer">
           <img 
-            src="/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png" 
-            alt="Anima Chat" 
+            src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
+            alt="Anima AI Chat" 
             className="h-16 w-auto hover:opacity-80 transition-opacity"
           />
         </Link>
