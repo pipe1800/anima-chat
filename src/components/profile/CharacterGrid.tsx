@@ -97,23 +97,15 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
           key={character.id}
           className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform relative"
         >
-          {/* Avatar as background */}
-          <div className="absolute inset-0 opacity-30">
-            <img 
-              src={character.avatar_url} 
-              alt={character.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <CardContent className="p-0 relative z-10">
-            {/* Character Avatar Section - Top Half */}
-            <div className="relative h-48 bg-gradient-to-br from-black/60 to-black/40 flex items-center justify-center">
-              <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
-                <AvatarImage src={character.avatar_url} alt={character.name} />
-                <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
-                  {character.name?.charAt(0)?.toUpperCase() || <User className="w-8 h-8" />}
-                </AvatarFallback>
-              </Avatar>
+          <CardContent className="p-0 relative">
+            {/* Character Avatar Section - Full Height */}
+            <div className="relative h-64 bg-gradient-to-br from-black/60 to-black/40">
+              <img 
+                src={character.avatar_url} 
+                alt={character.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40" />
               
               {/* Visibility Badge */}
               <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full capitalize">
