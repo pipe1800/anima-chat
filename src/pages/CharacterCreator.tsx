@@ -180,6 +180,21 @@ const CharacterCreator = () => {
 
       const cardData: CharacterCardData = await parseCharacterCard(file);
 
+      // Explicitly parse example dialogue if it exists as a string
+      let processedExampleDialogue = [];
+      if (cardData.example_dialogue) {
+        if (Array.isArray(cardData.example_dialogue)) {
+          // Already parsed as array
+          processedExampleDialogue = cardData.example_dialogue;
+        } else if (typeof cardData.example_dialogue === 'string') {
+          // Parse the string to array
+          processedExampleDialogue = parseExampleDialogue(cardData.example_dialogue);
+        }
+      } else if (cardData.mes_example) {
+        // Parse mes_example field as fallback
+        processedExampleDialogue = parseExampleDialogue(cardData.mes_example);
+      }
+
       // Map character card data to our form structure
       const mappedData = {
         name: cardData.name || '',
@@ -194,7 +209,7 @@ const CharacterCreator = () => {
         },
         dialogue: {
           greeting: cardData.first_mes || '',
-          example_dialogues: cardData.example_dialogue || parseExampleDialogue(cardData.mes_example || '')
+          example_dialogues: processedExampleDialogue
         },
         addons: {
           dynamicWorldInfo: false,
@@ -211,7 +226,7 @@ const CharacterCreator = () => {
         nsfw_enabled: characterData.nsfw_enabled // Keep current NSFW setting
       };
 
-      // Update the character data
+      // Update the character data with the fully structured data
       setCharacterData(mappedData);
 
       toast({
