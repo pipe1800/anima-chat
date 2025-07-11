@@ -47,7 +47,7 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="bg-[#1a1a2e] border-gray-700/50 animate-pulse">
             <CardContent className="p-0">
@@ -91,15 +91,23 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-4 gap-6">
       {characters.map((character) => (
         <Card
           key={character.id}
-          className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform"
+          className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform relative"
         >
-          <CardContent className="p-0">
+          {/* Avatar as background */}
+          <div className="absolute inset-0 opacity-30">
+            <img 
+              src={character.avatar_url} 
+              alt={character.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <CardContent className="p-0 relative z-10">
             {/* Character Avatar Section - Top Half */}
-            <div className="relative h-48 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
+            <div className="relative h-48 bg-gradient-to-br from-black/60 to-black/40 flex items-center justify-center">
               <Avatar className="w-20 h-20 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
                 <AvatarImage src={character.avatar_url} alt={character.name} />
                 <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
@@ -123,10 +131,10 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
             </div>
 
             {/* Character Info - Bottom Half */}
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 bg-gradient-to-t from-black/80 to-transparent">
               {/* Name */}
-              <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors line-clamp-1">
-                {character.name}
+              <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate" title={character.name}>
+                {character.name.length > 20 ? `${character.name.substring(0, 20)}...` : character.name}
               </h3>
 
               {/* Description */}

@@ -228,7 +228,7 @@ export function DashboardContent() {
 
 
         {/* Your Dashboard sections - moved above Daily Quest */}
-        <Card className="bg-[#1a1a2e] border-gray-700/50">
+        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[800px]">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
@@ -319,14 +319,22 @@ export function DashboardContent() {
                 </TabsContent>
 
                 <TabsContent value="my-characters" className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     {formattedMyCharacters.length > 0 ? (
                       formattedMyCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden"
                         >
-                          <CardContent className="p-4 text-center">
+                          {/* Avatar as background */}
+                          <div className="absolute inset-0 opacity-20">
+                            <img 
+                              src={character.image} 
+                              alt={character.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <CardContent className="p-4 text-center relative z-10">
                             <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-gray-600">
                               <AvatarImage 
                                 src={character.image} 
@@ -338,8 +346,8 @@ export function DashboardContent() {
                               </AvatarFallback>
                             </Avatar>
                             
-                            <h3 className="text-white font-bold text-lg mb-2">
-                              {character.name}
+                            <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
+                              {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
                             </h3>
                             
                             <div className="flex items-center justify-center space-x-4 text-sm mb-3">
@@ -389,14 +397,22 @@ export function DashboardContent() {
                 </TabsContent>
 
                 <TabsContent value="favorites" className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     {formattedFavoriteCharacters.length > 0 ? (
                       formattedFavoriteCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden"
                         >
-                          <CardContent className="p-4 text-center">
+                          {/* Avatar as background */}
+                          <div className="absolute inset-0 opacity-20">
+                            <img 
+                              src={character.image} 
+                              alt={character.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <CardContent className="p-4 text-center relative z-10">
                             <Avatar className="w-16 h-16 mx-auto mb-3 ring-2 ring-yellow-600">
                               <AvatarImage 
                                 src={character.image} 
@@ -408,8 +424,8 @@ export function DashboardContent() {
                               </AvatarFallback>
                             </Avatar>
                             
-                            <h3 className="text-white font-bold text-lg mb-2">
-                              {character.name}
+                            <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
+                              {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
                             </h3>
                             
                             <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
