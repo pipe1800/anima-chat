@@ -145,6 +145,11 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   }, []);
 
   const handleToggle = (key: keyof AddonData, value: boolean) => {
+    // Don't allow enabling individual addons if user is on Guest Pass
+    if (value && userPlan === 'Guest Pass') {
+      return;
+    }
+    
     const updatedAddons = { ...addons, [key]: value };
     setAddons(updatedAddons);
     onUpdate({ addons: updatedAddons });
@@ -162,7 +167,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   };
 
   const handleMasterToggle = (value: boolean) => {
-    // Don't allow enabling if user is on Guest Pass
+    // Don't allow enabling if user is on Guest Pass (only Guest Pass is restricted)
     if (value && userPlan === 'Guest Pass') {
       return;
     }
@@ -251,7 +256,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   creditCost="+15% credit cost"
                   enabled={addons.dynamicWorldInfo}
                   onToggle={(enabled) => handleToggle('dynamicWorldInfo', enabled)}
-                  disabled={!addonsEnabled}
+                  disabled={!addonsEnabled || userPlan === 'Guest Pass'}
                 />
                 <AddonCard
                   icon={BrainCircuit}
@@ -260,7 +265,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   creditCost="+25% credit cost"
                   enabled={addons.enhancedMemory}
                   onToggle={(enabled) => handleToggle('enhancedMemory', enabled)}
-                  disabled={!addonsEnabled}
+                  disabled={!addonsEnabled || userPlan === 'Guest Pass'}
                 />
             </CardContent>
           </Card>
@@ -282,7 +287,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.moodTracking}
                 onToggle={(enabled) => handleToggle('moodTracking', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
               <AddonCard
                 icon={Shirt}
@@ -291,7 +296,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.clothingInventory}
                 onToggle={(enabled) => handleToggle('clothingInventory', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
               <AddonCard
                 icon={MapPin}
@@ -300,7 +305,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.locationTracking}
                 onToggle={(enabled) => handleToggle('locationTracking', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
               <AddonCard
                 icon={Cloud}
@@ -309,7 +314,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.timeWeather}
                 onToggle={(enabled) => handleToggle('timeWeather', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
               <AddonCard
                 icon={Heart}
@@ -318,7 +323,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+3% credit cost"
                 enabled={addons.relationshipStatus}
                 onToggle={(enabled) => handleToggle('relationshipStatus', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
             </CardContent>
           </Card>
@@ -340,7 +345,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+10% credit cost"
                 enabled={addons.chainOfThought}
                 onToggle={(enabled) => handleToggle('chainOfThought', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
               <AddonCard
                 icon={BookOpen}
@@ -349,7 +354,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 creditCost="+20% credit cost"
                 enabled={addons.fewShotExamples}
                 onToggle={(enabled) => handleToggle('fewShotExamples', enabled)}
-                disabled={!addonsEnabled}
+                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
               />
             </CardContent>
           </Card>
