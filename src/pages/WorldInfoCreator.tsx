@@ -243,6 +243,15 @@ const WorldInfoCreator = () => {
         await addWorldInfoTag(newWorldInfo.id, tag.id);
       }
       
+      // Add the first entry if provided
+      if (newEntryKeywords.trim() && newEntryText.trim()) {
+        const keywords = newEntryKeywords.split(',').map(k => k.trim()).filter(k => k);
+        await addWorldInfoEntry(newWorldInfo.id, {
+          keywords,
+          entry_text: newEntryText
+        });
+      }
+      
       await fetchWorldInfos();
       const detailedInfo = await getWorldInfoWithEntries(newWorldInfo.id);
       const detailedInfoWithAvatar = { ...detailedInfo, avatar_url: avatarUrl };
@@ -256,11 +265,13 @@ const WorldInfoCreator = () => {
       setEditAvatarUrl('');
       setEditVisibility('private');
       setSelectedTags([]);
+      setNewEntryKeywords('');
+      setNewEntryText('');
       setShowWorldInfoList(false);
       
       toast({
         title: "Success",
-        description: "World Info created successfully"
+        description: `World Info created successfully${newEntryKeywords.trim() && newEntryText.trim() ? ' with first entry' : ''}`
       });
     } catch (error) {
       console.error('Error creating world info:', error);
@@ -602,6 +613,8 @@ const WorldInfoCreator = () => {
     setEditAvatarUrl('');
     setEditVisibility('private');
     setSelectedTags([]);
+    setNewEntryKeywords('');
+    setNewEntryText('');
     setShowWorldInfoList(false);
   };
 
@@ -933,18 +946,18 @@ const WorldInfoCreator = () => {
               
               <div className="flex-1 overflow-auto">
                 {isCreating ? (
-                  <div className="p-6">
-                    <Card className="border-primary/20 bg-gray-800/50">
+                  <div className="p-6 space-y-6">
+                    <Card className="bg-gray-800/50 border-gray-700">
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-primary">
-                          <BookOpen className="w-5 h-5" />
-                          New World Info
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <Plus className="w-5 h-5" />
+                          Create New World Info
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-6">
                         <div className="flex flex-col items-center gap-4">
                           <div className="relative">
-                            <Avatar className="w-20 h-20 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                            <Avatar className="w-24 h-24 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
                               <AvatarImage src={editAvatarUrl} />
                               <AvatarFallback className="bg-primary/10">
                                 <Image className="w-8 h-8 text-primary/50" />
@@ -968,39 +981,41 @@ const WorldInfoCreator = () => {
                             className="hidden"
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="new-name">Name</Label>
-                          <Input
-                            id="new-name"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            placeholder="Enter world info name"
-                            className="bg-gray-800/50 border-gray-600 text-white"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="name" className="text-white">Name *</Label>
+                            <Input
+                              id="name"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="World info name"
+                              className="bg-gray-800/50 border-gray-600 text-white"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="visibility" className="text-white">Visibility</Label>
+                            <Select value={editVisibility} onValueChange={(value: 'public' | 'unlisted' | 'private') => setEditVisibility(value)}>
+                              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="private">Private</SelectItem>
+                                <SelectItem value="unlisted">Unlisted</SelectItem>
+                                <SelectItem value="public">Public</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                         <div>
-                          <Label htmlFor="new-description">Description</Label>
+                          <Label htmlFor="description" className="text-white">Description</Label>
                           <Textarea
-                            id="new-description"
+                            id="description"
                             value={editDescription}
                             onChange={(e) => setEditDescription(e.target.value)}
                             placeholder="Brief description of this world"
                             rows={3}
                             className="bg-gray-800/50 border-gray-600 text-white"
                           />
-                        </div>
-                        <div>
-                          <Label htmlFor="new-visibility">Visibility</Label>
-                          <Select value={editVisibility} onValueChange={(value: 'public' | 'unlisted' | 'private') => setEditVisibility(value)}>
-                            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="private">Private</SelectItem>
-                              <SelectItem value="unlisted">Unlisted</SelectItem>
-                              <SelectItem value="public">Public</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                         <TagSection
                           selectedTags={selectedTags}
@@ -1023,6 +1038,44 @@ const WorldInfoCreator = () => {
                           <Button variant="outline" onClick={handleBackToList}>
                             Cancel
                           </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Quick Add Entry Section for New World Info */}
+                    <Card className="bg-gray-800/50 border-gray-700">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <BookOpen className="w-5 h-5" />
+                          Add Your First Entry (Optional)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="first-entry-keywords" className="text-white">Keywords (comma-separated)</Label>
+                            <Input
+                              id="first-entry-keywords"
+                              value={newEntryKeywords}
+                              onChange={(e) => setNewEntryKeywords(e.target.value)}
+                              placeholder="character name, location, event"
+                              className="bg-gray-800/50 border-gray-600 text-white"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="first-entry-text" className="text-white">Entry Text</Label>
+                            <Textarea
+                              id="first-entry-text"
+                              value={newEntryText}
+                              onChange={(e) => setNewEntryText(e.target.value)}
+                              placeholder="Describe the lore or information"
+                              rows={4}
+                              className="bg-gray-800/50 border-gray-600 text-white"
+                            />
+                          </div>
+                          <p className="text-sm text-gray-400">
+                            You can add entries now or after creating the world info. Don't worry - you can always add more entries later!
+                          </p>
                         </div>
                       </CardContent>
                     </Card>
