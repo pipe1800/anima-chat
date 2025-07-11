@@ -23,7 +23,7 @@ import { getUserCredits } from '@/lib/supabase-queries';
 import { useUserSubscription } from '@/hooks/useProfile';
 
 // Preload the logo image to prevent reloading
-const LOGO_URL = '/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png';
+const LOGO_URL = '/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png';
 const logoImage = new Image();
 logoImage.src = LOGO_URL;
 
@@ -48,7 +48,7 @@ const AppSidebar = () => {
     return React.memo(() => (
       <img 
         src={LOGO_URL}
-        alt="Anima AI Chat" 
+        alt="Anima Chat" 
         className="h-16 w-auto"
         loading="eager"
         style={{ imageRendering: 'crisp-edges' }}

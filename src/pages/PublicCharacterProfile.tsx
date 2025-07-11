@@ -129,8 +129,8 @@ export default function PublicCharacterProfile() {
             <div className="flex items-center justify-between h-16">
               <div className="flex-shrink-0">
                 <img 
-                  src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-                  alt="Anima AI Chat" 
+                  src="/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png" 
+                  alt="Anima Chat" 
                   className="h-12 w-auto"
                 />
               </div>
@@ -179,8 +179,8 @@ export default function PublicCharacterProfile() {
             <div className="flex items-center justify-between h-16">
               <div className="flex-shrink-0">
                 <img 
-                  src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-                  alt="Anima AI Chat" 
+                  src="/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png" 
+                  alt="Anima Chat" 
                   className="h-12 w-auto"
                 />
               </div>
@@ -231,8 +231,8 @@ export default function PublicCharacterProfile() {
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0">
               <img 
-                src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-                alt="Anima AI Chat" 
+                src="/lovable-uploads/cb144190-2b60-459a-ac1e-0df3edba9e1b.png" 
+                alt="Anima Chat" 
                 className="h-12 w-auto"
               />
             </div>
