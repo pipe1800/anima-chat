@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserActiveSubscription } from '@/lib/supabase-queries';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Tables } from '@/integrations/supabase/types';
 
 // Define the Tag type
@@ -31,25 +33,45 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userPlan, setUserPlan] = useState<string>('Guest Pass');
 
-  // Fetch all available tags from the database when the component mounts
+  const { user } = useAuth();
+
+  // Fetch user subscription and tags when component mounts
   useEffect(() => {
-    const fetchTags = async () => {
-      console.log('PersonalityStep: Starting to fetch tags...');
+    const fetchData = async () => {
+      console.log('PersonalityStep: Starting to fetch data...');
       setIsLoading(true);
-      const { data, error } = await supabase.from('tags').select('*').order('name');
-      if (error) {
-        console.error('Error fetching tags:', error);
+      
+      try {
+        // Fetch user subscription
+        if (user) {
+          const { data: subscription } = await getUserActiveSubscription(user.id);
+          setUserPlan(subscription?.plan?.name || 'Guest Pass');
+        } else {
+          setUserPlan('Guest Pass');
+        }
+
+        // Fetch tags
+        const { data: tagsData, error } = await supabase.from('tags').select('*').order('name');
+        if (error) {
+          console.error('Error fetching tags:', error);
+          setAllTags([]);
+        } else {
+          console.log('PersonalityStep: Fetched tags:', tagsData);
+          setAllTags((tagsData as Tag[]) || []);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setUserPlan('Guest Pass');
         setAllTags([]);
-      } else {
-        console.log('PersonalityStep: Fetched tags:', data);
-        // Ensure data is cast to Tag[]
-        setAllTags((data as Tag[]) || []);
       }
+      
       setIsLoading(false);
     };
-    fetchTags();
-  }, []);
+    
+    fetchData();
+  }, [user]);
 
   // Update form data when character data is loaded
   useEffect(() => {
@@ -98,7 +120,20 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
   const isValid = corePersonality.trim().length >= 50;
 
   // Filter the dropdown to show only tags that haven't been selected yet
-  const availableTags = allTags.filter(tag => !selectedTags.some(selected => selected.id === tag.id));
+  // Also filter out NSFW tag for Guest Pass users
+  const availableTags = allTags.filter(tag => {
+    // Don't show already selected tags
+    if (selectedTags.some(selected => selected.id === tag.id)) {
+      return false;
+    }
+    
+    // Hide NSFW tag for Guest Pass users
+    if (userPlan === 'Guest Pass' && tag.name.toLowerCase() === 'nsfw') {
+      return false;
+    }
+    
+    return true;
+  });
   
   console.log('PersonalityStep render - allTags:', allTags.length, 'selectedTags:', selectedTags.length, 'availableTags:', availableTags.length);
 
