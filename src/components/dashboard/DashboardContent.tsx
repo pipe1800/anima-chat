@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { MonthlyCreditsWidget } from './MonthlyCreditsWidget';
+
 import DiscordCTA from '../DiscordCTA';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -226,12 +226,6 @@ export function DashboardContent() {
           </Card>
         </div>
 
-        {/* Monthly Credits Widget */}
-        <MonthlyCreditsWidget 
-          creditsUsed={creditsUsed} 
-          currentBalance={userCredits} 
-          monthlyAllowance={monthlyAllowance} 
-        />
 
         {/* Your Dashboard sections - moved above Daily Quest */}
         <Card className="bg-[#1a1a2e] border-gray-700/50">
