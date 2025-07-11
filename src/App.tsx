@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Discover from "./pages/Discover";
 import Chat from "./pages/Chat";
 import CharacterCreator from "./pages/CharacterCreator";
+import TestTags from "./pages/TestTags";
 import WorldInfoCreator from "./pages/WorldInfoCreator";
 import UserProfile from "./pages/UserProfile";
 import Subscription from "./pages/Subscription";
@@ -76,6 +77,7 @@ const App = () => (
                 <CharacterCreator />
               </OnboardingGuard>
             } />
+            <Route path="/test-tags" element={<TestTags />} />
             <Route path="/world-info-creator" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <WorldInfoCreator />
