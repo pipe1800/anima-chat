@@ -418,6 +418,8 @@ const CharacterCreator = () => {
             onPrevious={handlePrevious}
             isCreating={isCreating}
             isEditing={isEditing}
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
           />
         );
       default:

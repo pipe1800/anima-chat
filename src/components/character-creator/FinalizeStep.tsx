@@ -8,6 +8,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, MessageCircle, Heart, Sparkles, Globe, Link, Lock, Loader2 } from 'lucide-react';
 import { getUserPersonas, type Persona } from '@/lib/persona-operations';
+import { getUserActiveSubscription } from '@/lib/supabase-queries';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FinalizeStepProps {
   data: any;
@@ -16,37 +19,74 @@ interface FinalizeStepProps {
   onPrevious: () => void;
   isCreating?: boolean;
   isEditing?: boolean;
+  selectedTags: { id: number; name: string; }[];
+  setSelectedTags: React.Dispatch<React.SetStateAction<{ id: number; name: string; }[]>>;
 }
 
 type VisibilityType = 'public' | 'unlisted' | 'private';
 
-const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false, isEditing = false }: FinalizeStepProps) => {
+const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = false, isEditing = false, selectedTags, setSelectedTags }: FinalizeStepProps) => {
   const [visibility, setVisibility] = useState<VisibilityType>(data.visibility || 'public');
   const [enableNSFW, setEnableNSFW] = useState(data.nsfw_enabled || false);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>(data.default_persona_id || 'none');
+  const [userPlan, setUserPlan] = useState<string>('Guest Pass');
+  const [nsfwTag, setNsfwTag] = useState<{ id: number; name: string } | null>(null);
 
-  // Load user's personas
+  const { user } = useAuth();
+
+  // Check if user is premium (True Fan or Whale)
+  const isPremiumUser = () => {
+    return userPlan === 'True Fan' || userPlan === 'Whale';
+  };
+
+  // Load user's personas, subscription, and NSFW tag
   useEffect(() => {
-    const loadPersonas = async () => {
+    const loadUserData = async () => {
       try {
         const userPersonas = await getUserPersonas();
         setPersonas(userPersonas);
+
+        // Fetch user subscription
+        if (user) {
+          const { data: subscription } = await getUserActiveSubscription(user.id);
+          if (subscription?.plan) {
+            setUserPlan(subscription.plan.name);
+          } else {
+            setUserPlan('Guest Pass');
+          }
+        } else {
+          setUserPlan('Guest Pass');
+        }
+
+        // Fetch NSFW tag from database
+        const { data: tags } = await supabase
+          .from('tags')
+          .select('*')
+          .ilike('name', 'nsfw')
+          .limit(1);
+        
+        if (tags && tags.length > 0) {
+          setNsfwTag(tags[0]);
+        }
       } catch (error) {
-        console.error('Error loading personas:', error);
+        console.error('Error loading user data:', error);
       }
     };
-    loadPersonas();
-  }, []);
+    loadUserData();
+  }, [user]);
 
   // Update form data when character data is loaded
   useEffect(() => {
     if (data) {
       setVisibility(data.visibility || 'public');
-      setEnableNSFW(data.nsfw_enabled || false);
       setSelectedPersonaId(data.default_persona_id || 'none');
+      
+      // Check if NSFW tag exists in selected tags to determine initial NSFW state
+      const hasNSFWTag = selectedTags.some(tag => tag.name.toLowerCase() === 'nsfw');
+      setEnableNSFW(data.nsfw_enabled || hasNSFWTag);
     }
-  }, [data]);
+  }, [data, selectedTags]);
 
   const visibilityOptions = [
     {
@@ -68,6 +108,23 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
       icon: Lock,
     },
   ];
+
+  // Handle NSFW toggle with tag synchronization
+  const handleNSFWToggle = (checked: boolean) => {
+    setEnableNSFW(checked);
+
+    if (!nsfwTag) return; // No NSFW tag found in database
+
+    const nsfwTagIndex = selectedTags.findIndex(tag => tag.name.toLowerCase() === 'nsfw');
+    
+    if (checked && nsfwTagIndex === -1) {
+      // Add NSFW tag if switch is turned on and tag doesn't exist
+      setSelectedTags([...selectedTags, nsfwTag]);
+    } else if (!checked && nsfwTagIndex !== -1) {
+      // Remove NSFW tag if switch is turned off and tag exists
+      setSelectedTags(selectedTags.filter((_, index) => index !== nsfwTagIndex));
+    }
+  };
 
   const handleFinalize = () => {
     onUpdate({
@@ -261,13 +318,22 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
                 Enable NSFW Content
               </Label>
               <p className="text-gray-400 text-sm">
-                Allow mature content and conversations with this character
+                {isPremiumUser() 
+                  ? "Allow mature content and conversations with this character"
+                  : "NSFW content is only available for True Fan and Whale subscribers"
+                }
               </p>
+              {!isPremiumUser() && (
+                <p className="text-[#FF7A00] text-sm mt-2 font-medium">
+                  Upgrade to unlock NSFW features
+                </p>
+              )}
             </div>
             <Switch
               checked={enableNSFW}
-              onCheckedChange={setEnableNSFW}
-              className="data-[state=checked]:bg-[#FF7A00]"
+              onCheckedChange={isPremiumUser() ? handleNSFWToggle : undefined}
+              disabled={!isPremiumUser()}
+              className="data-[state=checked]:bg-[#FF7A00] disabled:opacity-50"
             />
           </div>
         </div>
