@@ -105,7 +105,7 @@ export function PublicCharacterGrid({ searchQuery, sortBy, filterBy }: PublicCha
 
       {/* Character Grid */}
       <div 
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8 transition-all duration-500 ease-in-out"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 transition-all duration-500 ease-in-out"
         style={{
           animation: 'fade-in 0.6s ease-out'
         }}
@@ -113,69 +113,54 @@ export function PublicCharacterGrid({ searchQuery, sortBy, filterBy }: PublicCha
         {sortedCharacters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform"
+            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
             style={{
               animation: `fade-in 0.6s ease-out ${index * 0.1}s both`
             }}
           >
-            <CardContent className="p-0">
-              {/* Character Avatar Section - Top Half */}
-              <div className="relative h-32 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
-                <Avatar className="w-24 h-24 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
-                  <AvatarImage src={character.avatar_url || "/placeholder.svg"} alt={character.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
-                    {character.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+            <CardContent className="p-0 relative h-full">
+              <img 
+                src={character.avatar_url || "/placeholder.svg"} 
+                alt={character.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              {/* Name at top */}
+              <div className="absolute top-4 left-4 right-4">
+                <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate">
+                  {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                </h3>
               </div>
 
-              {/* Character Info - Bottom Half */}
-              <div className="p-5 space-y-4">
-                {/* Name */}
-                <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors line-clamp-1">
-                  {character.name}
-                </h3>
-
-                {/* Description */}
-                <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed min-h-[2.5rem]">
-                  {character.short_description || "No description available"}
-                </p>
-
-                {/* Stats */}
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-1 text-gray-300">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{character.actual_chat_count.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-gray-300">
-                    <Heart className="w-4 h-4" />
-                    <span>{character.likes_count.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Creator */}
-                <p className="text-gray-500 text-xs">
-                  by @{character.creator?.username || 'Unknown'}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col space-y-2">
+              {/* Action Buttons - Center */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <div className="flex flex-col gap-2">
                   <Button
                     onClick={() => handleViewCharacter(character)}
                     variant="outline"
-                    className="w-full border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent"
+                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 bg-black/40"
+                    size="sm"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     View Character
                   </Button>
                   <Button
                     onClick={handleSignupToChat}
-                    className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                    size="sm"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Signup to Chat
                   </Button>
                 </div>
+              </div>
+
+              {/* Description preview at bottom */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
+                  {character.short_description || "No description available"}
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -95,69 +95,38 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
       {characters.map((character) => (
         <Card
           key={character.id}
-          className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group cursor-pointer overflow-hidden hover:scale-105 hover:-translate-y-2 transform relative"
+          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
         >
-          <CardContent className="p-0 relative">
-            {/* Character Avatar Section - Full Height */}
-            <div className="relative h-64 bg-gradient-to-br from-black/60 to-black/40">
-              <img 
-                src={character.avatar_url} 
-                alt={character.name}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40" />
-              
-              {/* Visibility Badge */}
-              <div className="absolute top-3 left-3 px-2 py-1 bg-[#FF7A00]/90 text-white text-xs font-medium rounded-full capitalize">
-                {character.visibility}
-              </div>
-
-              {/* Created Badge */}
-              {type === 'created' && (
-                <div className="absolute top-3 right-3">
-                  <Badge variant="outline" className="text-[#FF7A00] border-[#FF7A00]/30 bg-black/40">
-                    Created
-                  </Badge>
-                </div>
-              )}
+          <CardContent className="p-0 relative h-full">
+            <img 
+              src={character.avatar_url || "/placeholder.svg"} 
+              alt={character.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            
+            {/* Name at top */}
+            <div className="absolute top-4 left-4 right-4">
+              <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate">
+                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+              </h3>
             </div>
 
-            {/* Character Info - Bottom Half */}
-            <div className="p-5 space-y-4 bg-gradient-to-t from-black/80 to-transparent">
-              {/* Name */}
-              <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate" title={character.name}>
-                {character.name.length > 20 ? `${character.name.substring(0, 20)}...` : character.name}
-              </h3>
-
-              {/* Description */}
-              <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed min-h-[2.5rem]">
-                {character.short_description || 'No description available'}
-              </p>
-
-              {/* Stats */}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1 text-gray-300">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{character.interaction_count || 0}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-gray-300">
-                    <Heart className="w-4 h-4" />
-                    <span>0</span>
-                  </div>
-                </div>
+            {/* Created Badge */}
+            {type === 'created' && (
+              <div className="absolute top-4 right-4">
+                <Badge variant="outline" className="text-[#FF7A00] border-[#FF7A00]/30 bg-black/40">
+                  Created
+                </Badge>
               </div>
+            )}
 
-              {/* Created Date */}
-              <p className="text-gray-500 text-xs">
-                Created {new Date(character.created_at).toLocaleDateString()}
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+            {/* Action Buttons - Center */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+              <div className="flex gap-2">
                 <Button
                   onClick={() => handleStartChat(character)}
-                  className="flex-1 bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
                   size="sm"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
@@ -167,13 +136,20 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
                   <Button
                     onClick={() => handleEditCharacter(character)}
                     variant="outline"
-                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10"
+                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 bg-black/40"
                     size="sm"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
                 )}
               </div>
+            </div>
+
+            {/* Description preview at bottom */}
+            <div className="absolute bottom-4 left-4 right-4">
+              <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
+                {character.short_description || 'No description available'}
+              </p>
             </div>
           </CardContent>
         </Card>
