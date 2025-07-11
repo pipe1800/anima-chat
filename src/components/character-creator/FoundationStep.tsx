@@ -198,33 +198,18 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                 {isUploading ? 'Processing...' : 'Upload & Crop Image'}
               </Button>
               
-              <Button 
-                variant="outline"
-                className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 font-semibold py-3 px-6 rounded-xl"
-                onClick={() => {
-                  toast({
-                    title: "Coming Soon",
-                    description: "AI avatar generation will be available soon!",
-                  });
-                }}
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Generate with AI
-              </Button>
-            </div>
-
-            {/* Avatar URL Input */}
-            <div className="w-full max-w-xs">
-              <Label htmlFor="avatar-url" className="text-gray-300 text-sm mb-2 block">
-                Or paste image URL
-              </Label>
-              <Input
-                id="avatar-url"
-                placeholder="https://example.com/avatar.jpg"
-                value={formData.avatar}
-                onChange={(e) => handleInputChange('avatar', e.target.value)}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg"
-              />
+              {/* PNG Character Card Upload */}
+              <div className="w-full max-w-xs">
+                <Label htmlFor="character-card" className="text-gray-300 text-sm mb-2 block">
+                  Upload PNG Character Card
+                </Label>
+                <Input
+                  id="character-card"
+                  type="file"
+                  accept=".png"
+                  className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80"
+                />
+              </div>
             </div>
           </div>
 
