@@ -166,14 +166,10 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-[#FF7A00]/60">
-                    <User className="w-16 h-16 mb-2 animate-pulse" />
-                    <div className="w-12 h-12 rounded-full bg-[#FF7A00]/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
-                    <div className="w-8 h-8 rounded-full bg-[#FF7A00]/40 animate-ping absolute" style={{ animationDelay: '1.5s', animationDuration: '3s' }} />
+                    <User className="w-16 h-16 mb-2" />
                   </div>
                 )}
               </div>
-              
-              <div className="absolute inset-0 rounded-full border-2 border-[#FF7A00]/50 animate-pulse" style={{ animationDuration: '2s' }} />
             </div>
 
             {/* File input (hidden) */}
@@ -201,30 +197,28 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
               </Button>
               
               {/* PNG Character Card Upload */}
-              <div className="w-full max-w-xs">
-                <Label htmlFor="character-card" className="text-gray-300 text-sm mb-2 block">
-                  Upload PNG Character Card
-                </Label>
-                <Input
-                  id="character-card"
-                  type="file"
-                  accept=".png"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file && onFileChange) {
-                      onFileChange(file);
-                    }
-                  }}
-                  disabled={isParsingCard}
-                  className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                {isParsingCard && (
-                  <p className="text-xs text-gray-400 mt-1 flex items-center">
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Parsing character card...
-                  </p>
-                )}
-              </div>
+              <Label htmlFor="character-card" className="text-gray-300 text-sm mb-2 block">
+                Upload PNG Character Card
+              </Label>
+              <Input
+                id="character-card"
+                type="file"
+                accept=".png"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && onFileChange) {
+                    onFileChange(file);
+                  }
+                }}
+                disabled={isParsingCard}
+                className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              {isParsingCard && (
+                <p className="text-xs text-gray-400 mt-1 flex items-center">
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Parsing character card...
+                </p>
+              )}
             </div>
           </div>
 
