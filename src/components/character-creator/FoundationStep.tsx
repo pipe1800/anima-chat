@@ -197,11 +197,7 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
               </Button>
               
               {/* PNG Character Card Upload */}
-              <Label htmlFor="character-card" className="text-gray-300 text-sm mb-2 block">
-                Upload PNG Character Card
-              </Label>
-              <Input
-                id="character-card"
+              <input
                 type="file"
                 accept=".png"
                 onChange={(e) => {
@@ -210,15 +206,27 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                     onFileChange(file);
                   }
                 }}
-                disabled={isParsingCard}
-                className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="hidden"
+                id="character-card-input"
               />
-              {isParsingCard && (
-                <p className="text-xs text-gray-400 mt-1 flex items-center">
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Parsing character card...
-                </p>
-              )}
+              <Button
+                onClick={() => document.getElementById('character-card-input')?.click()}
+                disabled={isParsingCard}
+                variant="outline"
+                className="bg-gray-800/50 border-gray-600 text-white hover:bg-gray-700/50 font-semibold py-3 px-6 rounded-xl"
+              >
+                {isParsingCard ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Parsing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload PNG Character Card
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
