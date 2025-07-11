@@ -35,12 +35,14 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
   // Fetch all available tags from the database when the component mounts
   useEffect(() => {
     const fetchTags = async () => {
+      console.log('PersonalityStep: Starting to fetch tags...');
       setIsLoading(true);
       const { data, error } = await supabase.from('tags').select('*').order('name');
       if (error) {
         console.error('Error fetching tags:', error);
         setAllTags([]);
       } else {
+        console.log('PersonalityStep: Fetched tags:', data);
         // Ensure data is cast to Tag[]
         setAllTags((data as Tag[]) || []);
       }
@@ -97,6 +99,8 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
 
   // Filter the dropdown to show only tags that haven't been selected yet
   const availableTags = allTags.filter(tag => !selectedTags.some(selected => selected.id === tag.id));
+  
+  console.log('PersonalityStep render - allTags:', allTags.length, 'selectedTags:', selectedTags.length, 'availableTags:', availableTags.length);
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
