@@ -58,9 +58,117 @@ export const getWorldInfosByUser = async () => {
       throw new Error('Failed to fetch world infos');
     }
 
-    return worldInfos || [];
+    if (!worldInfos) return [];
+
+    // Enrich each world info with additional data
+    const enrichedWorldInfos = await Promise.all(
+      worldInfos.map(async (worldInfo) => {
+        // Get entries count
+        const { count: entriesCount } = await supabase
+          .from('world_info_entries')
+          .select('*', { count: 'exact', head: true })
+          .eq('world_info_id', worldInfo.id);
+
+        // Get likes count
+        const { count: likesCount } = await supabase
+          .from('world_info_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('world_info_id', worldInfo.id);
+
+        // Get tags
+        const { data: worldInfoTags } = await supabase
+          .from('world_info_tags')
+          .select(`
+            tag:tags(id, name)
+          `)
+          .eq('world_info_id', worldInfo.id);
+
+        const tags = worldInfoTags?.map(wt => wt.tag) || [];
+
+        return {
+          ...worldInfo,
+          entriesCount: entriesCount || 0,
+          likesCount: likesCount || 0,
+          tags
+        };
+      })
+    );
+
+    return enrichedWorldInfos;
   } catch (error) {
     console.error('Error in getWorldInfosByUser:', error);
+    throw error;
+  }
+};
+
+export const getUserWorldInfoCollection = async () => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // Get world infos that the user has added to their collection
+    const { data: collectionData, error } = await supabase
+      .from('world_info_users')
+      .select(`
+        world_info:world_infos(*)
+      `)
+      .eq('user_id', user.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user collection:', error);
+      throw new Error('Failed to fetch user collection');
+    }
+
+    if (!collectionData) return [];
+
+    // Extract world infos and enrich with additional data
+    const worldInfos = collectionData.map(item => item.world_info).filter(Boolean);
+
+    const enrichedWorldInfos = await Promise.all(
+      worldInfos.map(async (worldInfo) => {
+        // Get creator profile
+        const { data: creatorData } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .eq('id', worldInfo.creator_id)
+          .maybeSingle();
+
+        // Get entries count
+        const { count: entriesCount } = await supabase
+          .from('world_info_entries')
+          .select('*', { count: 'exact', head: true })
+          .eq('world_info_id', worldInfo.id);
+
+        // Get likes count
+        const { count: likesCount } = await supabase
+          .from('world_info_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('world_info_id', worldInfo.id);
+
+        // Get tags
+        const { data: worldInfoTags } = await supabase
+          .from('world_info_tags')
+          .select(`
+            tag:tags(id, name)
+          `)
+          .eq('world_info_id', worldInfo.id);
+
+        const tags = worldInfoTags?.map(wt => wt.tag) || [];
+
+        return {
+          ...worldInfo,
+          creator: creatorData,
+          entriesCount: entriesCount || 0,
+          likesCount: likesCount || 0,
+          tags
+        };
+      })
+    );
+
+    return enrichedWorldInfos;
+  } catch (error) {
+    console.error('Error in getUserWorldInfoCollection:', error);
     throw error;
   }
 };

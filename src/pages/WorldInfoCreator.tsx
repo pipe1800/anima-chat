@@ -19,6 +19,7 @@ import { Tables } from '@/integrations/supabase/types';
 import {
   createWorldInfo,
   getWorldInfosByUser,
+  getUserWorldInfoCollection,
   getWorldInfoWithEntries,
   updateWorldInfo,
   deleteWorldInfo,
@@ -168,8 +169,12 @@ const WorldInfoCreator = () => {
   const fetchWorldInfos = async () => {
     try {
       setLoading(true);
-      const infos = await getWorldInfosByUser();
+      const [infos, collectedInfos] = await Promise.all([
+        getWorldInfosByUser(),
+        getUserWorldInfoCollection()
+      ]);
       setWorldInfos(infos);
+      setCollectedWorldInfos(collectedInfos);
     } catch (error) {
       console.error('Error fetching world infos:', error);
       toast({
@@ -716,18 +721,18 @@ const WorldInfoCreator = () => {
                                       {worldInfo.short_description || "No description available"}
                                     </p>
                                     
-                                    {/* Stats */}
-                                    <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
-                                      <span className="flex items-center gap-1">
-                                        <FileText className="w-4 h-4" />
-                                        {worldInfo.entriesCount || 0} entries
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <Heart className="w-4 h-4" />
-                                        {worldInfo.likesCount || 0} likes
-                                      </span>
-                                      <span>{worldInfo.interaction_count} uses</span>
-                                    </div>
+                                     {/* Stats */}
+                                     <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
+                                       <span className="flex items-center gap-1">
+                                         <FileText className="w-4 h-4" />
+                                         {worldInfo.entriesCount || 0} entries
+                                       </span>
+                                       <span className="flex items-center gap-1">
+                                         <Heart className="w-4 h-4" />
+                                         {worldInfo.likesCount || 0} likes
+                                       </span>
+                                       <span>{worldInfo.interaction_count} uses</span>
+                                     </div>
 
                                     {/* Tags */}
                                     {worldInfo.tags && worldInfo.tags.length > 0 && (
@@ -834,18 +839,18 @@ const WorldInfoCreator = () => {
                                       {worldInfo.short_description || "No description available"}
                                     </p>
                                     
-                                    {/* Stats */}
-                                    <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
-                                      <span className="flex items-center gap-1">
-                                        <FileText className="w-4 h-4" />
-                                        {worldInfo.entriesCount || 0} entries
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <Heart className="w-4 h-4" />
-                                        {worldInfo.likesCount || 0} likes
-                                      </span>
-                                      <span>by @{worldInfo.creator?.username || 'Unknown'}</span>
-                                    </div>
+                                     {/* Stats */}
+                                     <div className="flex items-center gap-4 text-base text-gray-500 mb-3">
+                                       <span className="flex items-center gap-1">
+                                         <FileText className="w-4 h-4" />
+                                         {worldInfo.entriesCount || 0} entries
+                                       </span>
+                                       <span className="flex items-center gap-1">
+                                         <Heart className="w-4 h-4" />
+                                         {worldInfo.likesCount || 0} likes
+                                       </span>
+                                       <span>by @{worldInfo.creator?.username || 'Unknown'}</span>
+                                     </div>
 
                                     {/* Tags */}
                                     {worldInfo.tags && worldInfo.tags.length > 0 && (

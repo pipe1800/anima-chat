@@ -62,12 +62,12 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
         {/* World Info Details - Bottom Half */}
         <div className="p-5 space-y-4 relative">
           {/* Name */}
-          <h3 className="text-white font-bold text-xl group-hover:text-[#FF7A00] transition-colors line-clamp-1">
+          <h3 className="text-white font-bold text-2xl group-hover:text-[#FF7A00] transition-colors line-clamp-1">
             {worldInfo.name}
           </h3>
 
           {/* Description */}
-          <p className="text-gray-400 text-base line-clamp-2 leading-relaxed min-h-[3rem]">
+          <p className="text-gray-400 text-lg line-clamp-2 leading-relaxed min-h-[3.5rem]">
             {worldInfo.short_description || "No description available"}
           </p>
 
@@ -75,12 +75,12 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
           {worldInfo.tags && worldInfo.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
               {worldInfo.tags.slice(0, 2).map((tag) => (
-                <Badge key={tag.id} variant="secondary" className="text-sm">
+                <Badge key={tag.id} variant="secondary" className="text-base">
                   {tag.name}
                 </Badge>
               ))}
               {worldInfo.tags.length > 2 && (
-                <Badge variant="secondary" className="text-sm">
+                <Badge variant="secondary" className="text-base">
                   +{worldInfo.tags.length - 2}
                 </Badge>
               )}
@@ -88,27 +88,27 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-2 text-base">
+          <div className="grid grid-cols-2 gap-2 text-lg">
             <div className="flex items-center space-x-1 text-gray-300">
-              <Heart className="w-4 h-4" />
+              <Heart className="w-5 h-5" />
               <span>{worldInfo.likes_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
-              <Star className="w-4 h-4" />
+              <Star className="w-5 h-5" />
               <span>{worldInfo.favorites_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
-              <Users className="w-4 h-4" />
+              <Users className="w-5 h-5" />
               <span>{worldInfo.usage_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
-              <Eye className="w-4 h-4" />
+              <Eye className="w-5 h-5" />
               <span>{worldInfo.interaction_count.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Creator */}
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-base">
             by @{worldInfo.creator?.username || 'Unknown'}
           </p>
 
