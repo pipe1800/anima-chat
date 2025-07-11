@@ -174,6 +174,49 @@ export const useAllTags = () => {
   });
 };
 
+// Public world infos query
+export const usePublicWorldInfos = () => {
+  return useQuery({
+    queryKey: ['public-world-infos'],
+    queryFn: async () => {
+      const { data: worldInfos, error } = await supabase
+        .from('world_infos')
+        .select(`
+          *,
+          world_info_likes(count),
+          world_info_favorites(count)
+        `)
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error('Failed to fetch public world infos');
+      }
+
+      if (!worldInfos || worldInfos.length === 0) return [];
+
+      // Get creator profiles separately
+      const creatorIds = [...new Set(worldInfos.map(w => w.creator_id))];
+      const { data: creators } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', creatorIds);
+
+      const creatorsMap = new Map(creators?.map(c => [c.id, c]) || []);
+
+      return worldInfos.map(worldInfo => ({
+        ...worldInfo,
+        creator: creatorsMap.get(worldInfo.creator_id),
+        likes_count: worldInfo.world_info_likes?.length || 0,
+        favorites_count: worldInfo.world_info_favorites?.length || 0,
+        usage_count: worldInfo.interaction_count
+      }));
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+  });
+};
+
 // World info tags query
 export const useWorldInfoTags = (worldInfoId: string | null) => {
   return useQuery({

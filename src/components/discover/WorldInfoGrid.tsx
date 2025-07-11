@@ -71,7 +71,7 @@ export function WorldInfoGrid({ searchQuery, sortBy, filterBy }: WorldInfoGridPr
   if (error) {
     return (
       <div className="text-center py-16">
-        <div className="text-red-400 text-lg mb-2">{error}</div>
+        <div className="text-red-400 text-lg mb-2">{error.message}</div>
         <div className="text-gray-500 text-sm">Please try again later</div>
       </div>
     );
