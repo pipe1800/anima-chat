@@ -620,7 +620,7 @@ const WorldInfoCreator = () => {
       <div className="min-h-screen flex w-full bg-[#121212]">
         <AppSidebar />
         
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden" style={{ marginLeft: 'var(--sidebar-width, 250px)' }}>
           {showWorldInfoList ? (
             <div className="h-full flex flex-col">
               {/* Header */}
