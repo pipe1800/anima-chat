@@ -33,6 +33,7 @@ import { UpgradeVerification as ComponentUpgradeVerification } from "./component
 import { UpgradeCallback } from "./pages/UpgradeCallback";
 import UpgradeVerification from "./pages/UpgradeVerification";
 import CreditPurchaseVerification from "./pages/CreditPurchaseVerification";
+import DialogueTestPage from "./pages/DialogueTestPage";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
               </OnboardingGuard>
             } />
             <Route path="/test-tags" element={<TestTags />} />
+            <Route path="/dialogue-test" element={<DialogueTestPage />} />
             <Route path="/world-info-creator" element={
               <OnboardingGuard requireOnboardingComplete={true}>
                 <WorldInfoCreator />
