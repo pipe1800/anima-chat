@@ -35,7 +35,10 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
     const fetchCharacters = async () => {
       try {
         setLoading(true);
+        console.log('CharacterSelection: Starting to fetch characters with vibes:', selectedVibes);
         const { data: recommendedChars, error } = await getRecommendedCharacters(selectedVibes, 4);
+        
+        console.log('CharacterSelection: getRecommendedCharacters result:', { data: recommendedChars, error });
         
         if (error) {
           console.error('Error fetching characters:', error);
