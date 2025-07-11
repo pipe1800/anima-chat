@@ -194,7 +194,7 @@ const CharacterCreator = () => {
         },
         dialogue: {
           greeting: cardData.first_mes || '',
-          example_dialogues: parseExampleDialogues(cardData.mes_example || '')
+          example_dialogues: cardData.example_dialogue || parseExampleDialogues(cardData.mes_example || '')
         },
         addons: {
           dynamicWorldInfo: false,
