@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import HeroSection from "@/components/HeroSection";
 import ValueProposition from "@/components/ValueProposition";
-import HowItWorks from "@/components/HowItWorks";
 import PricingTiers from "@/components/PricingTiers";
 import CustomerTestimonial from "@/components/CustomerTestimonial";
 import FAQ from "@/components/FAQ";
@@ -36,7 +35,6 @@ const Index = () => {
     <div className="min-h-screen">
       <HeroSection />
       <ValueProposition />
-      <HowItWorks />
       <PricingTiers />
       <CustomerTestimonial />
       <FAQ />

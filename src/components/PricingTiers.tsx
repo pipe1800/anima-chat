@@ -47,6 +47,10 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
       return { text: "Loading...", variant: "outline" as const, disabled: true };
     }
 
+    if (!user) {
+      return { text: "Create an Account", variant: "default" as const, disabled: false };
+    }
+
     if (currentPlan === planName) {
       return { text: "Current Plan", variant: "outline" as const, disabled: true };
     }
@@ -200,22 +204,34 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
 
                   <CardFooter className="px-6 pb-6">
                     {/* CTA Button */}
-                    <Button
-                      variant={buttonConfig.variant}
-                      size="lg"
-                      disabled={buttonConfig.disabled}
-                      className={`w-full py-3 sm:py-4 text-base sm:text-lg font-bold transition-all duration-300 min-h-[44px] ${
-                        buttonConfig.variant === "outline"
-                          ? buttonConfig.disabled
-                            ? "border-gray-500 text-gray-500 cursor-not-allowed"
-                            : "border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
-                          : buttonConfig.disabled
-                            ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                            : "bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white shadow-lg hover:shadow-[#FF7A00]/25 hover:scale-105"
-                      }`}
-                    >
-                      {buttonConfig.text}
-                    </Button>
+                    {!user ? (
+                      <a href="/auth?mode=signup" className="w-full">
+                        <Button
+                          variant="default"
+                          size="lg"
+                          className="w-full py-3 sm:py-4 text-base sm:text-lg font-bold transition-all duration-300 min-h-[44px] bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white shadow-lg hover:shadow-[#FF7A00]/25 hover:scale-105"
+                        >
+                          Create an Account
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button
+                        variant={buttonConfig.variant}
+                        size="lg"
+                        disabled={buttonConfig.disabled}
+                        className={`w-full py-3 sm:py-4 text-base sm:text-lg font-bold transition-all duration-300 min-h-[44px] ${
+                          buttonConfig.variant === "outline"
+                            ? buttonConfig.disabled
+                              ? "border-gray-500 text-gray-500 cursor-not-allowed"
+                              : "border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white"
+                            : buttonConfig.disabled
+                              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                              : "bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white shadow-lg hover:shadow-[#FF7A00]/25 hover:scale-105"
+                        }`}
+                      >
+                        {buttonConfig.text}
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               </div>
