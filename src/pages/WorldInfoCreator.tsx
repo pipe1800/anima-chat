@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -15,19 +15,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen, Image, Loader2, ArrowLeft, Heart, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { Tables } from '@/integrations/supabase/types';
 import {
   createWorldInfo,
-  getWorldInfosByUser,
-  getUserWorldInfoCollection,
-  getWorldInfoWithEntries,
   updateWorldInfo,
   deleteWorldInfo,
   addWorldInfoEntry,
   updateWorldInfoEntry,
   deleteWorldInfoEntry,
-  getAllTags,
-  getWorldInfoTags,
   addWorldInfoTag,
   removeWorldInfoTag,
   toggleWorldInfoLike,
@@ -37,18 +33,18 @@ import {
   type WorldInfoEntryData
 } from '@/lib/world-info-operations';
 import { uploadAvatar } from '@/lib/avatar-upload';
+import { 
+  useUserWorldInfos, 
+  useUserWorldInfoCollection, 
+  useWorldInfoWithEntries, 
+  useAllTags, 
+  useWorldInfoTags,
+  type WorldInfoWithDetails
+} from '@/hooks/useWorldInfos';
 
-type WorldInfo = Tables<'world_infos'> & {
+type WorldInfo = WorldInfoWithDetails & {
   entries?: Tables<'world_info_entries'>[];
   avatar_url?: string;
-  tags?: Tag[];
-  likesCount?: number;
-  favoritesCount?: number;
-  creator?: {
-    username: string;
-    avatar_url?: string;
-  };
-  entriesCount?: number;
 };
 
 type WorldInfoEntry = Tables<'world_info_entries'>;
@@ -114,15 +110,18 @@ const TagSection: React.FC<TagSectionProps> = ({ selectedTags, availableTags, on
 const WorldInfoCreator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   
-  const [worldInfos, setWorldInfos] = useState<WorldInfo[]>([]);
-  const [collectedWorldInfos, setCollectedWorldInfos] = useState<WorldInfo[]>([]);
+  // React Query hooks for optimized data fetching
+  const { data: worldInfos = [], isLoading: worldInfosLoading, refetch: refetchWorldInfos } = useUserWorldInfos();
+  const { data: collectedWorldInfos = [], isLoading: collectionLoading, refetch: refetchCollection } = useUserWorldInfoCollection();
+  const { data: availableTags = [] } = useAllTags();
+  
   const [selectedWorldInfo, setSelectedWorldInfo] = useState<WorldInfo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -143,58 +142,25 @@ const WorldInfoCreator = () => {
   const [entriesSearchQuery, setEntriesSearchQuery] = useState('');
   
   // Tag states
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   
   // View states
   const [showWorldInfoList, setShowWorldInfoList] = useState(true);
   const [editingWorldInfo, setEditingWorldInfo] = useState<WorldInfo | null>(null);
+  
+  // Computed loading state
+  const loading = worldInfosLoading || collectionLoading;
 
-  useEffect(() => {
-    if (user) {
-      fetchWorldInfos();
-      fetchTags();
-    }
-  }, [user]);
-
-  const fetchTags = async () => {
-    try {
-      const tags = await getAllTags();
-      setAvailableTags(tags);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const fetchWorldInfos = async () => {
-    try {
-      setLoading(true);
-      const [infos, collectedInfos] = await Promise.all([
-        getWorldInfosByUser(),
-        getUserWorldInfoCollection()
-      ]);
-      setWorldInfos(infos);
-      setCollectedWorldInfos(collectedInfos);
-    } catch (error) {
-      console.error('Error fetching world infos:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load World Infos",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchWorldInfoTags = async (worldInfoId: string) => {
-    try {
-      const tags = await getWorldInfoTags(worldInfoId);
-      setSelectedTags(tags);
-    } catch (error) {
-      console.error('Error fetching world info tags:', error);
-    }
-  };
+  // Get tags for selected world info
+  const { data: worldInfoTags = [] } = useWorldInfoTags(selectedWorldInfo?.id || null);
+  
+  // Get detailed world info with entries
+  const { data: worldInfoDetails, refetch: refetchWorldInfoDetails } = useWorldInfoWithEntries(selectedWorldInfo?.id || null);
+  
+  // Update selected tags when world info tags change
+  React.useEffect(() => {
+    setSelectedTags(worldInfoTags);
+  }, [worldInfoTags]);
 
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -243,10 +209,19 @@ const WorldInfoCreator = () => {
         await addWorldInfoTag(newWorldInfo.id, tag.id);
       }
       
-      await fetchWorldInfos();
-      const detailedInfo = await getWorldInfoWithEntries(newWorldInfo.id);
-      const detailedInfoWithAvatar = { ...detailedInfo, avatar_url: avatarUrl };
-      setSelectedWorldInfo(detailedInfoWithAvatar);
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['user-world-infos'] });
+      
+      // Set selected world info for editing - create proper type
+      const newWorldInfoComplete: WorldInfo = { 
+        ...newWorldInfo, 
+        avatar_url: avatarUrl, 
+        entries: [],
+        entriesCount: 0,
+        likesCount: 0,
+        tags: selectedTags
+      };
+      setSelectedWorldInfo(newWorldInfoComplete);
       setIsCreating(false);
       
       // Reset form
@@ -277,22 +252,11 @@ const WorldInfoCreator = () => {
     }
   };
 
-  const handleSelectWorldInfo = async (worldInfo: WorldInfo) => {
-    try {
-      const detailedInfo = await getWorldInfoWithEntries(worldInfo.id);
-      setSelectedWorldInfo(detailedInfo);
-      await fetchWorldInfoTags(worldInfo.id);
-      setIsEditing(false);
-      setEditingEntryId(null);
-      setShowWorldInfoList(false);
-    } catch (error) {
-      console.error('Error fetching world info details:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load World Info details",
-        variant: "destructive"
-      });
-    }
+  const handleSelectWorldInfo = (worldInfo: WorldInfo) => {
+    setSelectedWorldInfo(worldInfo);
+    setIsEditing(false);
+    setEditingEntryId(null);
+    setShowWorldInfoList(false);
   };
 
   const handleUpdateWorldInfo = async () => {
@@ -317,9 +281,12 @@ const WorldInfoCreator = () => {
         visibility: editVisibility
       });
       
-      await fetchWorldInfos();
-      const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-      const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: avatarUrl };
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['user-world-infos'] });
+      await queryClient.invalidateQueries({ queryKey: ['world-info-with-entries', selectedWorldInfo.id] });
+      
+      // Update selected world info
+      const updatedInfoWithAvatar = { ...selectedWorldInfo, name: editName, short_description: editDescription, visibility: editVisibility, avatar_url: avatarUrl };
       setSelectedWorldInfo(updatedInfoWithAvatar);
       setIsEditing(false);
       
@@ -343,7 +310,8 @@ const WorldInfoCreator = () => {
   const handleDeleteWorldInfo = async (worldInfoId: string, worldInfoName?: string) => {
     try {
       await deleteWorldInfo(worldInfoId);
-      await fetchWorldInfos();
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['user-world-infos'] });
       if (selectedWorldInfo?.id === worldInfoId) {
         setSelectedWorldInfo(null);
         setShowWorldInfoList(true);
@@ -372,6 +340,8 @@ const WorldInfoCreator = () => {
     try {
       await addWorldInfoTag(selectedWorldInfo.id, tagToAdd.id);
       setSelectedTags(prev => [...prev, tagToAdd]);
+      // Invalidate tags query to refresh
+      queryClient.invalidateQueries({ queryKey: ['world-info-tags', selectedWorldInfo.id] });
     } catch (error) {
       console.error('Error adding tag:', error);
       toast({
@@ -388,6 +358,8 @@ const WorldInfoCreator = () => {
     try {
       await removeWorldInfoTag(selectedWorldInfo.id, tagId);
       setSelectedTags(prev => prev.filter(tag => tag.id !== tagId));
+      // Invalidate tags query to refresh
+      queryClient.invalidateQueries({ queryKey: ['world-info-tags', selectedWorldInfo.id] });
     } catch (error) {
       console.error('Error removing tag:', error);
       toast({
@@ -428,9 +400,9 @@ const WorldInfoCreator = () => {
         entry_text: newEntryText
       });
       
-      const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-      const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
-      setSelectedWorldInfo(updatedInfoWithAvatar);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['world-info-with-entries', selectedWorldInfo.id] });
+      await refetchWorldInfoDetails();
       
       // Reset form
       setNewEntryKeywords('');
@@ -460,10 +432,10 @@ const WorldInfoCreator = () => {
         entry_text: editingEntryText
       });
       
+      // Invalidate queries to refresh data
       if (selectedWorldInfo) {
-        const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-        const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
-        setSelectedWorldInfo(updatedInfoWithAvatar);
+        queryClient.invalidateQueries({ queryKey: ['world-info-with-entries', selectedWorldInfo.id] });
+        await refetchWorldInfoDetails();
       }
       
       setEditingEntryId(null);
@@ -488,10 +460,10 @@ const WorldInfoCreator = () => {
     try {
       await deleteWorldInfoEntry(entryId);
       
+      // Invalidate queries to refresh data
       if (selectedWorldInfo) {
-        const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-        const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
-        setSelectedWorldInfo(updatedInfoWithAvatar);
+        queryClient.invalidateQueries({ queryKey: ['world-info-with-entries', selectedWorldInfo.id] });
+        await refetchWorldInfoDetails();
       }
       
       toast({
@@ -562,8 +534,16 @@ const WorldInfoCreator = () => {
       }
 
       // Refresh the list and select the new World Info
-      await fetchWorldInfos();
-      const detailedInfo = await getWorldInfoWithEntries(newWorldInfo.id);
+      await refetchWorldInfos();
+      
+      // Get the detailed info and set it as selected
+      const detailedInfo: WorldInfo = { 
+        ...newWorldInfo, 
+        entries: [],
+        entriesCount: 0,
+        likesCount: 0,
+        tags: []
+      };
       setSelectedWorldInfo(detailedInfo);
 
       toast({
