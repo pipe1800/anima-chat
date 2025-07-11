@@ -243,15 +243,6 @@ const WorldInfoCreator = () => {
         await addWorldInfoTag(newWorldInfo.id, tag.id);
       }
       
-      // Add the first entry if provided
-      if (newEntryKeywords.trim() && newEntryText.trim()) {
-        const keywords = newEntryKeywords.split(',').map(k => k.trim()).filter(k => k);
-        await addWorldInfoEntry(newWorldInfo.id, {
-          keywords,
-          entry_text: newEntryText
-        });
-      }
-      
       await fetchWorldInfos();
       const detailedInfo = await getWorldInfoWithEntries(newWorldInfo.id);
       const detailedInfoWithAvatar = { ...detailedInfo, avatar_url: avatarUrl };
@@ -271,7 +262,7 @@ const WorldInfoCreator = () => {
       
       toast({
         title: "Success",
-        description: `World Info created successfully${newEntryKeywords.trim() && newEntryText.trim() ? ' with first entry' : ''}`
+        description: "World Info created successfully"
       });
     } catch (error) {
       console.error('Error creating world info:', error);
@@ -409,7 +400,7 @@ const WorldInfoCreator = () => {
 
 
   const handleAddEntry = async () => {
-    if (!selectedWorldInfo || !newEntryKeywords.trim() || !newEntryText.trim()) {
+    if (!newEntryKeywords.trim() || !newEntryText.trim()) {
       toast({
         title: "Error",
         description: "Please fill in both keywords and entry text",
@@ -417,6 +408,18 @@ const WorldInfoCreator = () => {
       });
       return;
     }
+
+    // If we're creating a new world info, we need to create it first
+    if (isCreating) {
+      toast({
+        title: "Create World Info First",
+        description: "Please create the world info first, then you can add entries",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedWorldInfo) return;
 
     try {
       const keywords = newEntryKeywords.split(',').map(k => k.trim()).filter(k => k);
@@ -947,11 +950,12 @@ const WorldInfoCreator = () => {
               <div className="flex-1 overflow-auto">
                 {isCreating ? (
                   <div className="p-6 space-y-6">
+                    {/* Basic Information Card - Identical to Edit Mode */}
                     <Card className="bg-gray-800/50 border-gray-700">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-white">
-                          <Plus className="w-5 h-5" />
-                          Create New World Info
+                          <User className="w-5 h-5" />
+                          World Info Details
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -983,9 +987,9 @@ const WorldInfoCreator = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="name" className="text-white">Name *</Label>
+                            <Label htmlFor="edit-name" className="text-white">Name</Label>
                             <Input
-                              id="name"
+                              id="edit-name"
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
                               placeholder="World info name"
@@ -993,7 +997,7 @@ const WorldInfoCreator = () => {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="visibility" className="text-white">Visibility</Label>
+                            <Label htmlFor="edit-visibility" className="text-white">Visibility</Label>
                             <Select value={editVisibility} onValueChange={(value: 'public' | 'unlisted' | 'private') => setEditVisibility(value)}>
                               <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
                                 <SelectValue />
@@ -1007,9 +1011,9 @@ const WorldInfoCreator = () => {
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="description" className="text-white">Description</Label>
+                          <Label htmlFor="edit-description" className="text-white">Description</Label>
                           <Textarea
-                            id="description"
+                            id="edit-description"
                             value={editDescription}
                             onChange={(e) => setEditDescription(e.target.value)}
                             placeholder="Brief description of this world"
@@ -1031,9 +1035,9 @@ const WorldInfoCreator = () => {
                           }}
                         />
                         <div className="flex gap-2">
-                          <Button onClick={handleCreateNew} disabled={saving || uploadingAvatar} className="flex-1">
-                            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                            {saving ? 'Creating...' : 'Create'}
+                          <Button onClick={handleCreateNew} disabled={saving || uploadingAvatar}>
+                            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                            {saving ? 'Creating...' : 'Create World Info'}
                           </Button>
                           <Button variant="outline" onClick={handleBackToList}>
                             Cancel
@@ -1042,40 +1046,76 @@ const WorldInfoCreator = () => {
                       </CardContent>
                     </Card>
 
-                    {/* Quick Add Entry Section for New World Info */}
+                    {/* World Info Entries Card - Identical to Edit Mode */}
                     <Card className="bg-gray-800/50 border-gray-700">
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-white">
-                          <BookOpen className="w-5 h-5" />
-                          Add Your First Entry (Optional)
+                        <CardTitle className="flex items-center justify-between text-white">
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-5 h-5" />
+                            World Info Entries
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
+                              <Input
+                                placeholder="Search entries..."
+                                value={entriesSearchQuery}
+                                onChange={(e) => setEntriesSearchQuery(e.target.value)}
+                                className="pl-8 w-64 bg-gray-800/50 border-gray-600 text-white"
+                              />
+                            </div>
+                          </div>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-6">
+                        {/* Add New Entry Form */}
+                        <Card className="bg-gray-700/50 border-gray-600">
+                          <CardContent className="p-4">
+                            <h4 className="font-semibold mb-4 flex items-center gap-2 text-white">
+                              <Plus className="w-4 h-4" />
+                              Add New Entry
+                            </h4>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="new-entry-keywords" className="text-white">Keywords (comma-separated)</Label>
+                                <Input
+                                  id="new-entry-keywords"
+                                  value={newEntryKeywords}
+                                  onChange={(e) => setNewEntryKeywords(e.target.value)}
+                                  placeholder="character name, location, event"
+                                  className="bg-gray-800/50 border-gray-600 text-white"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-entry-text" className="text-white">Entry Text</Label>
+                                <Textarea
+                                  id="new-entry-text"
+                                  value={newEntryText}
+                                  onChange={(e) => setNewEntryText(e.target.value)}
+                                  placeholder="Describe the lore or information"
+                                  rows={4}
+                                  className="bg-gray-800/50 border-gray-600 text-white"
+                                />
+                              </div>
+                              <Button 
+                                onClick={handleAddEntry} 
+                                disabled={!newEntryKeywords.trim() || !newEntryText.trim()}
+                                className="w-full"
+                              >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Entry
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Entries List */}
                         <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="first-entry-keywords" className="text-white">Keywords (comma-separated)</Label>
-                            <Input
-                              id="first-entry-keywords"
-                              value={newEntryKeywords}
-                              onChange={(e) => setNewEntryKeywords(e.target.value)}
-                              placeholder="character name, location, event"
-                              className="bg-gray-800/50 border-gray-600 text-white"
-                            />
+                          <div className="text-center py-12 text-gray-400">
+                            <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                            <h3 className="text-lg font-medium mb-2 text-white">No entries yet</h3>
+                            <p>Create your world info first, then add entries above to get started.</p>
                           </div>
-                          <div>
-                            <Label htmlFor="first-entry-text" className="text-white">Entry Text</Label>
-                            <Textarea
-                              id="first-entry-text"
-                              value={newEntryText}
-                              onChange={(e) => setNewEntryText(e.target.value)}
-                              placeholder="Describe the lore or information"
-                              rows={4}
-                              className="bg-gray-800/50 border-gray-600 text-white"
-                            />
-                          </div>
-                          <p className="text-sm text-gray-400">
-                            You can add entries now or after creating the world info. Don't worry - you can always add more entries later!
-                          </p>
                         </div>
                       </CardContent>
                     </Card>
