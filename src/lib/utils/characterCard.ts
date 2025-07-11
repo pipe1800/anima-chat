@@ -84,6 +84,11 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
       throw new Error('Invalid character data format.');
     }
 
+    // Process example dialogue if it exists
+    if (characterData.example_dialogue && typeof characterData.example_dialogue === 'string') {
+      characterData.example_dialogue = parseExampleDialogue(characterData.example_dialogue);
+    }
+
     console.log('Successfully parsed character data:', characterData);
     return characterData;
 
