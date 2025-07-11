@@ -112,6 +112,20 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   });
   const [userPlan, setUserPlan] = useState<string>('Guest Pass');
 
+  // Count selected Stateful Character Tracking addons for Guest Pass restriction
+  const getSelectedTrackingCount = () => {
+    const trackingAddons = ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'];
+    return trackingAddons.filter(addon => addons[addon as keyof AddonData]).length;
+  };
+
+  const isTrackingAddon = (key: keyof AddonData) => {
+    return ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'].includes(key);
+  };
+
+  const isPremiumUser = () => {
+    return userPlan === 'True Fan' || userPlan === 'Whale';
+  };
+
   // Calculate if any add-ons are currently enabled
   const hasActiveAddons = () => {
     return Object.values(addons).some(value => value === true);
@@ -146,10 +160,25 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   }, []);
 
   const handleToggle = (key: keyof AddonData, value: boolean) => {
-    // Don't allow enabling individual addons if user is on Guest Pass
-    if (value && userPlan === 'Guest Pass') {
-      console.log('Blocking addon toggle for Guest Pass user');
+    // Enhanced Memory restriction - only True Fan and Whale
+    if (key === 'enhancedMemory' && value && !isPremiumUser()) {
+      console.log('Blocking Enhanced Memory for Guest Pass user');
       return;
+    }
+
+    // Chain-of-Thought restriction - only True Fan and Whale
+    if (key === 'chainOfThought' && value && !isPremiumUser()) {
+      console.log('Blocking Chain-of-Thought for Guest Pass user');
+      return;
+    }
+
+    // Stateful Character Tracking restriction for Guest Pass - max 2 addons
+    if (isTrackingAddon(key) && value && userPlan === 'Guest Pass') {
+      const currentCount = getSelectedTrackingCount();
+      if (currentCount >= 2) {
+        console.log('Blocking tracking addon - Guest Pass limit reached (2/5)');
+        return;
+      }
     }
     
     console.log('Addon toggle allowed for plan:', userPlan);
@@ -170,13 +199,6 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   };
 
   const handleMasterToggle = (value: boolean) => {
-    // Don't allow enabling if user is on Guest Pass (only Guest Pass is restricted)
-    if (value && userPlan === 'Guest Pass') {
-      console.log('Blocking master toggle for Guest Pass user');
-      return;
-    }
-    
-    console.log('Master toggle allowed for plan:', userPlan);
     setAddonsEnabled(value);
     
     // If turning off master switch, disable all addons
@@ -193,15 +215,15 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
 
   const calculateTotalCost = () => {
     let total = 0;
-    if (addons.dynamicWorldInfo) total += 15;
-    if (addons.enhancedMemory) total += 25;
-    if (addons.moodTracking) total += 3;
-    if (addons.clothingInventory) total += 3;
-    if (addons.locationTracking) total += 3;
-    if (addons.timeWeather) total += 3;
-    if (addons.relationshipStatus) total += 3;
-    if (addons.chainOfThought) total += 10;
-    if (addons.fewShotExamples) total += 20;
+    if (addons.dynamicWorldInfo) total += 10; // Changed from 15% to 10%
+    // Enhanced Memory cost calculated dynamically in chat
+    if (addons.moodTracking) total += 5; // Changed from 3% to 5%
+    if (addons.clothingInventory) total += 5; // Changed from 3% to 5%
+    if (addons.locationTracking) total += 5; // Changed from 3% to 5%
+    if (addons.timeWeather) total += 5; // Changed from 3% to 5%
+    if (addons.relationshipStatus) total += 5; // Changed from 3% to 5%
+    if (addons.chainOfThought) total += 30; // Changed from 10% to 30%
+    if (addons.fewShotExamples) total += 7; // Changed from 20% to 7%
     return total;
   };
 
@@ -227,18 +249,12 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   <p className="text-sm text-gray-400">
                     Master control for all character enhancement features
                   </p>
-                  {userPlan === 'Guest Pass' && (
-                    <p className="text-sm text-orange-500 mt-2">
-                      ⚠️ This feature is for paid subscribers only. Upgrade your plan to unlock character add-ons.
-                    </p>
-                  )}
                   <p className="text-xs text-gray-500 mt-1">Current plan: {userPlan}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <Switch
                     checked={addonsEnabled}
                     onCheckedChange={handleMasterToggle}
-                    disabled={userPlan === 'Guest Pass'}
                     className="scale-125"
                   />
                 </div>
@@ -259,19 +275,19 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   icon={BookOpen}
                   title="Dynamic World Info"
                   description="Build a 'lorebook' for your character. When you mention keywords in chat, relevant lore is automatically added to the AI's context, ensuring consistency."
-                  creditCost="+15% credit cost"
+                  creditCost="+10% credit cost"
                   enabled={addons.dynamicWorldInfo}
                   onToggle={(enabled) => handleToggle('dynamicWorldInfo', enabled)}
-                  disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                  disabled={!addonsEnabled}
                 />
                 <AddonCard
                   icon={BrainCircuit}
                   title="Enhanced Memory"
                   description="Gives your character a long-term memory by creating a running summary of your conversation, preventing them from forgetting important details."
-                  creditCost="+25% credit cost"
+                  creditCost={isPremiumUser() ? "Cost calculated when feature is activated in chat" : "Requires True Fan or Whale subscription"}
                   enabled={addons.enhancedMemory}
                   onToggle={(enabled) => handleToggle('enhancedMemory', enabled)}
-                  disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                  disabled={!addonsEnabled || !isPremiumUser()}
                 />
             </CardContent>
           </Card>
@@ -284,52 +300,59 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 Enable individual trackers to make your character aware of their current state. 
                 Each tracker adds a small credit cost.
               </CardDescription>
+              {userPlan === 'Guest Pass' && (
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-3 mt-3">
+                  <p className="text-sm text-orange-400">
+                    ⚠️ Free users are restricted to 2 addons in this section ({getSelectedTrackingCount()}/2 selected)
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <AddonCard
                 icon={Smile}
                 title="Mood Tracking"
                 description="Character's emotional state will evolve and be remembered."
-                creditCost="+3% credit cost"
+                creditCost="+5% credit cost"
                 enabled={addons.moodTracking}
                 onToggle={(enabled) => handleToggle('moodTracking', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.moodTracking && getSelectedTrackingCount() >= 2)}
               />
               <AddonCard
                 icon={Shirt}
                 title="Clothing & Inventory"
                 description="Keeps track of what the character is wearing and carrying."
-                creditCost="+3% credit cost"
+                creditCost="+5% credit cost"
                 enabled={addons.clothingInventory}
                 onToggle={(enabled) => handleToggle('clothingInventory', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.clothingInventory && getSelectedTrackingCount() >= 2)}
               />
               <AddonCard
                 icon={MapPin}
                 title="Location Tracking"
                 description="Remembers the character's current location and environment."
-                creditCost="+3% credit cost"
+                creditCost="+5% credit cost"
                 enabled={addons.locationTracking}
                 onToggle={(enabled) => handleToggle('locationTracking', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.locationTracking && getSelectedTrackingCount() >= 2)}
               />
               <AddonCard
                 icon={Cloud}
                 title="Time & Weather"
                 description="The character will be aware of the in-story time and weather."
-                creditCost="+3% credit cost"
+                creditCost="+5% credit cost"
                 enabled={addons.timeWeather}
                 onToggle={(enabled) => handleToggle('timeWeather', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.timeWeather && getSelectedTrackingCount() >= 2)}
               />
               <AddonCard
                 icon={Heart}
                 title="Relationship Status"
                 description="Tracks the evolving relationship between you and the character."
-                creditCost="+3% credit cost"
+                creditCost="+5% credit cost"
                 enabled={addons.relationshipStatus}
                 onToggle={(enabled) => handleToggle('relationshipStatus', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.relationshipStatus && getSelectedTrackingCount() >= 2)}
               />
             </CardContent>
           </Card>
@@ -348,19 +371,19 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 icon={Lightbulb}
                 title="Chain-of-Thought"
                 description="Prompts the AI to 'think step-by-step', improving logic and reasoning for complex scenarios."
-                creditCost="+10% credit cost"
+                creditCost={isPremiumUser() ? "+30% credit cost" : "Requires True Fan or Whale subscription"}
                 enabled={addons.chainOfThought}
                 onToggle={(enabled) => handleToggle('chainOfThought', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled || !isPremiumUser()}
               />
               <AddonCard
                 icon={BookOpen}
                 title="Few-Shot Examples"
                 description="Provide 1-3 examples of ideal interactions to better guide the AI's tone and style."
-                creditCost="+20% credit cost"
+                creditCost="+7% credit cost"
                 enabled={addons.fewShotExamples}
                 onToggle={(enabled) => handleToggle('fewShotExamples', enabled)}
-                disabled={!addonsEnabled || userPlan === 'Guest Pass'}
+                disabled={!addonsEnabled}
               />
             </CardContent>
           </Card>
