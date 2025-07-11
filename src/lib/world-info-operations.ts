@@ -487,3 +487,133 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
     throw error;
   }
 };
+
+// =============================================================================
+// LIKES AND COLLECTION MANAGEMENT
+// =============================================================================
+
+export const toggleWorldInfoLike = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // Check if already liked
+    const { data: existingLike } = await supabase
+      .from('world_info_likes')
+      .select('id')
+      .eq('world_info_id', worldInfoId)
+      .eq('user_id', user.user.id)
+      .single();
+
+    if (existingLike) {
+      // Unlike
+      const { error } = await supabase
+        .from('world_info_likes')
+        .delete()
+        .eq('id', existingLike.id);
+
+      if (error) {
+        console.error('Error removing like:', error);
+        throw new Error('Failed to remove like');
+      }
+
+      return { isLiked: false };
+    } else {
+      // Like
+      const { error } = await supabase
+        .from('world_info_likes')
+        .insert({
+          world_info_id: worldInfoId,
+          user_id: user.user.id
+        });
+
+      if (error) {
+        console.error('Error adding like:', error);
+        throw new Error('Failed to add like');
+      }
+
+      return { isLiked: true };
+    }
+  } catch (error) {
+    console.error('Error in toggleWorldInfoLike:', error);
+    throw error;
+  }
+};
+
+export const addWorldInfoToCollection = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    // Check if already in collection
+    const { data: existingUsage } = await supabase
+      .from('world_info_users')
+      .select('id')
+      .eq('world_info_id', worldInfoId)
+      .eq('user_id', user.user.id)
+      .single();
+
+    if (existingUsage) {
+      return { isUsed: true };
+    }
+
+    // Add to collection
+    const { error } = await supabase
+      .from('world_info_users')
+      .insert({
+        world_info_id: worldInfoId,
+        user_id: user.user.id
+      });
+
+    if (error) {
+      console.error('Error adding to collection:', error);
+      throw new Error('Failed to add to collection');
+    }
+
+    // Increment usage count
+    const { data: currentWorldInfo } = await supabase
+      .from('world_infos')
+      .select('interaction_count')
+      .eq('id', worldInfoId)
+      .single();
+
+    const { error: updateError } = await supabase
+      .from('world_infos')
+      .update({ 
+        interaction_count: (currentWorldInfo?.interaction_count || 0) + 1
+      })
+      .eq('id', worldInfoId);
+
+    if (updateError) {
+      console.error('Error updating usage count:', updateError);
+    }
+
+    return { isUsed: true };
+  } catch (error) {
+    console.error('Error in addWorldInfoToCollection:', error);
+    throw error;
+  }
+};
+
+export const removeWorldInfoFromCollection = async (worldInfoId: string) => {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('world_info_users')
+      .delete()
+      .eq('world_info_id', worldInfoId)
+      .eq('user_id', user.user.id);
+
+    if (error) {
+      console.error('Error removing from collection:', error);
+      throw new Error('Failed to remove from collection');
+    }
+
+    return { isUsed: false };
+  } catch (error) {
+    console.error('Error in removeWorldInfoFromCollection:', error);
+    throw error;
+  }
+};
