@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,55 +18,71 @@ interface DialoguePair {
   character: string;
 }
 
+interface DialogueFormData {
+  greeting: string;
+  example_dialogues: DialoguePair[];
+}
+
 const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps) => {
-  const [greeting, setGreeting] = useState(data.dialogue?.greeting || '');
-  const [dialoguePairs, setDialoguePairs] = useState<DialoguePair[]>(
-    data.dialogue?.example_dialogues || [{ user: '', character: '' }]
-  );
+  const formMethods = useForm<DialogueFormData>({
+    defaultValues: {
+      greeting: data.dialogue?.greeting || '',
+      example_dialogues: data.dialogue?.example_dialogues?.length > 0 
+        ? data.dialogue.example_dialogues 
+        : [{ user: '', character: '' }]
+    }
+  });
+
+  const { control, handleSubmit, watch, reset } = formMethods;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "example_dialogues"
+  });
+
+  const watchedValues = watch();
 
   // Update form data when character data is loaded
   useEffect(() => {
     if (data.dialogue) {
-      setGreeting(data.dialogue.greeting || '');
-      setDialoguePairs(data.dialogue.example_dialogues || [{ user: '', character: '' }]);
+      reset({
+        greeting: data.dialogue.greeting || '',
+        example_dialogues: data.dialogue.example_dialogues?.length > 0 
+          ? data.dialogue.example_dialogues 
+          : [{ user: '', character: '' }]
+      });
     }
-  }, [data]);
+  }, [data, reset]);
 
   const addDialoguePair = () => {
-    setDialoguePairs(prev => [...prev, { user: '', character: '' }]);
+    append({ user: '', character: '' });
   };
 
   const removeDialoguePair = (index: number) => {
-    if (dialoguePairs.length > 1) {
-      setDialoguePairs(prev => prev.filter((_, i) => i !== index));
+    if (fields.length > 1) {
+      remove(index);
     }
   };
 
-  const updateDialoguePair = (index: number, field: 'user' | 'character', value: string) => {
-    setDialoguePairs(prev => prev.map((pair, i) => 
-      i === index ? { ...pair, [field]: value } : pair
-    ));
-  };
-
   const handleNext = () => {
-    const validDialoguePairs = dialoguePairs.filter(pair => 
+    const validDialoguePairs = watchedValues.example_dialogues.filter(pair => 
       pair.user.trim() && pair.character.trim()
     );
     
     onUpdate({
       dialogue: {
-        greeting,
+        greeting: watchedValues.greeting,
         example_dialogues: validDialoguePairs
       }
     });
     onNext();
   };
 
-  const isValid = greeting.trim() && dialoguePairs.some(pair => pair.user.trim() && pair.character.trim());
+  const isValid = watchedValues.greeting?.trim() && watchedValues.example_dialogues?.some(pair => pair.user?.trim() && pair.character?.trim());
 
   return (
-    <div className="flex-1 overflow-auto bg-[#121212]">
-      <div className="max-w-4xl mx-auto p-6 lg:p-8">
+    <FormProvider {...formMethods}>
+      <div className="flex-1 overflow-auto bg-[#121212]">
+        <div className="max-w-4xl mx-auto p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
@@ -91,17 +108,16 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
               <Textarea
                 id="greeting"
                 placeholder="Hey there! Ready to dive into some digital chaos? I've got stories that'll make your neural implants tingle..."
-                value={greeting}
-                onChange={(e) => setGreeting(e.target.value)}
+                {...formMethods.register('greeting')}
                 rows={4}
                 className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed pl-12 pt-4"
               />
             </div>
             
-            {greeting && (
+            {watchedValues.greeting && (
               <div className="mt-4 p-4 bg-gradient-to-r from-[#FF7A00]/10 to-transparent rounded-lg border border-[#FF7A00]/20">
                 <p className="text-[#FF7A00] font-medium mb-2">Preview:</p>
-                <p className="text-white italic">"{greeting}"</p>
+                <p className="text-white italic">"{watchedValues.greeting}"</p>
               </div>
             )}
           </div>
@@ -118,13 +134,13 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
             </div>
 
             <div className="space-y-6">
-              {dialoguePairs.map((pair, index) => (
-                <div key={index} className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
+              {fields.map((field, index) => (
+                <div key={field.id} className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-white font-medium">
                       Dialogue Example {index + 1}
                     </h4>
-                    {dialoguePairs.length > 1 && (
+                    {fields.length > 1 && (
                       <button
                         onClick={() => removeDialoguePair(index)}
                         className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
@@ -145,8 +161,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       </div>
                       <Textarea
                         placeholder="What the user might say..."
-                        value={pair.user}
-                        onChange={(e) => updateDialoguePair(index, 'user', e.target.value)}
+                        {...formMethods.register(`example_dialogues.${index}.user`)}
                         rows={3}
                         className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none text-sm"
                       />
@@ -162,8 +177,7 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
                       </div>
                       <Textarea
                         placeholder="How your character responds..."
-                        value={pair.character}
-                        onChange={(e) => updateDialoguePair(index, 'character', e.target.value)}
+                        {...formMethods.register(`example_dialogues.${index}.character`)}
                         rows={3}
                         className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none text-sm"
                       />
@@ -224,8 +238,9 @@ const DialogueStep = ({ data, onUpdate, onNext, onPrevious }: DialogueStepProps)
             Next: Finalize →
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+    </FormProvider>
   );
 };
 
