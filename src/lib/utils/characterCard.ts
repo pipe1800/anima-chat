@@ -79,14 +79,14 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
       throw new Error('Failed to parse character data as JSON. The data format may be invalid.');
     }
 
+    // Check if example_dialogue exists and is a string, then parse it
+    if (characterData.example_dialogue && typeof characterData.example_dialogue === 'string') {
+      characterData.example_dialogue = parseExampleDialogue(characterData.example_dialogue);
+    }
+
     // Validate that we have some essential character data
     if (!characterData || typeof characterData !== 'object') {
       throw new Error('Invalid character data format.');
-    }
-
-    // Process example dialogue if it exists
-    if (characterData.example_dialogue && typeof characterData.example_dialogue === 'string') {
-      characterData.example_dialogue = parseExampleDialogue(characterData.example_dialogue);
     }
 
     console.log('Successfully parsed character data:', characterData);
