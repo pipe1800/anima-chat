@@ -10,6 +10,7 @@ import FinalizeStep from '@/components/character-creator/FinalizeStep';
 import CreationStepsHeader from '@/components/character-creator/CreationStepsHeader';
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
 import { getCharacterDetails } from '@/lib/supabase-queries';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { parseCharacterCard, parseExampleDialogue, type CharacterCardData } from '@/lib/utils/characterCard';
 import type { Tables } from '@/integrations/supabase/types';
@@ -180,6 +181,45 @@ const CharacterCreator = () => {
 
       const cardData: CharacterCardData = await parseCharacterCard(file);
 
+      // Upload the PNG file to Supabase storage for the avatar
+      let avatarUrl = '';
+      if (user) {
+        try {
+          const fileExt = 'png';
+          const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('character-avatars')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Error uploading avatar:', uploadError);
+            toast({
+              title: "Avatar Upload Warning",
+              description: "Character data was imported but avatar upload failed.",
+              variant: "destructive",
+            });
+          } else {
+            // Get the public URL for the uploaded file
+            const { data: urlData } = supabase.storage
+              .from('character-avatars')
+              .getPublicUrl(fileName);
+            
+            avatarUrl = urlData.publicUrl;
+          }
+        } catch (error) {
+          console.error('Error uploading avatar:', error);
+          toast({
+            title: "Avatar Upload Warning",
+            description: "Character data was imported but avatar upload failed.",
+            variant: "destructive",
+          });
+        }
+      }
+
       // Explicitly parse example dialogue if it exists as a string
       let processedExampleDialogue = [];
       if (cardData.example_dialogue) {
@@ -198,7 +238,7 @@ const CharacterCreator = () => {
       // Map character card data to our form structure
       const mappedData = {
         name: cardData.name || '',
-        avatar: '', // We'll keep the current avatar handling for now
+        avatar: avatarUrl, // Use the uploaded PNG as avatar
         title: cardData.title || '',
         description: cardData.description || '',
         personality: {
@@ -231,7 +271,7 @@ const CharacterCreator = () => {
 
       toast({
         title: "Character Card Loaded!",
-        description: `Successfully imported character "${cardData.name || 'Unknown'}".`,
+        description: `Successfully imported character "${cardData.name || 'Unknown'}" with avatar.`,
       });
 
     } catch (error) {
