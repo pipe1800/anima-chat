@@ -1,7 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/dashboard/AppSidebar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -619,23 +617,15 @@ const WorldInfoCreator = () => {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <div className="flex-1 ml-64 p-8">
-            <div className="text-center">Loading...</div>
-          </div>
-        </div>
-      </SidebarProvider>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">Loading...</div>
+      </div>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#121212]">
-        <AppSidebar />
-        
-        <main className="flex-1 overflow-hidden" style={{ marginLeft: 'var(--sidebar-width, 250px)' }}>
+    <div className="min-h-screen bg-[#121212]">
+      <main className="flex-1 overflow-hidden">
           {showWorldInfoList ? (
             <div className="h-full flex flex-col">
               {/* Header */}
@@ -1423,7 +1413,7 @@ const WorldInfoCreator = () => {
           className="hidden"
         />
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 

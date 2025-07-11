@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -290,16 +290,13 @@ const Subscription = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#FF7A00]"></div>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#FF7A00]"></div>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="max-w-7xl mx-auto px-6 py-8">
         
         {/* Hero Section */}
@@ -636,7 +633,6 @@ const Subscription = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 };
 
