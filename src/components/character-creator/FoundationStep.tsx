@@ -13,9 +13,11 @@ interface FoundationStepProps {
   data: any;
   onUpdate: (data: any) => void;
   onNext: () => void;
+  onFileChange?: (file: File) => Promise<void>;
+  isParsingCard?: boolean;
 }
 
-const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
+const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = false }: FoundationStepProps) => {
   const [formData, setFormData] = useState({
     name: data.name || '',
     avatar: data.avatar || '',
@@ -207,8 +209,21 @@ const FoundationStep = ({ data, onUpdate, onNext }: FoundationStepProps) => {
                   id="character-card"
                   type="file"
                   accept=".png"
-                  className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && onFileChange) {
+                      onFileChange(file);
+                    }
+                  }}
+                  disabled={isParsingCard}
+                  className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {isParsingCard && (
+                  <p className="text-xs text-gray-400 mt-1 flex items-center">
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Parsing character card...
+                  </p>
+                )}
               </div>
             </div>
           </div>

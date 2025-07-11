@@ -11,6 +11,7 @@ import CreationStepsHeader from '@/components/character-creator/CreationStepsHea
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
 import { getCharacterDetails } from '@/lib/supabase-queries';
 import { useToast } from '@/hooks/use-toast';
+import { parseCharacterCard, type CharacterCardData } from '@/lib/utils/characterCard';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Tag = Tables<'tags'>;
@@ -48,6 +49,7 @@ const CharacterCreator = () => {
   });
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isParsingCard, setIsParsingCard] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -165,6 +167,102 @@ const CharacterCreator = () => {
     }
   };
 
+  const handleFileChange = async (file: File) => {
+    if (!file) return;
+
+    try {
+      setIsParsingCard(true);
+      
+      toast({
+        title: "Parsing Character Card",
+        description: "Reading character data from PNG file...",
+      });
+
+      const cardData: CharacterCardData = await parseCharacterCard(file);
+
+      // Map character card data to our form structure
+      const mappedData = {
+        name: cardData.name || '',
+        avatar: '', // We'll keep the current avatar handling for now
+        title: cardData.title || '',
+        description: cardData.description || '',
+        personality: {
+          core_personality: cardData.personality || cardData.description || '',
+          tags: [], // Tags will be handled separately if needed
+          knowledge_base: cardData.world_scenario || cardData.scenario || '',
+          scenario_definition: cardData.scenario || ''
+        },
+        dialogue: {
+          greeting: cardData.first_mes || '',
+          example_dialogues: parseExampleDialogues(cardData.mes_example || '')
+        },
+        addons: {
+          dynamicWorldInfo: false,
+          enhancedMemory: false,
+          moodTracking: false,
+          clothingInventory: false,
+          locationTracking: false,
+          timeWeather: false,
+          relationshipStatus: false,
+          chainOfThought: false,
+          fewShotExamples: false
+        },
+        visibility: characterData.visibility, // Keep current visibility setting
+        nsfw_enabled: characterData.nsfw_enabled // Keep current NSFW setting
+      };
+
+      // Update the character data
+      setCharacterData(mappedData);
+
+      toast({
+        title: "Character Card Loaded!",
+        description: `Successfully imported character "${cardData.name || 'Unknown'}".`,
+      });
+
+    } catch (error) {
+      console.error('Error parsing character card:', error);
+      toast({
+        title: "Parse Error",
+        description: error instanceof Error ? error.message : "Failed to parse character card.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingCard(false);
+    }
+  };
+
+  // Helper function to parse example dialogues from character card format
+  const parseExampleDialogues = (mesExample: string) => {
+    if (!mesExample) return [];
+    
+    try {
+      // Character cards often have dialogue in format like:
+      // {{user}}: Hello
+      // {{char}}: Hi there!
+      const lines = mesExample.split('\n').filter(line => line.trim());
+      const dialogues = [];
+      
+      for (let i = 0; i < lines.length; i += 2) {
+        const userLine = lines[i];
+        const charLine = lines[i + 1];
+        
+        if (userLine && charLine) {
+          const user = userLine.replace(/{{user}}:\s*/, '').trim();
+          const character = charLine.replace(/{{char}}:\s*/, '').trim();
+          
+          if (user && character) {
+            dialogues.push({ user, character });
+          }
+        }
+      }
+      
+      return dialogues;
+    } catch (error) {
+      console.error('Error parsing example dialogues:', error);
+      return [];
+    }
+  };
+
   const steps = [
     { id: 1, title: 'Foundation', description: 'Basic character info' },
     { id: 2, title: 'Personality', description: 'Traits and behavior' },
@@ -255,6 +353,8 @@ const CharacterCreator = () => {
             data={characterData}
             onUpdate={handleDataUpdate}
             onNext={handleNext}
+            onFileChange={handleFileChange}
+            isParsingCard={isParsingCard}
           />
         );
       case 2:
