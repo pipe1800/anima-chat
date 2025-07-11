@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserSubscription } from '@/lib/supabase-queries';
 
 interface AddonData {
   dynamicWorldInfo: boolean;
@@ -95,6 +97,7 @@ const AddonCard: React.FC<AddonCardProps> = ({
 };
 
 const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevious }) => {
+  const { user } = useAuth();
   const [addons, setAddons] = useState<AddonData>({
     dynamicWorldInfo: false,
     enhancedMemory: false,
@@ -107,6 +110,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
     fewShotExamples: false,
     ...data.addons
   });
+  const [userPlan, setUserPlan] = useState<string>('Guest Pass');
 
   // Calculate if any add-ons are currently enabled
   const hasActiveAddons = () => {
@@ -114,6 +118,26 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   };
 
   const [addonsEnabled, setAddonsEnabled] = useState<boolean>(hasActiveAddons());
+
+  // Fetch user subscription to check if they're on Guest Pass
+  useEffect(() => {
+    const fetchUserSubscription = async () => {
+      if (!user) {
+        setUserPlan('Guest Pass');
+        return;
+      }
+      
+      try {
+        const { data: subscription } = await getUserSubscription(user.id);
+        setUserPlan(subscription?.plan?.name || 'Guest Pass');
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        setUserPlan('Guest Pass');
+      }
+    };
+
+    fetchUserSubscription();
+  }, [user]);
 
   // Keep master switch in sync when component loads or addons change
   useEffect(() => {
@@ -138,6 +162,11 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   };
 
   const handleMasterToggle = (value: boolean) => {
+    // Don't allow enabling if user is on Guest Pass
+    if (value && userPlan === 'Guest Pass') {
+      return;
+    }
+    
     setAddonsEnabled(value);
     
     // If turning off master switch, disable all addons
@@ -188,11 +217,17 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   <p className="text-sm text-gray-400">
                     Master control for all character enhancement features
                   </p>
+                  {userPlan === 'Guest Pass' && (
+                    <p className="text-sm text-orange-500 mt-2">
+                      ⚠️ This feature is for paid subscribers only. Upgrade your plan to unlock character add-ons.
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0">
                   <Switch
                     checked={addonsEnabled}
                     onCheckedChange={handleMasterToggle}
+                    disabled={userPlan === 'Guest Pass'}
                     className="scale-125"
                   />
                 </div>
@@ -352,35 +387,27 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
           </Card>
         </div>
 
-        {/* Sticky Footer */}
-        <div className="fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-gray-700 p-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={onPrevious}
-                className="bg-transparent border-gray-600 text-white hover:bg-gray-800"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm text-gray-400">Total Credit Cost Increase</p>
-              <p className="text-xl font-bold text-[#FF7A00]">+{calculateTotalCost()}%</p>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={onNext}
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
+        {/* Navigation */}
+        <div className="flex justify-between mt-12 pt-6 border-t border-gray-700/50">
+          <Button
+            onClick={onPrevious}
+            variant="outline"
+            className="border-gray-600 text-gray-300 hover:bg-gray-800/50 px-8 py-3 rounded-xl"
+          >
+            ← Previous
+          </Button>
+          
+          <div className="text-center">
+            <p className="text-sm text-gray-400">Total Credit Cost Increase</p>
+            <p className="text-xl font-bold text-[#FF7A00]">+{calculateTotalCost()}%</p>
           </div>
+          
+          <Button
+            onClick={onNext}
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg"
+          >
+            Next: Finalize →
+          </Button>
         </div>
       </div>
     </div>

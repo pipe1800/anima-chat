@@ -130,8 +130,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                 rows={8}
                 className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-6"
               />
-              <div className="absolute bottom-4 right-4 text-xs text-gray-400">
-                {corePersonality.length} characters
+              <div className={`absolute bottom-4 right-4 text-sm font-medium ${
+                corePersonality.length >= 50 ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {corePersonality.length}/50
               </div>
             </div>
             <p className="text-sm text-gray-500">
