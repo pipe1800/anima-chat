@@ -614,6 +614,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_character_addons: {
+        Row: {
+          addon_settings: Json
+          character_id: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          addon_settings?: Json
+          character_id: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          addon_settings?: Json
+          character_id?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_character_addons_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_onboarding_progress: {
         Row: {
           completed_at: string | null

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
-import AddonsStep from '@/components/character-creator/AddonsStep';
+
 import FinalizeStep from '@/components/character-creator/FinalizeStep';
 import CreationStepsHeader from '@/components/character-creator/CreationStepsHeader';
 import { createCharacter, updateCharacter, type CharacterCreationData } from '@/lib/character-operations';
@@ -290,8 +290,7 @@ const CharacterCreator = () => {
     { id: 1, title: 'Foundation', description: 'Basic character info' },
     { id: 2, title: 'Personality', description: 'Traits and behavior' },
     { id: 3, title: 'Dialogue', description: 'Voice and responses' },
-    { id: 4, title: 'Addons', description: 'Enhanced features' },
-    { id: 5, title: 'Finalize', description: isEditing ? 'Review and update' : 'Review and create' }
+    { id: 4, title: 'Finalize', description: isEditing ? 'Review and update' : 'Review and create' }
   ];
 
   const handleStepChange = (stepId: number) => {
@@ -401,15 +400,6 @@ const CharacterCreator = () => {
           />
         );
       case 4:
-        return (
-          <AddonsStep
-            data={characterData}
-            onUpdate={handleDataUpdate}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
-          />
-        );
-      case 5:
         return (
           <FinalizeStep
             data={characterData}

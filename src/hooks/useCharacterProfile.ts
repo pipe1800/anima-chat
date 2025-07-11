@@ -22,6 +22,7 @@ interface CharacterProfileData {
   };
   actual_chat_count?: number;
   likes_count?: number;
+  tags?: Array<{ id: number; name: string }>;
 }
 
 export const useCharacterProfile = (characterId: string | undefined) => {
@@ -35,7 +36,8 @@ export const useCharacterProfile = (characterId: string | undefined) => {
         .from('characters')
         .select(`
           *,
-          character_definitions(*)
+          character_definitions(*),
+          character_tags(tag_id, tags(id, name))
         `)
         .eq('id', characterId)
         .eq('visibility', 'public')
@@ -66,7 +68,8 @@ export const useCharacterProfile = (characterId: string | undefined) => {
         ...characterData,
         creator: creatorResult.data || { username: 'Unknown', avatar_url: null },
         actual_chat_count: chatCountResult.count || 0,
-        likes_count: likesCountResult.count || 0
+        likes_count: likesCountResult.count || 0,
+        tags: characterData.character_tags?.map((ct: any) => ct.tags).filter(Boolean) || []
       };
     },
     enabled: !!characterId,
