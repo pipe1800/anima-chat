@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { parseExampleDialogue } from '@/lib/utils/characterCard';
 
 export interface CharacterCreationData {
   name: string;
@@ -62,10 +63,22 @@ export const createCharacter = async (characterData: CharacterCreationData) => {
       throw new Error('Failed to create character');
     }
 
+    // Process example dialogues to ensure they're in the correct format
+    const processedDialogue = {
+      ...characterData.dialogue,
+      example_dialogues: characterData.dialogue.example_dialogues.map(dialogue => {
+        // If the dialogue is a string, parse it; otherwise, keep it as is
+        if (typeof dialogue === 'string') {
+          return parseExampleDialogue(dialogue);
+        }
+        return dialogue;
+      }).flat() // Flatten in case parseExampleDialogue returns an array
+    };
+
     // Create character definition
     const definition: any = {
       personality: characterData.personality,
-      dialogue: characterData.dialogue,
+      dialogue: processedDialogue,
       title: characterData.title
     };
 
@@ -153,10 +166,22 @@ export const updateCharacter = async (characterId: string, characterData: Charac
       throw new Error('Failed to update character');
     }
 
+    // Process example dialogues to ensure they're in the correct format
+    const processedDialogue = {
+      ...characterData.dialogue,
+      example_dialogues: characterData.dialogue.example_dialogues.map(dialogue => {
+        // If the dialogue is a string, parse it; otherwise, keep it as is
+        if (typeof dialogue === 'string') {
+          return parseExampleDialogue(dialogue);
+        }
+        return dialogue;
+      }).flat() // Flatten in case parseExampleDialogue returns an array
+    };
+
     // Update character definition
     const definition: any = {
       personality: characterData.personality,
-      dialogue: characterData.dialogue,
+      dialogue: processedDialogue,
       title: characterData.title
     };
 
