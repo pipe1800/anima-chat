@@ -302,9 +302,13 @@ export const BillingSettings = () => {
                       <div>
                         <p className="font-medium mb-2">If you cancel your membership, you will lose access to the following benefits:</p>
                         <div className="bg-gray-800/50 rounded-lg p-3">
-                          {userSubscription.plans.features?.features && Array.isArray(userSubscription.plans.features.features) ? (
+                          {userSubscription.plans.features && 
+                           typeof userSubscription.plans.features === 'object' && 
+                           userSubscription.plans.features !== null &&
+                           'features' in userSubscription.plans.features &&
+                           Array.isArray((userSubscription.plans.features as any).features) ? (
                             <ul className="space-y-1">
-                              {userSubscription.plans.features.features.map((feature: string, idx: number) => (
+                              {((userSubscription.plans.features as any).features as string[]).map((feature: string, idx: number) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-red-400 mt-1">•</span>
                                   <span className="text-sm">{feature}</span>
