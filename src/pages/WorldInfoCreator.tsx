@@ -10,7 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen, Image, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import {
@@ -29,9 +32,11 @@ import {
   type WorldInfoCreationData,
   type WorldInfoEntryData
 } from '@/lib/world-info-operations';
+import { uploadAvatar } from '@/lib/avatar-upload';
 
 type WorldInfo = Tables<'world_infos'> & {
   entries?: Tables<'world_info_entries'>[];
+  avatar_url?: string;
 };
 
 type WorldInfoEntry = Tables<'world_info_entries'>;
@@ -81,6 +86,7 @@ const WorldInfoCreator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const [worldInfos, setWorldInfos] = useState<WorldInfo[]>([]);
   const [selectedWorldInfo, setSelectedWorldInfo] = useState<WorldInfo | null>(null);
@@ -89,10 +95,12 @@ const WorldInfoCreator = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   // Form states
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editVisibility, setEditVisibility] = useState<'public' | 'unlisted' | 'private'>('private');
   
@@ -150,6 +158,16 @@ const WorldInfoCreator = () => {
     }
   };
 
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setEditAvatarFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setEditAvatarUrl(previewUrl);
+    }
+  };
+
   const handleCreateNew = async () => {
     if (!editName.trim()) {
       toast({
@@ -162,12 +180,25 @@ const WorldInfoCreator = () => {
 
     try {
       setSaving(true);
+      
+      let avatarUrl = '';
+      if (editAvatarFile && user) {
+        setUploadingAvatar(true);
+        const uploadedUrl = await uploadAvatar(editAvatarFile, user.id);
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
+        setUploadingAvatar(false);
+      }
+
       const newWorldInfo = await createWorldInfo({
         name: editName,
         short_description: editDescription,
-        avatar_url: editAvatarUrl,
         visibility: editVisibility
       });
+      
+      // Add avatar_url to local state for display
+      const newWorldInfoWithAvatar = { ...newWorldInfo, avatar_url: avatarUrl };
       
       // Add selected tags
       for (const tagId of selectedTags) {
@@ -176,12 +207,14 @@ const WorldInfoCreator = () => {
       
       await fetchWorldInfos();
       const detailedInfo = await getWorldInfoWithEntries(newWorldInfo.id);
-      setSelectedWorldInfo(detailedInfo);
+      const detailedInfoWithAvatar = { ...detailedInfo, avatar_url: avatarUrl };
+      setSelectedWorldInfo(detailedInfoWithAvatar);
       setIsCreating(false);
       
       // Reset form
       setEditName('');
       setEditDescription('');
+      setEditAvatarFile(null);
       setEditAvatarUrl('');
       setEditVisibility('private');
       setSelectedTags([]);
@@ -199,6 +232,7 @@ const WorldInfoCreator = () => {
       });
     } finally {
       setSaving(false);
+      setUploadingAvatar(false);
     }
   };
 
@@ -224,16 +258,27 @@ const WorldInfoCreator = () => {
 
     try {
       setSaving(true);
+      
+      let avatarUrl = selectedWorldInfo.avatar_url || '';
+      if (editAvatarFile && user) {
+        setUploadingAvatar(true);
+        const uploadedUrl = await uploadAvatar(editAvatarFile, user.id);
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
+        setUploadingAvatar(false);
+      }
+
       await updateWorldInfo(selectedWorldInfo.id, {
         name: editName,
         short_description: editDescription,
-        avatar_url: editAvatarUrl,
         visibility: editVisibility
       });
       
       await fetchWorldInfos();
       const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-      setSelectedWorldInfo(updatedInfo);
+      const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: avatarUrl };
+      setSelectedWorldInfo(updatedInfoWithAvatar);
       setIsEditing(false);
       
       toast({
@@ -249,14 +294,11 @@ const WorldInfoCreator = () => {
       });
     } finally {
       setSaving(false);
+      setUploadingAvatar(false);
     }
   };
 
   const handleDeleteWorldInfo = async (worldInfoId: string) => {
-    if (!confirm('Are you sure you want to delete this World Info? This action cannot be undone.')) {
-      return;
-    }
-
     try {
       await deleteWorldInfo(worldInfoId);
       await fetchWorldInfos();
@@ -317,7 +359,8 @@ const WorldInfoCreator = () => {
       });
       
       const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-      setSelectedWorldInfo(updatedInfo);
+      const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
+      setSelectedWorldInfo(updatedInfoWithAvatar);
       
       // Reset form
       setNewEntryKeywords('');
@@ -349,7 +392,8 @@ const WorldInfoCreator = () => {
       
       if (selectedWorldInfo) {
         const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-        setSelectedWorldInfo(updatedInfo);
+        const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
+        setSelectedWorldInfo(updatedInfoWithAvatar);
       }
       
       setEditingEntryId(null);
@@ -371,14 +415,13 @@ const WorldInfoCreator = () => {
   };
 
   const handleDeleteEntry = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this entry?')) return;
-
     try {
       await deleteWorldInfoEntry(entryId);
       
       if (selectedWorldInfo) {
         const updatedInfo = await getWorldInfoWithEntries(selectedWorldInfo.id);
-        setSelectedWorldInfo(updatedInfo);
+        const updatedInfoWithAvatar = { ...updatedInfo, avatar_url: selectedWorldInfo.avatar_url };
+        setSelectedWorldInfo(updatedInfoWithAvatar);
       }
       
       toast({
@@ -477,6 +520,7 @@ const WorldInfoCreator = () => {
     setEditName(worldInfo.name);
     setEditDescription(worldInfo.short_description || '');
     setEditAvatarUrl(worldInfo.avatar_url || '');
+    setEditAvatarFile(null);
     setEditVisibility(worldInfo.visibility as 'public' | 'unlisted' | 'private');
     setIsEditing(true);
   };
@@ -520,181 +564,227 @@ const WorldInfoCreator = () => {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex-1 ml-64 p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">World Info Creator</h1>
-              <p className="text-muted-foreground mt-2">Create and manage lore entries for your characters</p>
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header Section */}
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Lorebook Studio
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Create rich, immersive worlds through detailed lore entries. Build the foundation for unforgettable storytelling experiences.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={() => setIsCreating(true)}
+                  disabled={isCreating}
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Lorebook
+                </Button>
+                <Dialog open={importing} onOpenChange={setImporting}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" onClick={handleImportFile}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Lorebook
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Importing Lorebook</DialogTitle>
+                      <DialogDescription>
+                        Please wait while we process your lorebook file. This may take a few moments for larger files.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - World Info List */}
-              <div className="lg:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      My World Infos
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* Left Column - World Info Grid */}
+              <div className="lg:col-span-1 space-y-6">
+                {/* Create New Form */}
+                {isCreating && (
+                  <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-primary">
+                        <BookOpen className="w-5 h-5" />
+                        New Lorebook
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="w-20 h-20 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                            <AvatarImage src={editAvatarUrl} />
+                            <AvatarFallback className="bg-primary/10">
+                              <Image className="w-8 h-8 text-primary/50" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
+                            onClick={() => avatarInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                          >
+                            {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarSelect}
+                          className="hidden"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="new-name">Name</Label>
+                        <Input
+                          id="new-name"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Enter lorebook name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="new-description">Description</Label>
+                        <Textarea
+                          id="new-description"
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          placeholder="Brief description of this world"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="new-visibility">Visibility</Label>
+                        <Select value={editVisibility} onValueChange={(value: 'public' | 'unlisted' | 'private') => setEditVisibility(value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="private">Private</SelectItem>
+                            <SelectItem value="unlisted">Unlisted</SelectItem>
+                            <SelectItem value="public">Public</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <TagSection
+                        selectedTags={selectedTags}
+                        availableTags={availableTags}
+                        onTagToggle={(tagId) => {
+                          if (selectedTags.includes(tagId)) {
+                            setSelectedTags(prev => prev.filter(id => id !== tagId));
+                          } else {
+                            setSelectedTags(prev => [...prev, tagId]);
+                          }
+                        }}
+                      />
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => setIsCreating(true)}
-                          disabled={isCreating}
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Create New
+                        <Button onClick={handleCreateNew} disabled={saving || uploadingAvatar} className="flex-1">
+                          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                          {saving ? 'Creating...' : 'Create'}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleImportFile}
-                          disabled={importing}
-                        >
-                          <Upload className="w-4 h-4 mr-1" />
-                          {importing ? 'Importing...' : 'Import'}
+                        <Button variant="outline" onClick={() => {
+                          setIsCreating(false);
+                          setSelectedTags([]);
+                          setEditAvatarFile(null);
+                          setEditAvatarUrl('');
+                        }}>
+                          Cancel
                         </Button>
                       </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Create New Form */}
-                    {isCreating && (
-                      <div className="mb-4 p-4 border rounded-lg bg-muted/50">
-                        <h3 className="font-semibold mb-3 flex items-center gap-2">
-                          <BookOpen className="w-4 h-4" />
-                          Create New World Info
-                        </h3>
-                        <div className="space-y-3">
-                          <div>
-                            <Label htmlFor="new-name">Name</Label>
-                            <Input
-                              id="new-name"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              placeholder="Enter world info name"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="new-description">Description</Label>
-                            <Textarea
-                              id="new-description"
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              placeholder="Enter description"
-                              rows={3}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="new-avatar">Avatar URL</Label>
-                            <Input
-                              id="new-avatar"
-                              value={editAvatarUrl}
-                              onChange={(e) => setEditAvatarUrl(e.target.value)}
-                              placeholder="https://example.com/avatar.jpg"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="new-visibility">Visibility</Label>
-                            <Select value={editVisibility} onValueChange={(value: 'public' | 'unlisted' | 'private') => setEditVisibility(value)}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="private">Private</SelectItem>
-                                <SelectItem value="unlisted">Unlisted</SelectItem>
-                                <SelectItem value="public">Public</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <TagSection
-                            selectedTags={selectedTags}
-                            availableTags={availableTags}
-                            onTagToggle={(tagId) => {
-                              if (selectedTags.includes(tagId)) {
-                                setSelectedTags(prev => prev.filter(id => id !== tagId));
-                              } else {
-                                setSelectedTags(prev => [...prev, tagId]);
-                              }
-                            }}
-                          />
-                          <div className="flex gap-2">
-                            <Button onClick={handleCreateNew} disabled={saving}>
-                              {saving ? 'Creating...' : 'Create'}
-                            </Button>
-                            <Button variant="outline" onClick={() => {
-                              setIsCreating(false);
-                              setSelectedTags([]);
-                            }}>
-                              Cancel
-                            </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* World Info Grid */}
+                <div className="grid gap-4">
+                  {worldInfos.map((worldInfo) => (
+                    <Card
+                      key={worldInfo.id}
+                      className={`cursor-pointer transition-all hover:shadow-lg ${
+                        selectedWorldInfo?.id === worldInfo.id ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-1 hover:ring-primary/50'
+                      }`}
+                      onClick={() => handleSelectWorldInfo(worldInfo)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-12 h-12 flex-shrink-0">
+                            <AvatarImage src={worldInfo.avatar_url} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                              <BookOpen className="w-6 h-6 text-primary" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold truncate">{worldInfo.name}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {worldInfo.short_description || 'No description'}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline" className="text-xs">
+                                {worldInfo.visibility}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                {worldInfo.entries?.length || 0} entries
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* World Info List */}
-                    <div className="space-y-2">
-                      {worldInfos.map((worldInfo) => (
-                        <div
-                          key={worldInfo.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
-                            selectedWorldInfo?.id === worldInfo.id ? 'bg-muted border-primary' : ''
-                          }`}
-                          onClick={() => handleSelectWorldInfo(worldInfo)}
-                        >
-                          <div className="flex items-center gap-3">
-                            {worldInfo.avatar_url ? (
-                              <img 
-                                src={worldInfo.avatar_url} 
-                                alt={worldInfo.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                                <BookOpen className="w-5 h-5 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium truncate">{worldInfo.name}</h3>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {worldInfo.short_description || 'No description'}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {worldInfo.visibility}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
+                        <div className="flex justify-end gap-1 mt-3">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(worldInfo);
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startEditing(worldInfo);
-                                }}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteWorldInfo(worldInfo.id);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
-                            </div>
-                          </div>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Lorebook</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{worldInfo.name}"? This action cannot be undone and will permanently remove all entries.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteWorldInfo(worldInfo.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
 
               {/* Right Column - Editor */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 {selectedWorldInfo ? (
                   <>
                     {/* Basic Information Card */}
@@ -702,12 +792,31 @@ const WorldInfoCreator = () => {
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <User className="w-5 h-5" />
-                          Basic Information
+                          Lorebook Details
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-6">
                         {isEditing ? (
                           <>
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="relative">
+                                <Avatar className="w-24 h-24 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                                  <AvatarImage src={editAvatarUrl} />
+                                  <AvatarFallback className="bg-primary/10">
+                                    <Image className="w-8 h-8 text-primary/50" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
+                                  onClick={() => avatarInputRef.current?.click()}
+                                  disabled={uploadingAvatar}
+                                >
+                                  {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
+                                </Button>
+                              </div>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <Label htmlFor="edit-name">Name</Label>
@@ -715,7 +824,7 @@ const WorldInfoCreator = () => {
                                   id="edit-name"
                                   value={editName}
                                   onChange={(e) => setEditName(e.target.value)}
-                                  placeholder="World Info name"
+                                  placeholder="Lorebook name"
                                 />
                               </div>
                               <div>
@@ -733,26 +842,18 @@ const WorldInfoCreator = () => {
                               </div>
                             </div>
                             <div>
-                              <Label htmlFor="edit-avatar">Avatar URL</Label>
-                              <Input
-                                id="edit-avatar"
-                                value={editAvatarUrl}
-                                onChange={(e) => setEditAvatarUrl(e.target.value)}
-                                placeholder="https://example.com/avatar.jpg"
-                              />
-                            </div>
-                            <div>
                               <Label htmlFor="edit-description">Description</Label>
                               <Textarea
                                 id="edit-description"
                                 value={editDescription}
                                 onChange={(e) => setEditDescription(e.target.value)}
-                                placeholder="World Info description"
+                                placeholder="Brief description of this world"
                                 rows={3}
                               />
                             </div>
                             <div className="flex gap-2">
-                              <Button onClick={handleUpdateWorldInfo} disabled={saving}>
+                              <Button onClick={handleUpdateWorldInfo} disabled={saving || uploadingAvatar}>
+                                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                                 {saving ? 'Saving...' : 'Save Changes'}
                               </Button>
                               <Button variant="outline" onClick={() => setIsEditing(false)}>
@@ -762,33 +863,28 @@ const WorldInfoCreator = () => {
                           </>
                         ) : (
                           <>
-                            <div className="flex items-start gap-4">
-                              {selectedWorldInfo.avatar_url ? (
-                                <img 
-                                  src={selectedWorldInfo.avatar_url} 
-                                  alt={selectedWorldInfo.name}
-                                  className="w-16 h-16 rounded-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                                  <BookOpen className="w-8 h-8 text-muted-foreground" />
-                                </div>
-                              )}
+                            <div className="flex items-start gap-6">
+                              <Avatar className="w-20 h-20 flex-shrink-0">
+                                <AvatarImage src={selectedWorldInfo.avatar_url} />
+                                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                                  <BookOpen className="w-10 h-10 text-primary" />
+                                </AvatarFallback>
+                              </Avatar>
                               <div className="flex-1">
-                                <h2 className="text-2xl font-bold">{selectedWorldInfo.name}</h2>
-                                <p className="text-muted-foreground mt-1">
+                                <h2 className="text-3xl font-bold">{selectedWorldInfo.name}</h2>
+                                <p className="text-muted-foreground mt-2 text-lg">
                                   {selectedWorldInfo.short_description || 'No description provided'}
                                 </p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline">
+                                <div className="flex items-center gap-3 mt-4">
+                                  <Badge variant="outline" className="px-3 py-1">
                                     {selectedWorldInfo.visibility}
                                   </Badge>
-                                  <Badge variant="outline">
+                                  <Badge variant="secondary" className="px-3 py-1">
                                     {selectedWorldInfo.entries?.length || 0} entries
                                   </Badge>
                                 </div>
                               </div>
-                              <Button onClick={() => startEditing(selectedWorldInfo)}>
+                              <Button onClick={() => startEditing(selectedWorldInfo)} className="flex-shrink-0">
                                 <Edit2 className="w-4 h-4 mr-2" />
                                 Edit
                               </Button>
@@ -810,7 +906,7 @@ const WorldInfoCreator = () => {
                         <CardTitle className="flex items-center justify-between">
                           <span className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5" />
-                            Lorebook Entries
+                            Lore Entries
                           </span>
                           <div className="flex items-center gap-2">
                             <div className="relative">
@@ -825,90 +921,101 @@ const WorldInfoCreator = () => {
                           </div>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-6">
                         {/* Add New Entry Form */}
-                        <div className="p-4 border rounded-lg bg-muted/50">
-                          <h4 className="font-semibold mb-3">Add New Entry</h4>
-                          <div className="space-y-3">
-                            <div>
-                              <Label htmlFor="new-entry-keywords">Keywords (comma-separated)</Label>
-                              <Input
-                                id="new-entry-keywords"
-                                value={newEntryKeywords}
-                                onChange={(e) => setNewEntryKeywords(e.target.value)}
-                                placeholder="character name, location, event"
-                              />
+                        <Card className="bg-muted/50">
+                          <CardContent className="p-4">
+                            <h4 className="font-semibold mb-4 flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              Add New Entry
+                            </h4>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="new-entry-keywords">Keywords (comma-separated)</Label>
+                                <Input
+                                  id="new-entry-keywords"
+                                  value={newEntryKeywords}
+                                  onChange={(e) => setNewEntryKeywords(e.target.value)}
+                                  placeholder="character name, location, event"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="new-entry-text">Entry Text</Label>
+                                <Textarea
+                                  id="new-entry-text"
+                                  value={newEntryText}
+                                  onChange={(e) => setNewEntryText(e.target.value)}
+                                  placeholder="Describe the lore or information"
+                                  rows={4}
+                                />
+                              </div>
+                              <Button 
+                                onClick={handleAddEntry} 
+                                disabled={!newEntryKeywords.trim() || !newEntryText.trim()}
+                                className="w-full"
+                              >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Entry
+                              </Button>
                             </div>
-                            <div>
-                              <Label htmlFor="new-entry-text">Entry Text</Label>
-                              <Textarea
-                                id="new-entry-text"
-                                value={newEntryText}
-                                onChange={(e) => setNewEntryText(e.target.value)}
-                                placeholder="Describe the lore or information"
-                                rows={4}
-                              />
-                            </div>
-                            <Button onClick={handleAddEntry} disabled={!newEntryKeywords.trim() || !newEntryText.trim()}>
-                              <Plus className="w-4 h-4 mr-2" />
-                              Add Entry
-                            </Button>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
 
                         {/* Entries List */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {filteredEntries.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                              {entriesSearchQuery ? 'No entries match your search' : 'No entries yet. Add your first entry above.'}
+                            <div className="text-center py-12 text-muted-foreground">
+                              <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                              <h3 className="text-lg font-medium mb-2">No entries found</h3>
+                              <p>{entriesSearchQuery ? 'No entries match your search' : 'Add your first lore entry above to get started.'}</p>
                             </div>
                           ) : (
                             filteredEntries.map((entry) => (
-                              <div key={entry.id} className="p-4 border rounded-lg bg-background">
-                                {editingEntryId === entry.id ? (
-                                  <div className="space-y-3">
-                                    <div>
-                                      <Label htmlFor="edit-entry-keywords">Keywords</Label>
-                                      <Input
-                                        id="edit-entry-keywords"
-                                        value={editingEntryKeywords}
-                                        onChange={(e) => setEditingEntryKeywords(e.target.value)}
-                                      />
+                              <Card key={entry.id} className="border-l-4 border-l-primary/30">
+                                <CardContent className="p-4">
+                                  {editingEntryId === entry.id ? (
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label htmlFor="edit-entry-keywords">Keywords</Label>
+                                        <Input
+                                          id="edit-entry-keywords"
+                                          value={editingEntryKeywords}
+                                          onChange={(e) => setEditingEntryKeywords(e.target.value)}
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="edit-entry-text">Entry Text</Label>
+                                        <Textarea
+                                          id="edit-entry-text"
+                                          value={editingEntryText}
+                                          onChange={(e) => setEditingEntryText(e.target.value)}
+                                          rows={4}
+                                        />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button onClick={handleUpdateEntry} size="sm">
+                                          <Save className="w-4 h-4 mr-1" />
+                                          Save
+                                        </Button>
+                                        <Button onClick={cancelEditingEntry} variant="outline" size="sm">
+                                          <X className="w-4 h-4 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <Label htmlFor="edit-entry-text">Entry Text</Label>
-                                      <Textarea
-                                        id="edit-entry-text"
-                                        value={editingEntryText}
-                                        onChange={(e) => setEditingEntryText(e.target.value)}
-                                        rows={4}
-                                      />
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button onClick={handleUpdateEntry} size="sm">
-                                        <Save className="w-4 h-4 mr-1" />
-                                        Save
-                                      </Button>
-                                      <Button onClick={cancelEditingEntry} variant="outline" size="sm">
-                                        <X className="w-4 h-4 mr-1" />
-                                        Cancel
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <>
+                                  ) : (
                                     <div className="flex items-start justify-between gap-4">
-                                      <div className="flex-1">
-                                        <div className="flex flex-wrap gap-1 mb-2">
+                                      <div className="flex-1 space-y-3">
+                                        <div className="flex flex-wrap gap-2">
                                           {entry.keywords.map((keyword, idx) => (
-                                            <Badge key={idx} variant="secondary" className="text-xs">
+                                            <Badge key={idx} variant="secondary" className="text-xs font-medium">
                                               {keyword}
                                             </Badge>
                                           ))}
                                         </div>
-                                        <p className="text-sm leading-relaxed">{entry.entry_text}</p>
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{entry.entry_text}</p>
                                       </div>
-                                      <div className="flex gap-1">
+                                      <div className="flex gap-1 flex-shrink-0">
                                         <Button
                                           size="sm"
                                           variant="ghost"
@@ -916,18 +1023,35 @@ const WorldInfoCreator = () => {
                                         >
                                           <Edit2 className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleDeleteEntry(entry.id)}
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button size="sm" variant="ghost">
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Delete Entry</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to delete this lore entry? This action cannot be undone.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => handleDeleteEntry(entry.id)}
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                              >
+                                                Delete
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
                                       </div>
                                     </div>
-                                  </>
-                                )}
-                              </div>
+                                  )}
+                                </CardContent>
+                              </Card>
                             ))
                           )}
                         </div>
@@ -935,12 +1059,16 @@ const WorldInfoCreator = () => {
                     </Card>
                   </>
                 ) : (
-                  <Card>
-                    <CardContent className="py-16">
-                      <div className="text-center text-muted-foreground">
-                        <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <h3 className="text-lg font-medium mb-2">No World Info Selected</h3>
-                        <p>Select a World Info from the list on the left to start editing, or create a new one.</p>
+                  <Card className="h-[600px]">
+                    <CardContent className="flex items-center justify-center h-full">
+                      <div className="text-center text-muted-foreground max-w-md">
+                        <BookOpen className="w-24 h-24 mx-auto mb-6 opacity-30" />
+                        <h3 className="text-2xl font-semibold mb-4">Welcome to Lorebook Studio</h3>
+                        <p className="text-lg mb-6">Select a lorebook from the sidebar to start editing, or create a new one to begin crafting your world's lore.</p>
+                        <Button onClick={() => setIsCreating(true)} className="bg-gradient-to-r from-primary to-primary/80">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Your First Lorebook
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -948,7 +1076,7 @@ const WorldInfoCreator = () => {
               </div>
             </div>
 
-            {/* Hidden file input for imports */}
+            {/* Hidden file inputs */}
             <input
               ref={fileInputRef}
               type="file"

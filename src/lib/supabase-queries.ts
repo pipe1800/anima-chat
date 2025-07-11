@@ -578,7 +578,6 @@ export const getPublicWorldInfos = async (limit = 20, offset = 0) => {
       id,
       name,
       short_description,
-      avatar_url,
       interaction_count,
       created_at,
       creator_id

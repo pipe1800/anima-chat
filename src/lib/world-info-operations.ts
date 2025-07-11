@@ -4,7 +4,6 @@ import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 export interface WorldInfoCreationData {
   name: string;
   short_description?: string;
-  avatar_url?: string;
   visibility: 'public' | 'unlisted' | 'private';
 }
 
@@ -22,7 +21,6 @@ export const createWorldInfo = async (worldInfoData: WorldInfoCreationData) => {
       creator_id: user.user.id,
       name: worldInfoData.name,
       short_description: worldInfoData.short_description,
-      avatar_url: worldInfoData.avatar_url,
       visibility: worldInfoData.visibility
     };
 
@@ -114,7 +112,6 @@ export const updateWorldInfo = async (worldInfoId: string, worldInfoData: WorldI
     const worldInfoUpdate: TablesUpdate<'world_infos'> = {
       name: worldInfoData.name,
       short_description: worldInfoData.short_description,
-      avatar_url: worldInfoData.avatar_url,
       visibility: worldInfoData.visibility
     };
 

@@ -17,7 +17,6 @@ type PublicWorldInfo = {
   id: string;
   name: string;
   short_description: string | null;
-  avatar_url: string | null;
   interaction_count: number;
   created_at: string;
   creator: any;

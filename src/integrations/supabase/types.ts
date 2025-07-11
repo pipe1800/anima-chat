@@ -794,7 +794,6 @@ export type Database = {
       }
       world_infos: {
         Row: {
-          avatar_url: string | null
           created_at: string
           creator_id: string
           id: string
@@ -805,7 +804,6 @@ export type Database = {
           visibility: string
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           creator_id: string
           id?: string
@@ -816,7 +814,6 @@ export type Database = {
           visibility?: string
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           creator_id?: string
           id?: string

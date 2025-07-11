@@ -349,9 +349,8 @@ export default function PublicWorldInfoProfile() {
         <div className="mb-8">
           <div className="flex items-start gap-6 mb-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={worldInfo.avatar_url || undefined} />
-              <AvatarFallback className="text-3xl">
-                {worldInfo.name.charAt(0).toUpperCase()}
+              <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/20 to-primary/10">
+                <BookOpen className="w-10 h-10 text-primary" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -488,10 +487,9 @@ export default function PublicWorldInfoProfile() {
                     className="block border rounded-lg p-4 hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={worldInfo.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {worldInfo.name.charAt(0).toUpperCase()}
+                       <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                          <BookOpen className="w-6 h-6 text-primary" />
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">

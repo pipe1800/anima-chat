@@ -16,7 +16,6 @@ interface WorldInfoCardProps {
     id: string;
     name: string;
     short_description: string | null;
-    avatar_url: string | null;
     interaction_count: number;
     created_at: string;
     creator: {
@@ -49,10 +48,9 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
       <CardContent className="p-0">
         {/* World Info Avatar Section - Top Half */}
         <div className="relative h-32 bg-gradient-to-br from-[#FF7A00]/10 to-[#FF7A00]/5 flex items-center justify-center">
-          <Avatar className="w-24 h-24 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
-            <AvatarImage src={worldInfo.avatar_url || "/placeholder.svg"} alt={worldInfo.name} />
+           <Avatar className="w-24 h-24 ring-4 ring-[#FF7A00]/30 group-hover:ring-[#FF7A00]/60 transition-all duration-300">
             <AvatarFallback className="bg-gradient-to-br from-[#FF7A00] to-[#FF7A00]/70 text-white font-bold text-2xl">
-              {worldInfo.name.charAt(0).toUpperCase()}
+              <BookOpen className="w-8 h-8" />
             </AvatarFallback>
           </Avatar>
         </div>
