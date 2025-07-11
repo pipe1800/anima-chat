@@ -44,7 +44,7 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
 
   return (
     <Card
-      className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group overflow-hidden hover:scale-105 hover:-translate-y-2 transform"
+      className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF7A00]/20 group overflow-hidden hover:scale-105 hover:-translate-y-2 transform h-[420px]"
       style={{
         animation: `fade-in 0.6s ease-out ${index * 0.1}s both`
       }}
@@ -60,35 +60,39 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
         </div>
 
         {/* World Info Details - Bottom Half */}
-        <div className="p-5 space-y-4 relative">
+        <div className="p-5 relative flex flex-col h-[288px]">
           {/* Name */}
-          <h3 className="text-white font-bold text-2xl group-hover:text-[#FF7A00] transition-colors line-clamp-1">
+          <h3 className="text-white font-bold text-2xl group-hover:text-[#FF7A00] transition-colors line-clamp-1 mb-3">
             {worldInfo.name}
           </h3>
 
           {/* Description */}
-          <p className="text-gray-400 text-lg line-clamp-2 leading-relaxed min-h-[3.5rem]">
+          <p className="text-gray-400 text-lg line-clamp-2 leading-relaxed mb-4 flex-shrink-0" style={{ height: '3.5rem' }}>
             {worldInfo.short_description || "No description available"}
           </p>
 
-          {/* Tags */}
-          {worldInfo.tags && worldInfo.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {worldInfo.tags.slice(0, 2).map((tag) => (
-                <Badge key={tag.id} variant="secondary" className="text-base">
-                  {tag.name}
-                </Badge>
-              ))}
-              {worldInfo.tags.length > 2 && (
-                <Badge variant="secondary" className="text-base">
-                  +{worldInfo.tags.length - 2}
-                </Badge>
-              )}
-            </div>
-          )}
+          {/* Tags - Fixed height container */}
+          <div className="mb-4 flex-shrink-0" style={{ height: '2rem' }}>
+            {worldInfo.tags && worldInfo.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {worldInfo.tags.slice(0, 2).map((tag) => (
+                  <Badge key={tag.id} variant="secondary" className="text-base">
+                    {tag.name}
+                  </Badge>
+                ))}
+                {worldInfo.tags.length > 2 && (
+                  <Badge variant="secondary" className="text-base">
+                    +{worldInfo.tags.length - 2}
+                  </Badge>
+                )}
+              </div>
+            ) : (
+              <div></div>
+            )}
+          </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-2 text-lg">
+          <div className="grid grid-cols-2 gap-2 text-lg mb-4 flex-shrink-0">
             <div className="flex items-center space-x-1 text-gray-300">
               <Heart className="w-5 h-5" />
               <span>{worldInfo.likes_count.toLocaleString()}</span>
@@ -107,13 +111,14 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
             </div>
           </div>
 
-          {/* Creator */}
-          <p className="text-gray-500 text-base">
-            by @{worldInfo.creator?.username || 'Unknown'}
-          </p>
+          {/* Bottom section with creator and button */}
+          <div className="flex-1 flex items-end justify-between">
+            {/* Creator */}
+            <p className="text-gray-500 text-base">
+              by @{worldInfo.creator?.username || 'Unknown'}
+            </p>
 
-          {/* Action Button - Bottom Right */}
-          <div className="absolute bottom-4 right-4">
+            {/* Action Button */}
             <Button
               onClick={(e) => {
                 e.stopPropagation();
