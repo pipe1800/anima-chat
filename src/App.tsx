@@ -2,7 +2,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import OnboardingGuard from "@/components/auth/OnboardingGuard";
@@ -35,117 +34,113 @@ import UpgradeVerification from "./pages/UpgradeVerification";
 import CreditPurchaseVerification from "./pages/CreditPurchaseVerification";
 import DialogueTestPage from "./pages/DialogueTestPage";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/characters" element={<PublicDiscover />} />
-            <Route path="/characters/:characterId" element={<PublicCharacterProfile />} />
-            <Route path="/world-info/:id" element={<PublicWorldInfoProfile />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/email-confirmation" element={<EmailConfirmation />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={
-              <OnboardingGuard>
-                <Onboarding />
-              </OnboardingGuard>
-            } />
-            <Route path="/dashboard" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Dashboard />
-              </OnboardingGuard>
-            } />
-            <Route path="/discover" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Discover />
-              </OnboardingGuard>
-            } />
-            <Route path="/chat" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Chat />
-              </OnboardingGuard>
-            } />
-            <Route path="/character-creator" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <CharacterCreator />
-              </OnboardingGuard>
-            } />
-            <Route path="/test-tags" element={<TestTags />} />
-            <Route path="/dialogue-test" element={<DialogueTestPage />} />
-            <Route path="/world-info-creator" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <WorldInfoCreator />
-              </OnboardingGuard>
-            } />
-            <Route path="/profile/*" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <UserProfile />
-              </OnboardingGuard>
-            } />
-            <Route path="/subscription" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Subscription />
-              </OnboardingGuard>
-            } />
-            <Route path="/settings" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Settings />
-              </OnboardingGuard>
-            } />
-            <Route path="/moderation" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <Moderation />
-              </OnboardingGuard>
-            } />
-            <Route path="/guidelines" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <CommunityGuidelines />
-              </OnboardingGuard>
-            } />
-            <Route path="/character/:characterId" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <CharacterProfile />
-              </OnboardingGuard>
-            } />
-            <Route path="/paypal-verification" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <PayPalVerification />
-              </OnboardingGuard>
-            } />
-            <Route path="/upgrade-verification" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <UpgradeVerification />
-              </OnboardingGuard>
-            } />
-            <Route path="/credit-purchase-verification" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <CreditPurchaseVerification />
-              </OnboardingGuard>
-            } />
-            <Route path="/finalize-upgrade" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <UpgradeVerification />
-              </OnboardingGuard>
-            } />
-            <Route path="/upgrade-callback" element={
-              <OnboardingGuard requireOnboardingComplete={true}>
-                <UpgradeCallback />
-              </OnboardingGuard>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <AuthProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/characters" element={<PublicDiscover />} />
+          <Route path="/characters/:characterId" element={<PublicCharacterProfile />} />
+          <Route path="/world-info/:id" element={<PublicWorldInfoProfile />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/email-confirmation" element={<EmailConfirmation />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/onboarding" element={
+            <OnboardingGuard>
+              <Onboarding />
+            </OnboardingGuard>
+          } />
+          <Route path="/dashboard" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Dashboard />
+            </OnboardingGuard>
+          } />
+          <Route path="/discover" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Discover />
+            </OnboardingGuard>
+          } />
+          <Route path="/chat" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Chat />
+            </OnboardingGuard>
+          } />
+          <Route path="/character-creator" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <CharacterCreator />
+            </OnboardingGuard>
+          } />
+          <Route path="/test-tags" element={<TestTags />} />
+          <Route path="/dialogue-test" element={<DialogueTestPage />} />
+          <Route path="/world-info-creator" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <WorldInfoCreator />
+            </OnboardingGuard>
+          } />
+          <Route path="/profile/*" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <UserProfile />
+            </OnboardingGuard>
+          } />
+          <Route path="/subscription" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Subscription />
+            </OnboardingGuard>
+          } />
+          <Route path="/settings" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Settings />
+            </OnboardingGuard>
+          } />
+          <Route path="/moderation" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Moderation />
+            </OnboardingGuard>
+          } />
+          <Route path="/guidelines" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <CommunityGuidelines />
+            </OnboardingGuard>
+          } />
+          <Route path="/character/:characterId" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <CharacterProfile />
+            </OnboardingGuard>
+          } />
+          <Route path="/paypal-verification" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <PayPalVerification />
+            </OnboardingGuard>
+          } />
+          <Route path="/upgrade-verification" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <UpgradeVerification />
+            </OnboardingGuard>
+          } />
+          <Route path="/credit-purchase-verification" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <CreditPurchaseVerification />
+            </OnboardingGuard>
+          } />
+          <Route path="/finalize-upgrade" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <UpgradeVerification />
+            </OnboardingGuard>
+          } />
+          <Route path="/upgrade-callback" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <UpgradeCallback />
+            </OnboardingGuard>
+          } />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </AuthProvider>
 );
 
 export default App;
