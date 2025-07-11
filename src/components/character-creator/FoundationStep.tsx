@@ -197,28 +197,52 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
               </Button>
               
               {/* PNG Character Card Upload */}
-              <Label htmlFor="character-card" className="text-gray-300 text-sm mb-2 block">
-                Upload PNG Character Card
-              </Label>
-              <Input
-                id="character-card"
-                type="file"
-                accept=".png"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file && onFileChange) {
-                    onFileChange(file);
-                  }
-                }}
-                disabled={isParsingCard}
-                className="bg-gray-800/50 border-gray-600 text-white file:bg-[#FF7A00] file:text-white file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-3 hover:file:bg-[#FF7A00]/80 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              {isParsingCard && (
-                <p className="text-xs text-gray-400 mt-1 flex items-center">
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Parsing character card...
-                </p>
-              )}
+              <div className="space-y-3">
+                <Label className="text-gray-300 text-sm font-medium">
+                  Upload PNG Character Card
+                </Label>
+                
+                {/* Hidden file input */}
+                <input
+                  type="file"
+                  accept=".png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && onFileChange) {
+                      onFileChange(file);
+                    }
+                  }}
+                  disabled={isParsingCard}
+                  className="hidden"
+                  ref={(input) => {
+                    if (input) {
+                      (window as any).characterCardInput = input;
+                    }
+                  }}
+                />
+                
+                {/* Styled button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = (window as any).characterCardInput;
+                    if (input) input.click();
+                  }}
+                  disabled={isParsingCard}
+                  className="border-primary/50 text-primary hover:bg-primary/10 w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Choose PNG File
+                </Button>
+                
+                {isParsingCard && (
+                  <p className="text-xs text-gray-400 mt-1 flex items-center">
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Parsing character card...
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
