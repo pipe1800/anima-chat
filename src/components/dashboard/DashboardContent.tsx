@@ -324,7 +324,7 @@ export function DashboardContent() {
                       formattedMyCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-92 group"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
@@ -400,7 +400,7 @@ export function DashboardContent() {
                       formattedFavoriteCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-92 group"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
