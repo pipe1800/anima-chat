@@ -698,11 +698,11 @@ const WorldInfoCreator = () => {
                          {worldInfos.map((worldInfo) => (
                            <Card
                              key={worldInfo.id}
-                             className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg relative"
+                             className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg relative h-[200px]"
                            >
-                             <CardContent className="p-6 pb-16">
+                             <CardContent className="p-6 h-full flex flex-col">
                                <div className="flex items-start justify-between mb-4">
-                                  <div className="flex-1">
+                                  <div className="flex-1 min-h-0">
                                     <div className="flex items-center gap-3 mb-2">
                                       <h3 className="text-white font-semibold text-xl line-clamp-1">
                                         {worldInfo.name}
@@ -717,7 +717,7 @@ const WorldInfoCreator = () => {
                                         {worldInfo.visibility}
                                       </span>
                                     </div>
-                                    <p className="text-gray-400 text-base line-clamp-2 mb-3">
+                                    <p className="text-gray-400 text-base line-clamp-2 mb-3" style={{ height: '3rem' }}>
                                       {worldInfo.short_description || "No description available"}
                                     </p>
                                     
@@ -734,21 +734,25 @@ const WorldInfoCreator = () => {
                                        <span>{worldInfo.interaction_count} uses</span>
                                      </div>
 
-                                    {/* Tags */}
-                                    {worldInfo.tags && worldInfo.tags.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mb-3">
-                                        {worldInfo.tags.slice(0, 3).map((tag) => (
-                                          <Badge key={tag.id} variant="secondary" className="text-sm">
-                                            {tag.name}
-                                          </Badge>
-                                        ))}
-                                        {worldInfo.tags.length > 3 && (
-                                          <Badge variant="secondary" className="text-sm">
-                                            +{worldInfo.tags.length - 3} more
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
+                                    {/* Tags - Fixed height container */}
+                                    <div className="mb-3" style={{ height: '2rem' }}>
+                                      {worldInfo.tags && worldInfo.tags.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                          {worldInfo.tags.slice(0, 3).map((tag) => (
+                                            <Badge key={tag.id} variant="secondary" className="text-sm">
+                                              {tag.name}
+                                            </Badge>
+                                          ))}
+                                          {worldInfo.tags.length > 3 && (
+                                            <Badge variant="secondary" className="text-sm">
+                                              +{worldInfo.tags.length - 3} more
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div></div>
+                                      )}
+                                    </div>
                                   </div>
                                  <AlertDialog>
                                    <AlertDialogTrigger asChild>
@@ -816,11 +820,11 @@ const WorldInfoCreator = () => {
                          {collectedWorldInfos.map((worldInfo) => (
                            <Card
                              key={worldInfo.id}
-                             className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg relative"
+                             className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg relative h-[200px]"
                            >
-                             <CardContent className="p-6 pb-16">
+                             <CardContent className="p-6 h-full flex flex-col">
                                <div className="flex items-start justify-between mb-4">
-                                  <div className="flex-1">
+                                  <div className="flex-1 min-h-0">
                                     <div className="flex items-center gap-3 mb-2">
                                       <h3 className="text-white font-semibold text-xl line-clamp-1">
                                         {worldInfo.name}
@@ -835,7 +839,7 @@ const WorldInfoCreator = () => {
                                         {worldInfo.visibility}
                                       </span>
                                     </div>
-                                    <p className="text-gray-400 text-base line-clamp-2 mb-3">
+                                    <p className="text-gray-400 text-base line-clamp-2 mb-3" style={{ height: '3rem' }}>
                                       {worldInfo.short_description || "No description available"}
                                     </p>
                                     
@@ -852,21 +856,25 @@ const WorldInfoCreator = () => {
                                        <span>by @{worldInfo.creator?.username || 'Unknown'}</span>
                                      </div>
 
-                                    {/* Tags */}
-                                    {worldInfo.tags && worldInfo.tags.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mb-3">
-                                        {worldInfo.tags.slice(0, 3).map((tag) => (
-                                          <Badge key={tag.id} variant="secondary" className="text-sm">
-                                            {tag.name}
-                                          </Badge>
-                                        ))}
-                                        {worldInfo.tags.length > 3 && (
-                                          <Badge variant="secondary" className="text-sm">
-                                            +{worldInfo.tags.length - 3} more
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
+                                    {/* Tags - Fixed height container */}
+                                    <div className="mb-3" style={{ height: '2rem' }}>
+                                      {worldInfo.tags && worldInfo.tags.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                          {worldInfo.tags.slice(0, 3).map((tag) => (
+                                            <Badge key={tag.id} variant="secondary" className="text-sm">
+                                              {tag.name}
+                                            </Badge>
+                                          ))}
+                                          {worldInfo.tags.length > 3 && (
+                                            <Badge variant="secondary" className="text-sm">
+                                              +{worldInfo.tags.length - 3} more
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div></div>
+                                      )}
+                                    </div>
                                   </div>
                                  <Button
                                    variant="ghost"
@@ -875,9 +883,9 @@ const WorldInfoCreator = () => {
                                      e.stopPropagation();
                                      // Remove from collection logic would go here
                                    }}
-                                   className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                                   className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
                                  >
-                                   <X className="w-4 h-4" />
+                                   <Trash2 className="w-4 h-4" />
                                  </Button>
                                </div>
                                
