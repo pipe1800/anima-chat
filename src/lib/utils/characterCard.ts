@@ -107,24 +107,24 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
 /**
  * Parses raw example dialogue string into structured array
  * @param dialogueString - The raw example dialogue string from character card
- * @returns Array of dialogue objects with user and char keys
+ * @returns Array of dialogue objects with user and character keys
  */
-export function parseExampleDialogue(dialogueString: string | undefined): Array<{ user: string; char: string }> {
+export function parseExampleDialogue(dialogueString: string | undefined): Array<{ user: string; character: string }> {
   if (!dialogueString || typeof dialogueString !== 'string') {
     return [];
   }
 
   const lines = dialogueString.split('\n').filter(line => line.trim() !== '' && !line.trim().toUpperCase().includes('START'));
   
-  const pairs: Array<{ user: string; char: string }> = [];
+  const pairs: Array<{ user: string; character: string }> = [];
   let currentUserMessage = '';
 
   for (const line of lines) {
     if (line.includes('{{user}}:')) {
       // If we have a pending user message, it means the last turn was just a user message.
-      // So we pair it with an empty char response.
+      // So we pair it with an empty character response.
       if (currentUserMessage) {
-        pairs.push({ user: currentUserMessage, char: '' });
+        pairs.push({ user: currentUserMessage, character: '' });
       }
       currentUserMessage = line.replace('{{user}}:', '').trim();
     } else if (line.includes('{{char}}:')) {
@@ -132,16 +132,16 @@ export function parseExampleDialogue(dialogueString: string | undefined): Array<
       if (currentUserMessage) {
         pairs.push({
           user: currentUserMessage,
-          char: line.replace('{{char}}:', '').trim()
+          character: line.replace('{{char}}:', '').trim()
         });
         currentUserMessage = ''; // Reset for the next turn
       }
     }
   }
 
-  // If there's a leftover user message at the end, add it with an empty char response.
+  // If there's a leftover user message at the end, add it with an empty character response.
   if (currentUserMessage) {
-    pairs.push({ user: currentUserMessage, char: '' });
+    pairs.push({ user: currentUserMessage, character: '' });
   }
 
   return pairs;

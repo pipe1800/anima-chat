@@ -6,27 +6,27 @@ const testDialogueString = "START\n{{user}}: I'm unsure whether to confront this
 
 // This is the simplified parsing logic you suggested.
 // We are putting it directly here to guarantee it's the code being run.
-function parseExampleDialogueForTest(dialogueString: string): Array<{ user: string; char: string }> {
+function parseExampleDialogueForTest(dialogueString: string): Array<{ user: string; character: string }> {
   if (!dialogueString || typeof dialogueString !== 'string') {
     return [];
   }
 
   const lines = dialogueString.split('\n').filter(line => line.trim() !== '' && !line.trim().toUpperCase().includes('START'));
   
-  const pairs: Array<{ user: string; char: string }> = [];
+  const pairs: Array<{ user: string; character: string }> = [];
   let currentUserMessage = '';
 
   for (const line of lines) {
     if (line.includes('{{user}}:')) {
       if (currentUserMessage) {
-        pairs.push({ user: currentUserMessage, char: '' });
+        pairs.push({ user: currentUserMessage, character: '' });
       }
       currentUserMessage = line.replace('{{user}}:', '').trim();
     } else if (line.includes('{{char}}:')) {
       if (currentUserMessage) {
         pairs.push({
           user: currentUserMessage,
-          char: line.replace('{{char}}:', '').trim()
+          character: line.replace('{{char}}:', '').trim()
         });
         currentUserMessage = ''; // Reset for the next turn
       }
@@ -34,7 +34,7 @@ function parseExampleDialogueForTest(dialogueString: string): Array<{ user: stri
   }
 
   if (currentUserMessage) {
-    pairs.push({ user: currentUserMessage, char: '' });
+    pairs.push({ user: currentUserMessage, character: '' });
   }
 
   return pairs;
