@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
@@ -427,7 +426,7 @@ const CharacterCreator = () => {
   };
 
   return (
-    <DashboardLayout>
+    <div className="flex flex-col h-full">
       <div className="w-full">
         <CreationStepsHeader
           steps={steps}
@@ -439,7 +438,7 @@ const CharacterCreator = () => {
       <div className="flex-1 overflow-auto">
         {renderCurrentStep()}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

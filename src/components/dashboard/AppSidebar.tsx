@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   MessageCircle, 
@@ -22,6 +22,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUserCredits } from '@/lib/supabase-queries';
 import { useUserSubscription } from '@/hooks/useProfile';
 
+// Preload the logo image to prevent reloading
+const LOGO_URL = '/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png';
+const logoImage = new Image();
+logoImage.src = LOGO_URL;
+
 const baseMainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
   { title: "World Infos", url: "/world-info-creator", icon: BookOpen },
@@ -38,14 +43,18 @@ const AppSidebar = () => {
   const currentPath = location.pathname;
   const { data: userSubscription } = useUserSubscription();
 
-  // Memoize the logo image to prevent reloading
-  const logoImage = useMemo(() => (
-    <img 
-      src="/lovable-uploads/45d0ba23-cfa2-404a-8527-54e83cb321ef.png" 
-      alt="Anima AI Chat" 
-      className="h-16 w-auto"
-    />
-  ), []);
+  // Memoize the logo component to prevent re-rendering
+  const MemoizedLogo = useMemo(() => {
+    return React.memo(() => (
+      <img 
+        src={LOGO_URL}
+        alt="Anima AI Chat" 
+        className="h-16 w-auto"
+        loading="eager"
+        style={{ imageRendering: 'crisp-edges' }}
+      />
+    ));
+  }, []);
 
   // Create main items with dynamic subscription icon
   const mainItems = useMemo(() => {
@@ -61,39 +70,37 @@ const AppSidebar = () => {
     ];
   }, [userSubscription?.status]);
 
-  useEffect(() => {
-    const fetchCredits = async () => {
-      if (!user) return;
-      
-      try {
-        const creditsResult = await getUserCredits(user.id);
-        if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
-          setUserCredits(creditsResult.data.balance);
-        }
-      } catch (error) {
-        console.error('Error fetching credits:', error);
+  const fetchCredits = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const creditsResult = await getUserCredits(user.id);
+      if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
+        setUserCredits(creditsResult.data.balance);
       }
-    };
-
-    if (user) {
-      fetchCredits();
+    } catch (error) {
+      console.error('Error fetching credits:', error);
     }
   }, [user]);
 
-  const isActive = (path: string) => {
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
+
+  const isActive = useCallback((path: string) => {
     if (path === '/profile') {
       // Keep Profile active for both /profile and /profile/settings
       return currentPath === '/profile' || currentPath.startsWith('/profile/');
     }
     return currentPath === path;
-  };
+  }, [currentPath]);
 
-  const getNavClasses = (active: boolean) => 
-    `flex items-center justify-start w-full space-x-3 px-4 py-3 transition-all duration-200 text-base ${
+  const getNavClasses = useCallback((active: boolean) => 
+    `flex items-center justify-start w-full space-x-4 px-4 py-3.5 transition-all duration-200 text-base ${
       active 
         ? 'bg-[#FF7A00]/20 text-[#FF7A00] border-r-2 border-[#FF7A00]' 
         : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-    }`;
+    }`, []);
 
   const handleLogout = async () => {
     try {
@@ -127,7 +134,7 @@ const AppSidebar = () => {
         <div className="border-b border-gray-700/50 p-4">
           {/* App Logo */}
           <div className="flex items-center justify-center px-4 py-4">
-            {logoImage}
+            <MemoizedLogo />
           </div>
         </div>
 
@@ -149,7 +156,7 @@ const AppSidebar = () => {
                   ) : (
                     <IconComponent className="w-5 h-5 flex-shrink-0" />
                   )}
-                  <span className="font-medium">{item.title}</span>
+                  <span className="font-medium text-base">{item.title}</span>
                 </NavLink>
               );
             })}
@@ -159,11 +166,11 @@ const AppSidebar = () => {
         <div className="border-t border-gray-700/50 p-4">
           <Button 
             variant="ghost" 
-            className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-3 space-x-3"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50 p-3 space-x-4"
             onClick={handleLogout}
           >
             <PowerOff className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium">Logout</span>
+            <span className="font-medium text-base">Logout</span>
           </Button>
         </div>
       </div>

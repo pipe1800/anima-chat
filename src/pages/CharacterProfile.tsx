@@ -1,8 +1,5 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/dashboard/AppSidebar';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -87,72 +84,47 @@ export default function CharacterProfile() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-[#121212]">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col ml-64">
-            <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center px-6">
-              <SidebarTrigger className="text-gray-400 hover:text-white" />
-            </header>
-            <main className="flex-1 flex items-center justify-center">
-              <div className="flex items-center space-x-2">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FF7A00]" />
-                <span className="text-white">Loading character...</span>
-              </div>
-            </main>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-8 h-8 animate-spin text-[#FF7A00]" />
+          <span className="text-white">Loading character...</span>
         </div>
-      </SidebarProvider>
+      </div>
     );
   }
 
   if (error || !character) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-[#121212]">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col ml-64">
-            <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center px-6">
-              <SidebarTrigger className="text-gray-400 hover:text-white" />
-            </header>
-            <main className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-red-400 text-lg mb-2">{error}</div>
-                <Button onClick={() => navigate('/discover')} variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Discover
-                </Button>
-              </div>
-            </main>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-red-400 text-lg mb-2">{error}</div>
+          <Button onClick={() => navigate('/discover')} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Discover
+          </Button>
         </div>
-      </SidebarProvider>
+      </div>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#121212]">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col ml-64">{/* Added ml-64 to account for sidebar width */}
-          {/* Header */}
-          <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center justify-between px-6">
-            <div className="flex items-center space-x-4">
-              <SidebarTrigger className="text-gray-400 hover:text-white" />
-              <Button
-                onClick={() => navigate('/discover')}
-                variant="ghost"
-                className="text-gray-400 hover:text-white"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Discover
-              </Button>
-            </div>
-          </header>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <header className="h-16 border-b border-gray-700/50 bg-[#1b1b1b] flex items-center justify-between px-6">
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={() => navigate('/discover')}
+            variant="ghost"
+            className="text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Discover
+          </Button>
+        </div>
+      </header>
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto">
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
             <div className="max-w-6xl mx-auto p-8 space-y-8">
               {/* Character Hero Section */}
               <Card className="bg-[#1a1a2e] border-gray-700/50 overflow-hidden">
@@ -364,8 +336,6 @@ export default function CharacterProfile() {
               </div>
             </div>
           </main>
-        </div>
-      </div>
-    </SidebarProvider>
+    </div>
   );
 }
