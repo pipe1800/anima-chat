@@ -62,6 +62,9 @@ export default function PublicWorldInfoProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Debug logging for component rendering
+  console.log('🔍 Debug: PublicWorldInfoProfile component rendered with ID:', id);
   const [worldInfo, setWorldInfo] = useState<WorldInfoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
