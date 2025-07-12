@@ -143,9 +143,18 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
       .find(([key]) => key === addonKey)?.[1];
     
     if (!addon?.available) {
-      toast.error('This addon requires a higher subscription tier');
+      if (addonKey === 'enhancedMemory' || addonKey === 'chainOfThought') {
+        toast.error('This addon requires True Fan or Whale subscription. Upgrade to unlock advanced features!');
+      } else if (isGuestPass && activeStatefulAddons >= 2) {
+        toast.error('Guest Pass users are limited to 2 stateful tracking addons. Upgrade for unlimited access!');
+      } else {
+        toast.error('This addon is not available for your current subscription tier');
+      }
       return;
     }
+
+    // Show loading state
+    setSaving(true);
 
     const newSettings = {
       ...addonSettings,
@@ -153,19 +162,21 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     };
 
     setAddonSettings(newSettings);
-    setSaving(true);
 
     try {
       const result = await saveUserCharacterAddonSettings(userId, characterId, newSettings);
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error || 'Failed to save addon settings');
       }
-      toast.success('Addon settings updated');
+      
+      const action = newSettings[addonKey] ? 'enabled' : 'disabled';
+      const addonName = addon.name;
+      toast.success(`${addonName} ${action} successfully`);
     } catch (error) {
       console.error('Error saving addon settings:', error);
       // Revert the change
       setAddonSettings(addonSettings);
-      toast.error('Failed to update addon settings');
+      toast.error(`Failed to update ${addon.name}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -177,8 +188,18 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   if (loading) {
     return (
       <Button variant="ghost" className="text-gray-400 px-3" disabled>
-        <Settings className="w-4 h-4 mr-2" />
-        <span className="text-sm">Loading...</span>
+        <Settings className="w-4 h-4 mr-2 animate-spin" />
+        <span className="text-sm">Loading addons...</span>
+      </Button>
+    );
+  }
+
+  // Show subscription loading state if subscription is still being fetched
+  if (!subscription && userPlan === 'Guest Pass') {
+    return (
+      <Button variant="ghost" className="text-gray-400 px-3" disabled>
+        <Settings className="w-4 h-4 mr-2 animate-pulse" />
+        <span className="text-sm">Checking subscription...</span>
       </Button>
     );
   }
@@ -199,23 +220,34 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 px-3">
+            <Button 
+              variant="ghost" 
+              className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
+              disabled={saving}
+            >
               <div className="flex items-center space-x-2">
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Addons</span>
-                {activeAddons > 0 && (
+                <Settings className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
+                <span className="text-sm">
+                  {saving ? 'Saving...' : 'Addons'}
+                </span>
+                {activeAddons > 0 && !saving && (
                   <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
                     {activeAddons}
                   </Badge>
                 )}
-                <ChevronDown className="w-4 h-4" />
+                {!saving && <ChevronDown className="w-4 h-4" />}
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-96 bg-[#1a1a2e] border-gray-700/50 z-50 p-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
-                <h3 className="text-white font-medium">Character Addons</h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-white font-medium">Character Addons</h3>
+                  <Badge variant="outline" className="border-gray-600 text-gray-400 text-xs">
+                    {userPlan}
+                  </Badge>
+                </div>
                 {totalCost > 0 && (
                   <Badge variant="outline" className="border-[#FF7A00] text-[#FF7A00]">
                     +{totalCost}% credits per message
@@ -274,9 +306,44 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                     
                     {/* Guest Pass restriction notice for Stateful Character Tracking */}
                     {categoryName === 'Stateful Character Tracking' && isGuestPass && activeStatefulAddons >= 2 && (
-                      <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
-                        <p className="text-yellow-400 text-xs text-center">
-                          Guest Pass users are limited to 2 addons in this section. Upgrade for unlimited access.
+                      <div className="mt-2 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                          <p className="text-yellow-400 text-xs font-medium">
+                            Guest Pass Limit Reached
+                          </p>
+                        </div>
+                        <p className="text-yellow-300 text-xs mt-1">
+                          You've activated the maximum number of tracking addons. Upgrade to True Fan or Whale for unlimited access.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Upgrade prompts for locked features */}
+                    {categoryName === 'Core Enhancements' && isGuestPass && (
+                      <div className="mt-2 p-3 bg-blue-900/20 border border-blue-700/40 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                          <p className="text-blue-400 text-xs font-medium">
+                            Enhanced Memory Available with Upgrade
+                          </p>
+                        </div>
+                        <p className="text-blue-300 text-xs mt-1">
+                          Unlock Enhanced Memory and other premium features with True Fan or Whale subscription.
+                        </p>
+                      </div>
+                    )}
+
+                    {categoryName === 'Advanced Prompting Toolkit' && isGuestPass && (
+                      <div className="mt-2 p-3 bg-purple-900/20 border border-purple-700/40 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          <p className="text-purple-400 text-xs font-medium">
+                            Advanced Features Available
+                          </p>
+                        </div>
+                        <p className="text-purple-300 text-xs mt-1">
+                          Chain-of-Thought reasoning requires True Fan or Whale subscription for enhanced AI capabilities.
                         </p>
                       </div>
                     )}
@@ -286,9 +353,12 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
 
               {totalCost > 0 && (
                 <div className="border-t border-gray-700/50 pt-3">
-                  <p className="text-gray-400 text-xs text-center">
-                    These addons will increase your message cost by {totalCost}% credits
-                  </p>
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-1.5 h-1.5 bg-[#FF7A00] rounded-full"></div>
+                    <p className="text-gray-400 text-xs text-center">
+                      Active addons increase message cost by {totalCost}% credits
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
