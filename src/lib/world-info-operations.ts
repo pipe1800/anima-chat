@@ -506,10 +506,6 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
       .eq('world_info_id', worldInfoId)
       .order('created_at', { ascending: false });
 
-    console.log('Fetching entries for world info:', worldInfoId);
-    console.log('Entries data:', entries);
-    console.log('Entries error:', entriesError);
-
     if (entriesError) {
       console.error('Error fetching entries:', entriesError);
       throw new Error('Failed to fetch entries');
