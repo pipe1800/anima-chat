@@ -484,11 +484,16 @@ export const getPublicWorldInfoDetails = async (worldInfoId: string) => {
       .from('world_infos')
       .select('*')
       .eq('id', worldInfoId)
-      .eq('visibility', 'public')
       .single();
 
+    // Check if world info is accessible (public or owned by current user)
     if (worldInfoError || !worldInfo) {
       console.error('Error fetching world info:', worldInfoError);
+      throw new Error('World info not found');
+    }
+
+    const isOwner = isAuthenticated && worldInfo.creator_id === user.user.id;
+    if (worldInfo.visibility !== 'public' && !isOwner) {
       throw new Error('World info not found or not public');
     }
 
