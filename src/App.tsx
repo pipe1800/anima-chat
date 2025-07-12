@@ -98,6 +98,13 @@ const App = () => (
               </AuthenticatedLayout>
             </OnboardingGuard>
           } />
+          <Route path="/world-info-editor/:id" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <AuthenticatedLayout>
+                <WorldInfoEditor />
+              </AuthenticatedLayout>
+            </OnboardingGuard>
+          } />
           <Route path="/profile/*" element={
             <OnboardingGuard requireOnboardingComplete={true}>
               <AuthenticatedLayout>
