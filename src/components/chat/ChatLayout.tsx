@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { UserAddonDropdown } from './UserAddonDropdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -253,6 +254,11 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           </div>
           
           <div className="flex items-center space-x-3">
+            {/* Addons Dropdown */}
+            {currentUser && (
+              <UserAddonDropdown characterId={character.id} userId={currentUser.id} />
+            )}
+            
             {/* Persona Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

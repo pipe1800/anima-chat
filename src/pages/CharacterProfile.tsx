@@ -15,7 +15,7 @@ import { useCharacterProfile, useCharacterLikeStatus, useToggleCharacterLike } f
 import { CharacterFoundationSection } from '@/components/character-profile/CharacterFoundationSection';
 import { CharacterPersonalitySection } from '@/components/character-profile/CharacterPersonalitySection';
 import { CharacterDialogueSection } from '@/components/character-profile/CharacterDialogueSection';
-import { UserAddonSettingsSection } from '@/components/character-profile/UserAddonSettingsSection';
+
 import { CharacterStatsSection } from '@/components/character-profile/CharacterStatsSection';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -208,13 +208,6 @@ export default function CharacterProfile() {
                 exampleDialogues={[]} // TODO: Add example dialogues to character data
               />
 
-              {/* User Addon Settings Section */}
-              <UserAddonSettingsSection 
-                characterId={character.id}
-                onSettingsChange={(settings) => {
-                  console.log('Addon settings changed:', settings);
-                }}
-              />
             </div>
 
             {/* Sidebar */}
