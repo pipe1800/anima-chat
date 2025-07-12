@@ -95,6 +95,7 @@ export const saveUserCharacterAddonSettings = async (
 export const calculateAddonCreditCost = (settings: AddonSettings): number => {
   let total = 0;
   if (settings.dynamicWorldInfo) total += 10;
+  // Enhanced Memory has dynamic cost - not included in base calculation
   if (settings.moodTracking) total += 5;
   if (settings.clothingInventory) total += 5;
   if (settings.locationTracking) total += 5;
@@ -110,4 +111,70 @@ export const calculateAddonCreditCost = (settings: AddonSettings): number => {
  */
 export const hasActiveAddons = (settings: AddonSettings): boolean => {
   return Object.values(settings).some(value => value === true);
+};
+
+/**
+ * Validate addon settings for a specific subscription tier
+ */
+export const validateAddonSettings = (
+  settings: AddonSettings, 
+  userPlan: string
+): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  const isGuestPass = userPlan === 'Guest Pass';
+  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
+
+  // Enhanced Memory validation
+  if (settings.enhancedMemory && !isTrueFanOrWhale) {
+    errors.push('Enhanced Memory requires True Fan or Whale subscription');
+  }
+
+  // Chain of Thought validation
+  if (settings.chainOfThought && !isTrueFanOrWhale) {
+    errors.push('Chain of Thought requires True Fan or Whale subscription');
+  }
+
+  // Guest Pass stateful tracking limit
+  if (isGuestPass) {
+    const activeStatefulAddons = [
+      settings.moodTracking,
+      settings.clothingInventory,
+      settings.locationTracking,
+      settings.timeWeather,
+      settings.relationshipStatus,
+    ].filter(Boolean).length;
+
+    if (activeStatefulAddons > 2) {
+      errors.push('Guest Pass users are limited to 2 stateful tracking addons');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+};
+
+/**
+ * Get addon statistics for debugging/testing
+ */
+export const getAddonStats = (settings: AddonSettings) => {
+  const totalCost = calculateAddonCreditCost(settings);
+  const activeCount = Object.values(settings).filter(Boolean).length;
+  const activeAddons = Object.entries(settings)
+    .filter(([_, enabled]) => enabled)
+    .map(([key, _]) => key);
+
+  const statefulCount = [
+    settings.moodTracking,
+    settings.clothingInventory,
+    settings.locationTracking,
+    settings.timeWeather,
+    settings.relationshipStatus,
+  ].filter(Boolean).length;
+
+  return {
+    totalCost,
+    activeCount,
+    activeAddons,
+    statefulCount,
+    hasPremiumFeatures: settings.enhancedMemory || settings.chainOfThought,
+  };
 };

@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, type AddonSettings } from '@/lib/user-addon-operations';
+import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -137,18 +137,21 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   };
 
   const handleToggleAddon = async (addonKey: keyof AddonSettings) => {
-    // Check if addon is available for user's subscription tier
-    const addon = Object.values(addonCategories)
-      .flatMap(category => Object.entries(category))
-      .find(([key]) => key === addonKey)?.[1];
-    
-    if (!addon?.available) {
-      if (addonKey === 'enhancedMemory' || addonKey === 'chainOfThought') {
+    // Validate addon settings before attempting to save
+    const newSettings = {
+      ...addonSettings,
+      [addonKey]: !addonSettings[addonKey]
+    };
+
+    const validation = validateAddonSettings(newSettings, userPlan);
+    if (!validation.valid) {
+      const error = validation.errors[0];
+      if (error.includes('Enhanced Memory') || error.includes('Chain of Thought')) {
         toast.error('This addon requires True Fan or Whale subscription. Upgrade to unlock advanced features!');
-      } else if (isGuestPass && activeStatefulAddons >= 2) {
+      } else if (error.includes('stateful tracking')) {
         toast.error('Guest Pass users are limited to 2 stateful tracking addons. Upgrade for unlimited access!');
       } else {
-        toast.error('This addon is not available for your current subscription tier');
+        toast.error(error);
       }
       return;
     }
@@ -156,10 +159,10 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     // Show loading state
     setSaving(true);
 
-    const newSettings = {
-      ...addonSettings,
-      [addonKey]: !addonSettings[addonKey]
-    };
+    // Get addon details for success message
+    const addon = Object.values(addonCategories)
+      .flatMap(category => Object.entries(category))
+      .find(([key]) => key === addonKey)?.[1];
 
     setAddonSettings(newSettings);
 
