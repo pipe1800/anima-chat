@@ -260,7 +260,7 @@ const WorldInfoCreator = () => {
   };
 
   const handleViewWorldInfo = (worldInfo: WorldInfo) => {
-    navigate(`/world-info/${worldInfo.id}`);
+    navigate(`/world-info-view/${worldInfo.id}`);
   };
 
   const handleUpdateWorldInfo = async () => {

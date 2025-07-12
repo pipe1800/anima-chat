@@ -498,7 +498,7 @@ export default function PublicWorldInfoProfile() {
                 {similarWorldInfos.map((worldInfo) => (
                   <Link
                     key={worldInfo.id}
-                    to={`/world-info/${worldInfo.id}`}
+                    to={`/world-info-view/${worldInfo.id}`}
                     className="block border rounded-lg p-4 hover:bg-accent transition-colors"
                   >
                     <div className="flex items-start gap-3">

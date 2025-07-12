@@ -39,7 +39,7 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
   const navigate = useNavigate();
 
   const handleViewWorldInfo = () => {
-    navigate(`/world-info/${worldInfo.id}`);
+    navigate(`/world-info-view/${worldInfo.id}`);
   };
 
   return (
