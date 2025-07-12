@@ -37,10 +37,14 @@ export const getUserCharacterAddonSettings = async (
       .select('addon_settings')
       .eq('user_id', userId)
       .eq('character_id', characterId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.log('No existing addon settings found, using defaults');
+      console.error('Error fetching addon settings:', error);
+      return defaultAddonSettings;
+    }
+
+    if (!data) {
       return defaultAddonSettings;
     }
 
@@ -62,11 +66,16 @@ export const saveUserCharacterAddonSettings = async (
   try {
     const { error } = await supabase
       .from('user_character_addons')
-      .upsert({
-        user_id: userId,
-        character_id: characterId,
-        addon_settings: settings as any,
-      });
+      .upsert(
+        {
+          user_id: userId,
+          character_id: characterId,
+          addon_settings: settings as any,
+        },
+        {
+          onConflict: 'user_id,character_id'
+        }
+      );
 
     if (error) {
       console.error('Error saving addon settings:', error);
