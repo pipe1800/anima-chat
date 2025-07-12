@@ -2,16 +2,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getPrivateProfile } from '@/lib/supabase-queries';
-import type { Profile } from '@/types/database';
+import { getPrivateProfile, getUserActiveSubscription } from '@/lib/supabase-queries';
+import type { Profile, Subscription, Plan } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
+  subscription: any | null; // Using any for flexibility with the query result
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [subscription, setSubscription] = useState<any | null>(null); // Using any for flexibility
   const [loading, setLoading] = useState(true);
 
   const refreshProfile = async () => {
@@ -45,12 +48,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshSubscription = async () => {
+    if (!user) {
+      setSubscription(null);
+      return;
+    }
+
+    try {
+      const { data } = await getUserActiveSubscription(user.id);
+      setSubscription(data || null);
+    } catch (error) {
+      console.error('Subscription fetch failed:', error);
+      setSubscription(null);
+    }
+  };
+
   const signOut = async () => {
     try {
       // Clear local state first
       setUser(null);
       setProfile(null);
       setSession(null);
+      setSubscription(null);
       
       // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -70,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setProfile(null);
       setSession(null);
+      setSubscription(null);
       throw error;
     }
   };
@@ -92,12 +112,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch profile when user changes
+  // Fetch profile and subscription when user changes
   useEffect(() => {
     if (user) {
       refreshProfile();
+      refreshSubscription();
     } else {
       setProfile(null);
+      setSubscription(null);
     }
   }, [user]);
 
@@ -105,9 +127,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     session,
+    subscription,
     loading,
     signOut,
     refreshProfile,
+    refreshSubscription,
   };
 
   return (

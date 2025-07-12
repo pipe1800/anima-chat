@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, type AddonSettings } from '@/lib/user-addon-operations';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface UserAddonDropdownProps {
@@ -14,6 +15,7 @@ interface UserAddonDropdownProps {
 }
 
 export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProps) => {
+  const { subscription } = useAuth();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
     dynamicWorldInfo: false,
     enhancedMemory: false,
@@ -27,6 +29,9 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Determine user's subscription tier
+  const userPlan = subscription?.plan?.name || 'Guest Pass';
 
   const addonCategories = {
     'Core Enhancements': {
