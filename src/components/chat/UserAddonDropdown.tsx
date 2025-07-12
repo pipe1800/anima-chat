@@ -32,22 +32,91 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
 
   // Determine user's subscription tier
   const userPlan = subscription?.plan?.name || 'Guest Pass';
+  const isGuestPass = userPlan === 'Guest Pass';
+  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
+
+  // Count active stateful tracking addons for Guest Pass limits
+  const activeStatefulAddons = [
+    addonSettings.moodTracking,
+    addonSettings.clothingInventory,
+    addonSettings.locationTracking,
+    addonSettings.timeWeather,
+    addonSettings.relationshipStatus,
+  ].filter(Boolean).length;
 
   const addonCategories = {
     'Core Enhancements': {
-      dynamicWorldInfo: { name: 'Dynamic World Info', cost: 10, description: 'Enhanced world knowledge' },
-      enhancedMemory: { name: 'Enhanced Memory', cost: 0, description: 'Better conversation memory' },
+      dynamicWorldInfo: { 
+        name: 'Dynamic World Info', 
+        cost: 10, 
+        description: 'Enhanced world knowledge',
+        available: true,
+        dynamicCost: null
+      },
+      enhancedMemory: { 
+        name: 'Enhanced Memory', 
+        cost: 0, 
+        description: isTrueFanOrWhale 
+          ? 'Better conversation memory' 
+          : 'Upgrade to True Fan or Whale to unlock',
+        available: isTrueFanOrWhale,
+        dynamicCost: isTrueFanOrWhale ? 'Cost calculated per chat' : null
+      },
     },
     'Stateful Character Tracking': {
-      moodTracking: { name: 'Mood Tracking', cost: 5, description: 'Track character emotions' },
-      clothingInventory: { name: 'Clothing Inventory', cost: 5, description: 'Track character outfits' },
-      locationTracking: { name: 'Location Tracking', cost: 5, description: 'Track current location' },
-      timeWeather: { name: 'Time & Weather', cost: 5, description: 'Real-time environment' },
-      relationshipStatus: { name: 'Relationship Status', cost: 5, description: 'Track relationships' },
+      moodTracking: { 
+        name: 'Mood Tracking', 
+        cost: 5, 
+        description: 'Track character emotions',
+        available: isTrueFanOrWhale || (!addonSettings.moodTracking && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
+      clothingInventory: { 
+        name: 'Clothing Inventory', 
+        cost: 5, 
+        description: 'Track character outfits',
+        available: isTrueFanOrWhale || (!addonSettings.clothingInventory && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
+      locationTracking: { 
+        name: 'Location Tracking', 
+        cost: 5, 
+        description: 'Track current location',
+        available: isTrueFanOrWhale || (!addonSettings.locationTracking && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
+      timeWeather: { 
+        name: 'Time & Weather', 
+        cost: 5, 
+        description: 'Real-time environment',
+        available: isTrueFanOrWhale || (!addonSettings.timeWeather && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
+      relationshipStatus: { 
+        name: 'Relationship Status', 
+        cost: 5, 
+        description: 'Track relationships',
+        available: isTrueFanOrWhale || (!addonSettings.relationshipStatus && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
     },
     'Advanced Prompting Toolkit': {
-      chainOfThought: { name: 'Chain of Thought', cost: 30, description: 'Advanced reasoning' },
-      fewShotExamples: { name: 'Few Shot Examples', cost: 7, description: 'Better response quality' },
+      chainOfThought: { 
+        name: 'Chain of Thought', 
+        cost: 30, 
+        description: isTrueFanOrWhale 
+          ? 'Advanced reasoning' 
+          : 'Upgrade to True Fan or Whale to unlock',
+        available: isTrueFanOrWhale,
+        dynamicCost: null
+      },
+      fewShotExamples: { 
+        name: 'Few Shot Examples', 
+        cost: 7, 
+        description: 'Better response quality',
+        available: true,
+        dynamicCost: null
+      },
     }
   };
 
@@ -68,6 +137,16 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   };
 
   const handleToggleAddon = async (addonKey: keyof AddonSettings) => {
+    // Check if addon is available for user's subscription tier
+    const addon = Object.values(addonCategories)
+      .flatMap(category => Object.entries(category))
+      .find(([key]) => key === addonKey)?.[1];
+    
+    if (!addon?.available) {
+      toast.error('This addon requires a higher subscription tier');
+      return;
+    }
+
     const newSettings = {
       ...addonSettings,
       [addonKey]: !addonSettings[addonKey]
@@ -152,27 +231,56 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                     </h4>
                     <div className="space-y-2">
                       {Object.entries(addons).map(([key, details]) => (
-                        <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-[#0f0f0f] border border-gray-700/30">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-white font-medium text-sm">{details.name}</span>
-                              {details.cost > 0 && (
-                                <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00]">
-                                  +{details.cost}%
-                                </Badge>
-                              )}
+                        <div key={key} className={`flex items-center justify-between p-3 rounded-lg border ${
+                          details.available 
+                            ? 'bg-[#0f0f0f] border-gray-700/30' 
+                            : 'bg-gray-900/50 border-gray-700/20 opacity-60'
+                        }`}>
+                          <div className="flex-1 min-w-0 pr-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className={`font-medium text-sm ${
+                                  details.available ? 'text-white' : 'text-gray-500'
+                                }`}>
+                                  {details.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {details.dynamicCost ? (
+                                  <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                                    Dynamic
+                                  </Badge>
+                                ) : details.cost > 0 && (
+                                  <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00]">
+                                    +{details.cost}%
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-gray-400 text-xs mt-1">{details.description}</p>
+                            <p className={`text-xs mt-1 ${
+                              details.available ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              {details.description}
+                            </p>
                           </div>
                           <Switch
                             checked={addonSettings[key as keyof AddonSettings]}
                             onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
-                            disabled={saving}
-                            className="data-[state=checked]:bg-[#FF7A00]"
+                            disabled={saving || !details.available || (addonSettings[key as keyof AddonSettings] ? false : !details.available)}
+                            className="data-[state=checked]:bg-[#FF7A00] shrink-0"
                           />
                         </div>
                       ))}
                     </div>
+                    
+                    {/* Guest Pass restriction notice for Stateful Character Tracking */}
+                    {categoryName === 'Stateful Character Tracking' && isGuestPass && activeStatefulAddons >= 2 && (
+                      <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
+                        <p className="text-yellow-400 text-xs text-center">
+                          Guest Pass users are limited to 2 addons in this section. Upgrade for unlimited access.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
