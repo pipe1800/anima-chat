@@ -92,6 +92,12 @@ const AppSidebar = () => {
       // Keep Profile active for both /profile and /profile/settings
       return currentPath === '/profile' || currentPath.startsWith('/profile/');
     }
+    if (path === '/world-info') {
+      // Keep World Info active for all world-info related routes
+      return currentPath === '/world-info' || 
+             currentPath.startsWith('/world-info-') || 
+             currentPath.startsWith('/world-info/');
+    }
     return currentPath === path;
   }, [currentPath]);
 

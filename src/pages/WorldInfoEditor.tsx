@@ -298,19 +298,20 @@ export default function WorldInfoEditor() {
   };
 
   const handleAddEntry = async () => {
-    if (!id) {
+    if (!newEntryKeywords.trim() || !newEntryText.trim()) {
       toast({
         title: "Error",
-        description: "Please save the world info first before adding entries",
+        description: "Please fill in both keywords and entry text",
         variant: "destructive"
       });
       return;
     }
 
-    if (!newEntryKeywords.trim() || !newEntryText.trim()) {
+    if (!id) {
+      // For new world infos, we need to save the world info first
       toast({
-        title: "Error",
-        description: "Please fill in both keywords and entry text",
+        title: "Save First",
+        description: "Please save the world info before adding entries",
         variant: "destructive"
       });
       return;
@@ -553,14 +554,14 @@ export default function WorldInfoEditor() {
                 </CardContent>
               </Card>
 
-              {/* Entries Section - Only show if editing existing world info */}
-              {id && (
-                <Card className="bg-gray-800/50 border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <BookOpen className="w-5 h-5" />
-                      Lorebook Entries ({filteredEntries.length})
-                    </CardTitle>
+              {/* Entries Section */}
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <BookOpen className="w-5 h-5" />
+                    Lorebook Entries ({filteredEntries.length})
+                  </CardTitle>
+                  {id && (
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -570,44 +571,58 @@ export default function WorldInfoEditor() {
                         className="pl-10 bg-gray-800/50 border-gray-600 text-white"
                       />
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Add New Entry Form */}
-                    <div className="space-y-4 p-4 bg-gray-900/50 rounded-lg border border-gray-600">
-                      <h3 className="text-white font-semibold flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add New Entry
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="new-entry-keywords" className="text-white">Keywords (comma-separated)</Label>
-                          <Input
-                            id="new-entry-keywords"
-                            value={newEntryKeywords}
-                            onChange={(e) => setNewEntryKeywords(e.target.value)}
-                            placeholder="keyword1, keyword2, keyword3"
-                            className="bg-gray-800/50 border-gray-600 text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="new-entry-text" className="text-white">Entry Text</Label>
-                          <Textarea
-                            id="new-entry-text"
-                            value={newEntryText}
-                            onChange={(e) => setNewEntryText(e.target.value)}
-                            rows={3}
-                            placeholder="Enter the content for this entry..."
-                            className="bg-gray-800/50 border-gray-600 text-white"
-                          />
-                        </div>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Add New Entry Form */}
+                  <div className="space-y-4 p-4 bg-gray-900/50 rounded-lg border border-gray-600">
+                    <h3 className="text-white font-semibold flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add New Entry
+                    </h3>
+                    {!id && (
+                      <p className="text-sm text-gray-400">
+                        Save the world info first to add entries.
+                      </p>
+                    )}
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="new-entry-keywords" className="text-white">Keywords (comma-separated)</Label>
+                        <Input
+                          id="new-entry-keywords"
+                          value={newEntryKeywords}
+                          onChange={(e) => setNewEntryKeywords(e.target.value)}
+                          placeholder="keyword1, keyword2, keyword3"
+                          className="bg-gray-800/50 border-gray-600 text-white"
+                          disabled={!id}
+                        />
                       </div>
-                      <Button onClick={handleAddEntry} className="bg-primary hover:bg-primary/80">
+                      <div>
+                        <Label htmlFor="new-entry-text" className="text-white">Entry Text</Label>
+                        <Textarea
+                          id="new-entry-text"
+                          value={newEntryText}
+                          onChange={(e) => setNewEntryText(e.target.value)}
+                          rows={4}
+                          placeholder="Enter the content for this entry..."
+                          className="bg-gray-800/50 border-gray-600 text-white"
+                          disabled={!id}
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleAddEntry} 
+                        className="bg-primary hover:bg-primary/80"
+                        disabled={!id}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Entry
                       </Button>
                     </div>
+                  </div>
 
-                    {/* Existing Entries */}
+                  {/* Existing Entries */}
+                  {id && (
+
                     <div className="space-y-4">
                       {filteredEntries.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
@@ -703,9 +718,9 @@ export default function WorldInfoEditor() {
                         ))
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

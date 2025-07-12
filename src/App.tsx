@@ -46,7 +46,13 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/characters" element={<PublicDiscover />} />
           <Route path="/characters/:characterId" element={<PublicCharacterProfile />} />
-          <Route path="/world-info-view/:id" element={<PublicWorldInfoProfile />} />
+          <Route path="/world-info-view/:id" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <AuthenticatedLayout>
+                <PublicWorldInfoProfile />
+              </AuthenticatedLayout>
+            </OnboardingGuard>
+          } />
           <Route path="/auth" element={<Auth />} />
           <Route path="/email-confirmation" element={<EmailConfirmation />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
