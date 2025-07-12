@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Check, CheckCheck, X, Clock } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useChatMessages, useRealtimeMessages } from '@/hooks/useChat';
 import type { Message } from '@/hooks/useChat';
+import { MessageGroup } from './MessageGroup';
+import { groupMessages } from '@/utils/messageGrouping';
 
 interface Character {
   id: string;
@@ -40,6 +41,11 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
     const fetchedMessages = data?.pages?.flatMap(page => page.messages) || [];
     return [...fetchedMessages, ...newMessages];
   }, [data?.pages, newMessages]);
+
+  // Group messages for better visual organization
+  const messageGroups = React.useMemo(() => {
+    return groupMessages(allMessages);
+  }, [allMessages]);
 
   // Auto scroll to bottom for new messages
   useEffect(() => {
@@ -117,37 +123,13 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
         </div>
       )}
 
-      {/* Messages */}
-      {allMessages.map(message => (
-        <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
-          <div className={`flex space-x-3 max-w-[75%] ${message.isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
-            {!message.isUser && (
-              <Avatar className="w-10 h-10 flex-shrink-0 mt-1">
-                <AvatarImage src={character.avatar} alt={character.name} />
-                <AvatarFallback className="bg-[#FF7A00] text-white text-sm font-bold">
-                  {character.fallback}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            
-            <div className={`px-5 py-3 rounded-2xl ${message.isUser ? 'bg-[#2A2A2A] text-white rounded-br-md' : 'bg-[#1E1E1E] text-white rounded-bl-md'}`}>
-              <p className="text-[15px] leading-relaxed">{message.content}</p>
-              {message.isUser && message.status && (
-                <div className="flex justify-end mt-1">
-                  {message.status === 'sending' && (
-                    <Clock className="w-3 h-3 text-gray-400" />
-                  )}
-                  {message.status === 'sent' && (
-                    <CheckCheck className="w-3 h-3 text-green-400" />
-                  )}
-                  {message.status === 'failed' && (
-                    <X className="w-3 h-3 text-red-400" />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Message Groups */}
+      {messageGroups.map(group => (
+        <MessageGroup 
+          key={group.id} 
+          group={group} 
+          character={character}
+        />
       ))}
       <div ref={messagesEndRef} />
     </div>
