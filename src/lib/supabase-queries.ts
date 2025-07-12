@@ -497,9 +497,9 @@ export const createChat = async (userId: string, characterId: string, title?: st
 }
 
 /**
- * Get messages for a chat
+ * Get messages for a chat with pagination
  */
-export const getChatMessages = async (chatId: string) => {
+export const getChatMessages = async (chatId: string, limit = 50, offset = 0) => {
   const { data, error } = await supabase
     .from('messages')
     .select(`
@@ -510,9 +510,54 @@ export const getChatMessages = async (chatId: string) => {
       author_id
     `)
     .eq('chat_id', chatId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false }) // Get newest messages first
+    .range(offset, offset + limit - 1)
 
-  return { data: data || [], error }
+  // Reverse to show oldest first in UI
+  return { data: data ? data.reverse() : [], error }
+}
+
+/**
+ * Get recent messages for a chat (for quick loading)
+ */
+export const getRecentChatMessages = async (chatId: string, limit = 20) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(`
+      id,
+      content,
+      is_ai_message,
+      created_at,
+      author_id
+    `)
+    .eq('chat_id', chatId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  // Reverse to show oldest first in UI
+  return { data: data ? data.reverse() : [], error }
+}
+
+/**
+ * Get earlier messages for infinite scroll
+ */
+export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: string, limit = 20) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(`
+      id,
+      content,
+      is_ai_message,
+      created_at,
+      author_id
+    `)
+    .eq('chat_id', chatId)
+    .lt('created_at', beforeTimestamp)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  // Reverse to show oldest first in UI
+  return { data: data ? data.reverse() : [], error }
 }
 
 /**
