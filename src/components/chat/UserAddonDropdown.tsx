@@ -197,15 +197,8 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     );
   }
 
-  // Show subscription loading state if subscription is still being fetched
-  if (!subscription && userPlan === 'Guest Pass') {
-    return (
-      <Button variant="ghost" className="text-gray-400 px-3" disabled>
-        <Settings className="w-4 h-4 mr-2 animate-pulse" />
-        <span className="text-sm">Checking subscription...</span>
-      </Button>
-    );
-  }
+  // Remove the subscription loading check - just proceed with Guest Pass as default
+  // This prevents infinite loading when subscription query fails
 
   return (
     <TooltipProvider>

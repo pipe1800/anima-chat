@@ -55,7 +55,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data } = await getUserActiveSubscription(user.id);
+      const { data, error } = await getUserActiveSubscription(user.id);
+      if (error) {
+        console.error('Subscription fetch failed:', error);
+        // Set null instead of keeping it in loading state
+        setSubscription(null);
+        return;
+      }
       setSubscription(data || null);
     } catch (error) {
       console.error('Subscription fetch failed:', error);
