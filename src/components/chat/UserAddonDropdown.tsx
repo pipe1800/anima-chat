@@ -68,35 +68,35 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Mood Tracking', 
         cost: 5, 
         description: 'Track character emotions',
-        available: isTrueFanOrWhale || (!addonSettings.moodTracking && activeStatefulAddons < 2),
+        available: isTrueFanOrWhale || addonSettings.moodTracking || activeStatefulAddons < 2,
         dynamicCost: null
       },
       clothingInventory: { 
         name: 'Clothing Inventory', 
         cost: 5, 
         description: 'Track character outfits',
-        available: isTrueFanOrWhale || (!addonSettings.clothingInventory && activeStatefulAddons < 2),
+        available: isTrueFanOrWhale || addonSettings.clothingInventory || activeStatefulAddons < 2,
         dynamicCost: null
       },
       locationTracking: { 
         name: 'Location Tracking', 
         cost: 5, 
         description: 'Track current location',
-        available: isTrueFanOrWhale || (!addonSettings.locationTracking && activeStatefulAddons < 2),
+        available: isTrueFanOrWhale || addonSettings.locationTracking || activeStatefulAddons < 2,
         dynamicCost: null
       },
       timeWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isTrueFanOrWhale || (!addonSettings.timeWeather && activeStatefulAddons < 2),
+        available: isTrueFanOrWhale || addonSettings.timeWeather || activeStatefulAddons < 2,
         dynamicCost: null
       },
       relationshipStatus: { 
         name: 'Relationship Status', 
         cost: 5, 
         description: 'Track relationships',
-        available: isTrueFanOrWhale || (!addonSettings.relationshipStatus && activeStatefulAddons < 2),
+        available: isTrueFanOrWhale || addonSettings.relationshipStatus || activeStatefulAddons < 2,
         dynamicCost: null
       },
     },
