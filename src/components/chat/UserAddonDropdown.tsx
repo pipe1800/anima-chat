@@ -222,16 +222,14 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
               disabled={saving}
             >
               <div className="flex items-center space-x-2">
-                <Settings className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
-                <span className="text-sm">
-                  {saving ? 'Saving...' : 'Addons'}
-                </span>
-                {activeAddons > 0 && !saving && (
+                <Settings className="w-4 h-4" />
+                <span className="text-sm">Addons</span>
+                {activeAddons > 0 && (
                   <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
                     {activeAddons}
                   </Badge>
                 )}
-                {!saving && <ChevronDown className="w-4 h-4" />}
+                <ChevronDown className="w-4 h-4" />
               </div>
             </Button>
           </DropdownMenuTrigger>
