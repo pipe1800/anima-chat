@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, ChevronDown, HelpCircle } from 'lucide-react';
+import { Settings, ChevronDown, HelpCircle, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -27,21 +28,33 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     chainOfThought: false,
     fewShotExamples: false,
   });
+  const [tempAddonSettings, setTempAddonSettings] = useState<AddonSettings>({
+    dynamicWorldInfo: false,
+    enhancedMemory: false,
+    moodTracking: false,
+    clothingInventory: false,
+    locationTracking: false,
+    timeWeather: false,
+    relationshipStatus: false,
+    chainOfThought: false,
+    fewShotExamples: false,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Determine user's subscription tier
   const userPlan = subscription?.plan?.name || 'Guest Pass';
   const isGuestPass = userPlan === 'Guest Pass';
   const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
 
-  // Count active stateful tracking addons for Guest Pass limits
+  // Count active stateful tracking addons for Guest Pass limits (using temp settings for validation)
   const activeStatefulAddons = [
-    addonSettings.moodTracking,
-    addonSettings.clothingInventory,
-    addonSettings.locationTracking,
-    addonSettings.timeWeather,
-    addonSettings.relationshipStatus,
+    tempAddonSettings.moodTracking,
+    tempAddonSettings.clothingInventory,
+    tempAddonSettings.locationTracking,
+    tempAddonSettings.timeWeather,
+    tempAddonSettings.relationshipStatus,
   ].filter(Boolean).length;
 
   const addonCategories = {
@@ -68,35 +81,35 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Mood Tracking', 
         cost: 5, 
         description: 'Track character emotions',
-        available: isTrueFanOrWhale || addonSettings.moodTracking || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.moodTracking || activeStatefulAddons < 2,
         dynamicCost: null
       },
       clothingInventory: { 
         name: 'Clothing Inventory', 
         cost: 5, 
         description: 'Track character outfits',
-        available: isTrueFanOrWhale || addonSettings.clothingInventory || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.clothingInventory || activeStatefulAddons < 2,
         dynamicCost: null
       },
       locationTracking: { 
         name: 'Location Tracking', 
         cost: 5, 
         description: 'Track current location',
-        available: isTrueFanOrWhale || addonSettings.locationTracking || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.locationTracking || activeStatefulAddons < 2,
         dynamicCost: null
       },
       timeWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isTrueFanOrWhale || addonSettings.timeWeather || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.timeWeather || activeStatefulAddons < 2,
         dynamicCost: null
       },
       relationshipStatus: { 
         name: 'Relationship Status', 
         cost: 5, 
         description: 'Track relationships',
-        available: isTrueFanOrWhale || addonSettings.relationshipStatus || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || activeStatefulAddons < 2,
         dynamicCost: null
       },
     },
@@ -128,6 +141,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     try {
       const settings = await getUserCharacterAddonSettings(userId, characterId);
       setAddonSettings(settings);
+      setTempAddonSettings(settings);
     } catch (error) {
       console.error('Error loading addon settings:', error);
       toast.error('Failed to load addon settings');
@@ -136,11 +150,11 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     }
   };
 
-  const handleToggleAddon = async (addonKey: keyof AddonSettings) => {
-    // Validate addon settings before attempting to save
+  const handleToggleAddon = (addonKey: keyof AddonSettings) => {
+    // Validate addon settings before attempting to update temp settings
     const newSettings = {
-      ...addonSettings,
-      [addonKey]: !addonSettings[addonKey]
+      ...tempAddonSettings,
+      [addonKey]: !tempAddonSettings[addonKey]
     };
 
     const validation = validateAddonSettings(newSettings, userPlan);
@@ -156,37 +170,37 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
       return;
     }
 
-    // Show loading state
+    setTempAddonSettings(newSettings);
+  };
+
+  const handleSaveAddons = async () => {
     setSaving(true);
-
-    // Get addon details for success message
-    const addon = Object.values(addonCategories)
-      .flatMap(category => Object.entries(category))
-      .find(([key]) => key === addonKey)?.[1];
-
-    setAddonSettings(newSettings);
-
+    
     try {
-      const result = await saveUserCharacterAddonSettings(userId, characterId, newSettings);
+      const result = await saveUserCharacterAddonSettings(userId, characterId, tempAddonSettings);
       if (!result.success) {
         throw new Error(result.error || 'Failed to save addon settings');
       }
       
-      const action = newSettings[addonKey] ? 'enabled' : 'disabled';
-      const addonName = addon.name;
-      toast.success(`${addonName} ${action} successfully`);
+      setAddonSettings(tempAddonSettings);
+      setShowConfirmDialog(false);
+      toast.success('Addon settings saved successfully');
     } catch (error) {
       console.error('Error saving addon settings:', error);
-      // Revert the change
-      setAddonSettings(addonSettings);
-      toast.error(`Failed to update ${addon.name}. Please try again.`);
+      toast.error('Failed to save addon settings. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const totalCost = calculateAddonCreditCost(addonSettings);
+  const handleCancelChanges = () => {
+    setTempAddonSettings(addonSettings);
+    setShowConfirmDialog(false);
+  };
+
+  const totalCost = calculateAddonCreditCost(tempAddonSettings);
   const activeAddons = Object.values(addonSettings).filter(Boolean).length;
+  const hasUnsavedChanges = JSON.stringify(addonSettings) !== JSON.stringify(tempAddonSettings);
 
   if (loading) {
     return (
@@ -203,6 +217,12 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   return (
     <TooltipProvider>
       <div className="flex items-center space-x-2">
+        {activeAddons > 0 && (
+          <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
+            {activeAddons}
+          </Badge>
+        )}
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white px-2">
@@ -224,16 +244,11 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
               <div className="flex items-center space-x-2">
                 <Settings className="w-4 h-4" />
                 <span className="text-sm">Addons</span>
-                {activeAddons > 0 && (
-                  <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
-                    {activeAddons}
-                  </Badge>
-                )}
                 <ChevronDown className="w-4 h-4" />
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-96 bg-[#1a1a2e] border-gray-700/50 z-50 p-4">
+          <DropdownMenuContent align="start" className="w-[500px] bg-[#1a1a2e] border-gray-700/50 z-50 p-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
                 <div className="flex items-center space-x-2">
@@ -244,7 +259,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                 </div>
                 {totalCost > 0 && (
                   <Badge variant="outline" className="border-[#FF7A00] text-[#FF7A00]">
-                    +{totalCost}% credits per message
+                    +{totalCost}%
                   </Badge>
                 )}
               </div>
@@ -288,9 +303,9 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                               </Badge>
                             )}
                             <Switch
-                              checked={addonSettings[key as keyof AddonSettings]}
+                              checked={tempAddonSettings[key as keyof AddonSettings]}
                               onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
-                              disabled={saving || !details.available || (addonSettings[key as keyof AddonSettings] ? false : !details.available)}
+                              disabled={saving || !details.available || (tempAddonSettings[key as keyof AddonSettings] ? false : !details.available)}
                               className="data-[state=checked]:bg-[#FF7A00]"
                             />
                           </div>
@@ -350,11 +365,52 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-1.5 h-1.5 bg-[#FF7A00] rounded-full"></div>
                     <p className="text-gray-400 text-xs text-center">
-                      Active addons increase message cost by {totalCost}% credits
+                      Active addons increase message cost by {totalCost}%
                     </p>
                   </div>
                 </div>
               )}
+
+              <div className="border-t border-gray-700/50 pt-3 mt-4">
+                <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                      disabled={saving || !hasUnsavedChanges}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Confirm Addon Changes</AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
+                        {totalCost > 0 ? (
+                          <>Your active addons will increase message credits by <span className="text-[#FF7A00] font-semibold">{totalCost}%</span>. This means each message will cost more credits based on the addons you've enabled.</>
+                        ) : (
+                          <>You have no active addons selected. Your messages will use the standard credit cost.</>
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel 
+                        onClick={handleCancelChanges}
+                        className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600"
+                      >
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleSaveAddons}
+                        disabled={saving}
+                        className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                      >
+                        {saving ? 'Saving...' : 'Accept Changes'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
