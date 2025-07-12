@@ -236,26 +236,13 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                             ? 'bg-[#0f0f0f] border-gray-700/30' 
                             : 'bg-gray-900/50 border-gray-700/20 opacity-60'
                         }`}>
-                          <div className="flex-1 min-w-0 pr-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className={`font-medium text-sm ${
-                                  details.available ? 'text-white' : 'text-gray-500'
-                                }`}>
-                                  {details.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                {details.dynamicCost ? (
-                                  <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
-                                    Dynamic
-                                  </Badge>
-                                ) : details.cost > 0 && (
-                                  <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00]">
-                                    +{details.cost}%
-                                  </Badge>
-                                )}
-                              </div>
+                          <div className="flex-1 min-w-0 pr-3">
+                            <div className="flex items-center">
+                              <span className={`font-medium text-sm ${
+                                details.available ? 'text-white' : 'text-gray-500'
+                              }`}>
+                                {details.name}
+                              </span>
                             </div>
                             <p className={`text-xs mt-1 ${
                               details.available ? 'text-gray-400' : 'text-gray-500'
@@ -263,12 +250,24 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                               {details.description}
                             </p>
                           </div>
-                          <Switch
-                            checked={addonSettings[key as keyof AddonSettings]}
-                            onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
-                            disabled={saving || !details.available || (addonSettings[key as keyof AddonSettings] ? false : !details.available)}
-                            className="data-[state=checked]:bg-[#FF7A00] shrink-0"
-                          />
+                          
+                          <div className="flex items-center space-x-3 shrink-0">
+                            {details.dynamicCost ? (
+                              <Badge variant="outline" className="text-xs border-blue-400 text-blue-400 h-5">
+                                Dynamic
+                              </Badge>
+                            ) : details.cost > 0 && (
+                              <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00] h-5 min-w-[45px] justify-center">
+                                +{details.cost}%
+                              </Badge>
+                            )}
+                            <Switch
+                              checked={addonSettings[key as keyof AddonSettings]}
+                              onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
+                              disabled={saving || !details.available || (addonSettings[key as keyof AddonSettings] ? false : !details.available)}
+                              className="data-[state=checked]:bg-[#FF7A00]"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
