@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, ChevronDown, HelpCircle, Save } from 'lucide-react';
+import { Settings, ChevronDown, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAuth } from '@/contexts/AuthContext';
@@ -222,17 +222,6 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
             {activeAddons}
           </Badge>
         )}
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white px-2">
-              <HelpCircle className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Active addons will increase your credit usage per message</p>
-          </TooltipContent>
-        </Tooltip>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
