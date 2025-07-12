@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -109,6 +110,7 @@ const WorldInfoCreator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   
@@ -255,6 +257,10 @@ const WorldInfoCreator = () => {
     setIsEditing(false);
     setEditingEntryId(null);
     setShowWorldInfoList(false);
+  };
+
+  const handleViewWorldInfo = (worldInfo: WorldInfo) => {
+    navigate(`/world-info/${worldInfo.id}`);
   };
 
   const handleUpdateWorldInfo = async () => {
@@ -776,7 +782,7 @@ const WorldInfoCreator = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleSelectWorldInfo(worldInfo)}
+                                    onClick={() => handleViewWorldInfo(worldInfo)}
                                     className="border-primary/50 text-primary hover:bg-primary/10"
                                   >
                                     View
@@ -877,14 +883,14 @@ const WorldInfoCreator = () => {
                                
                                {/* Action Button - Bottom Right */}
                                <div className="absolute bottom-4 right-4">
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => handleSelectWorldInfo(worldInfo)}
-                                   className="border-primary/50 text-primary hover:bg-primary/10"
-                                 >
-                                   View
-                                 </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewWorldInfo(worldInfo)}
+                                    className="border-primary/50 text-primary hover:bg-primary/10"
+                                  >
+                                    View
+                                  </Button>
                                </div>
                              </CardContent>
                            </Card>
