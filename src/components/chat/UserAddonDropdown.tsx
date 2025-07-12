@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, ChevronDown } from 'lucide-react';
+import { Settings, ChevronDown, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, type AddonSettings } from '@/lib/user-addon-operations';
 import { toast } from 'sonner';
 
@@ -27,16 +28,22 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const addonDetails = {
-    dynamicWorldInfo: { name: 'Dynamic World Info', cost: 10, description: 'Enhanced world knowledge' },
-    enhancedMemory: { name: 'Enhanced Memory', cost: 0, description: 'Better conversation memory' },
-    moodTracking: { name: 'Mood Tracking', cost: 5, description: 'Track character emotions' },
-    clothingInventory: { name: 'Clothing Inventory', cost: 5, description: 'Track character outfits' },
-    locationTracking: { name: 'Location Tracking', cost: 5, description: 'Track current location' },
-    timeWeather: { name: 'Time & Weather', cost: 5, description: 'Real-time environment' },
-    relationshipStatus: { name: 'Relationship Status', cost: 5, description: 'Track relationships' },
-    chainOfThought: { name: 'Chain of Thought', cost: 30, description: 'Advanced reasoning' },
-    fewShotExamples: { name: 'Few Shot Examples', cost: 7, description: 'Better response quality' },
+  const addonCategories = {
+    'Core Enhancements': {
+      dynamicWorldInfo: { name: 'Dynamic World Info', cost: 10, description: 'Enhanced world knowledge' },
+      enhancedMemory: { name: 'Enhanced Memory', cost: 0, description: 'Better conversation memory' },
+    },
+    'Stateful Character Tracking': {
+      moodTracking: { name: 'Mood Tracking', cost: 5, description: 'Track character emotions' },
+      clothingInventory: { name: 'Clothing Inventory', cost: 5, description: 'Track character outfits' },
+      locationTracking: { name: 'Location Tracking', cost: 5, description: 'Track current location' },
+      timeWeather: { name: 'Time & Weather', cost: 5, description: 'Real-time environment' },
+      relationshipStatus: { name: 'Relationship Status', cost: 5, description: 'Track relationships' },
+    },
+    'Advanced Prompting Toolkit': {
+      chainOfThought: { name: 'Chain of Thought', cost: 30, description: 'Advanced reasoning' },
+      fewShotExamples: { name: 'Few Shot Examples', cost: 7, description: 'Better response quality' },
+    }
   };
 
   useEffect(() => {
@@ -93,65 +100,89 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 px-3">
-          <div className="flex items-center space-x-2">
-            <Settings className="w-4 h-4" />
-            <span className="text-sm">Addons</span>
-            {activeAddons > 0 && (
-              <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
-                {activeAddons}
-              </Badge>
-            )}
-            <ChevronDown className="w-4 h-4" />
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80 bg-[#1a1a2e] border-gray-700/50 z-50 p-4">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
-            <h3 className="text-white font-medium">Character Addons</h3>
-            {totalCost > 0 && (
-              <Badge variant="outline" className="border-[#FF7A00] text-[#FF7A00]">
-                +{totalCost} credits per message
-              </Badge>
-            )}
-          </div>
-
-          <div className="space-y-3 max-h-80 overflow-y-auto">
-            {Object.entries(addonDetails).map(([key, details]) => (
-              <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-[#0f0f0f] border border-gray-700/30">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white font-medium text-sm">{details.name}</span>
-                    {details.cost > 0 && (
-                      <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00]">
-                        +{details.cost}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-gray-400 text-xs mt-1">{details.description}</p>
-                </div>
-                <Switch
-                  checked={addonSettings[key as keyof AddonSettings]}
-                  onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
-                  disabled={saving}
-                  className="data-[state=checked]:bg-[#FF7A00]"
-                />
+    <TooltipProvider>
+      <div className="flex items-center space-x-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white px-2">
+              <HelpCircle className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Active addons will increase your credit usage per message</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 px-3">
+              <div className="flex items-center space-x-2">
+                <Settings className="w-4 h-4" />
+                <span className="text-sm">Addons</span>
+                {activeAddons > 0 && (
+                  <Badge variant="secondary" className="bg-[#FF7A00] text-white text-xs">
+                    {activeAddons}
+                  </Badge>
+                )}
+                <ChevronDown className="w-4 h-4" />
               </div>
-            ))}
-          </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-96 bg-[#1a1a2e] border-gray-700/50 z-50 p-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-700/50 pb-3">
+                <h3 className="text-white font-medium">Character Addons</h3>
+                {totalCost > 0 && (
+                  <Badge variant="outline" className="border-[#FF7A00] text-[#FF7A00]">
+                    +{totalCost}% credits per message
+                  </Badge>
+                )}
+              </div>
 
-          {totalCost > 0 && (
-            <div className="border-t border-gray-700/50 pt-3">
-              <p className="text-gray-400 text-xs text-center">
-                These addons will increase your message cost by {totalCost} credits
-              </p>
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {Object.entries(addonCategories).map(([categoryName, addons]) => (
+                  <div key={categoryName} className="space-y-3">
+                    <h4 className="text-gray-300 font-medium text-sm border-b border-gray-700/30 pb-1">
+                      {categoryName}
+                    </h4>
+                    <div className="space-y-2">
+                      {Object.entries(addons).map(([key, details]) => (
+                        <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-[#0f0f0f] border border-gray-700/30">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-white font-medium text-sm">{details.name}</span>
+                              {details.cost > 0 && (
+                                <Badge variant="outline" className="text-xs border-[#FF7A00] text-[#FF7A00]">
+                                  +{details.cost}%
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-gray-400 text-xs mt-1">{details.description}</p>
+                          </div>
+                          <Switch
+                            checked={addonSettings[key as keyof AddonSettings]}
+                            onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
+                            disabled={saving}
+                            className="data-[state=checked]:bg-[#FF7A00]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {totalCost > 0 && (
+                <div className="border-t border-gray-700/50 pt-3">
+                  <p className="text-gray-400 text-xs text-center">
+                    These addons will increase your message cost by {totalCost}% credits
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TooltipProvider>
   );
 };
