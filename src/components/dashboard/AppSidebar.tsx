@@ -29,7 +29,7 @@ logoImage.src = LOGO_URL;
 
 const baseMainItems = [
   { title: "Create Character", url: "/character-creator", icon: Plus },
-  { title: "World Infos", url: "/world-info-creator", icon: BookOpen },
+  { title: "World Infos", url: "/world-info", icon: BookOpen },
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Discover", url: "/discover", icon: Compass },
   { title: "Profile", url: "/profile", icon: User },

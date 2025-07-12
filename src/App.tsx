@@ -17,7 +17,8 @@ import Discover from "./pages/Discover";
 import Chat from "./pages/Chat";
 import CharacterCreator from "./pages/CharacterCreator";
 import TestTags from "./pages/TestTags";
-import WorldInfoCreator from "./pages/WorldInfoCreator";
+import WorldInfo from "./pages/WorldInfo";
+import WorldInfoEditor from "./pages/WorldInfoEditor";
 import UserProfile from "./pages/UserProfile";
 import Subscription from "./pages/Subscription";
 import Settings from "./pages/Settings";
@@ -83,10 +84,17 @@ const App = () => (
           } />
           <Route path="/test-tags" element={<TestTags />} />
           <Route path="/dialogue-test" element={<DialogueTestPage />} />
-          <Route path="/world-info-creator" element={
+          <Route path="/world-info" element={
             <OnboardingGuard requireOnboardingComplete={true}>
               <AuthenticatedLayout>
-                <WorldInfoCreator />
+                <WorldInfo />
+              </AuthenticatedLayout>
+            </OnboardingGuard>
+          } />
+          <Route path="/world-info-editor" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <AuthenticatedLayout>
+                <WorldInfoEditor />
               </AuthenticatedLayout>
             </OnboardingGuard>
           } />
