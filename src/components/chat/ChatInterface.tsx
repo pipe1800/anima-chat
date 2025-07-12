@@ -11,6 +11,7 @@ import {
   useSendMessage,
   useConsumeCredits,
   useChatCache,
+  useRealtimeMessages,
   type Message
 } from '@/hooks/useChat';
 import { createMessage } from '@/lib/supabase-queries';
@@ -50,7 +51,10 @@ const ChatInterface = ({
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
   const consumeCreditsMutation = useConsumeCredits();
-  const { addOptimisticMessage } = useChatCache();
+  const { addOptimisticMessage, updateMessageStatus } = useChatCache();
+  
+  // Enable real-time updates for current chat
+  useRealtimeMessages(currentChatId);
 
   // Initialize greeting message for new chats
   useEffect(() => {
@@ -58,12 +62,13 @@ const ChatInterface = ({
       const greeting = characterDetails.definition?.[0]?.greeting || 
                       `Hello! I'm ${character.name}. It's great to meet you. What would you like to talk about?`;
       
-      const greetingMessage: Message = {
-        id: 'greeting',
-        content: greeting,
-        isUser: false,
-        timestamp: new Date()
-      };
+        const greetingMessage: Message = {
+          id: 'greeting',
+          content: greeting,
+          isUser: false,
+          timestamp: new Date(),
+          status: 'sent'
+        };
       setNewMessages([greetingMessage]);
     }
     
@@ -90,11 +95,13 @@ const ChatInterface = ({
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
     const userMessage: Message = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       content: inputValue,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'sending'
     };
     
     // Optimistically add user message
@@ -117,6 +124,9 @@ const ChatInterface = ({
         setCurrentChatId(result.chatId);
       }
 
+      // Update message status to sent
+      updateMessageStatus(result.chatId, tempId, 'sent');
+
       // Handle first message achievement
       if (isFirstMessage) {
         setIsFirstMessage(false);
@@ -135,7 +145,8 @@ const ChatInterface = ({
           id: `ai-${Date.now()}`,
           content: getAIResponse(messageContent, character.id),
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          status: 'sent'
         };
         
         setNewMessages(prev => [...prev, aiResponse]);
@@ -154,8 +165,15 @@ const ChatInterface = ({
     } catch (error) {
       console.error('Error handling message:', error);
       setIsTyping(false);
-      // Remove the optimistic message on error
-      setNewMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+      
+      // Update message status to failed
+      if (currentChatId) {
+        updateMessageStatus(currentChatId, tempId, 'failed');
+      } else {
+        // Remove the optimistic message if no chat was created
+        setNewMessages(prev => prev.filter(msg => msg.id !== tempId));
+      }
+      
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

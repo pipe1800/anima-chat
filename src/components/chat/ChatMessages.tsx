@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
-import { useChatMessages } from '@/hooks/useChat';
+import { Loader2, Check, CheckCheck, X, Clock } from 'lucide-react';
+import { useChatMessages, useRealtimeMessages } from '@/hooks/useChat';
 import type { Message } from '@/hooks/useChat';
 
 interface Character {
@@ -31,6 +31,9 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
     isLoading,
     error
   } = useChatMessages(chatId);
+
+  // Enable real-time updates
+  useRealtimeMessages(chatId);
 
   // Combine fetched messages with new messages
   const allMessages = React.useMemo(() => {
@@ -129,6 +132,19 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
             
             <div className={`px-5 py-3 rounded-2xl ${message.isUser ? 'bg-[#2A2A2A] text-white rounded-br-md' : 'bg-[#1E1E1E] text-white rounded-bl-md'}`}>
               <p className="text-[15px] leading-relaxed">{message.content}</p>
+              {message.isUser && message.status && (
+                <div className="flex justify-end mt-1">
+                  {message.status === 'sending' && (
+                    <Clock className="w-3 h-3 text-gray-400" />
+                  )}
+                  {message.status === 'sent' && (
+                    <CheckCheck className="w-3 h-3 text-green-400" />
+                  )}
+                  {message.status === 'failed' && (
+                    <X className="w-3 h-3 text-red-400" />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

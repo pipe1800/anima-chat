@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
 import { 
   getRecentChatMessages, 
   getEarlierChatMessages,
@@ -16,6 +17,7 @@ export interface Message {
   content: string;
   isUser: boolean;
   timestamp: Date;
+  status?: 'sending' | 'sent' | 'failed';
 }
 
 // Hook for managing chat messages with pagination
@@ -48,7 +50,8 @@ export const useChatMessages = (chatId: string | null) => {
         id: msg.id,
         content: msg.content,
         isUser: !msg.is_ai_message,
-        timestamp: new Date(msg.created_at)
+        timestamp: new Date(msg.created_at),
+        status: 'sent'
       }));
       
       return {
@@ -182,7 +185,8 @@ export const useChatCache = () => {
           id: msg.id,
           content: msg.content,
           isUser: !msg.is_ai_message,
-          timestamp: new Date(msg.created_at)
+          timestamp: new Date(msg.created_at),
+          status: 'sent'
         }));
         
         return {
@@ -217,9 +221,81 @@ export const useChatCache = () => {
     });
   };
   
+  const updateMessageStatus = (chatId: string, tempId: string, status: 'sent' | 'failed', newId?: string) => {
+    queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+      if (!old || !old.pages.length) return old;
+      
+      const updatedPages = old.pages.map(page => ({
+        ...page,
+        messages: page.messages.map(msg => 
+          msg.id === tempId 
+            ? { ...msg, status, ...(newId && { id: newId }) }
+            : msg
+        )
+      }));
+      
+      return { ...old, pages: updatedPages };
+    });
+  };
+  
   return {
     prefetchChatMessages,
     invalidateChatMessages,
     addOptimisticMessage,
+    updateMessageStatus,
   };
+};
+
+// Hook for real-time message updates
+export const useRealtimeMessages = (chatId: string | null) => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (!chatId || !user) return;
+    
+    const channel = supabase
+      .channel(`chat-${chatId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chatId}`
+        },
+        (payload) => {
+          const newMessage: Message = {
+            id: payload.new.id,
+            content: payload.new.content,
+            isUser: !payload.new.is_ai_message,
+            timestamp: new Date(payload.new.created_at),
+            status: 'sent'
+          };
+          
+          // Only add messages from other sources (AI responses)
+          if (payload.new.author_id !== user.id) {
+            queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+              if (!old || !old.pages.length) return old;
+              
+              const firstPage = old.pages[0];
+              const updatedFirstPage: ChatPage = {
+                ...firstPage,
+                messages: [...firstPage.messages, newMessage]
+              };
+              
+              return {
+                ...old,
+                pages: [updatedFirstPage, ...old.pages.slice(1)]
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatId, user, queryClient]);
 };
