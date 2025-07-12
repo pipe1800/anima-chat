@@ -78,6 +78,13 @@ export default function PublicWorldInfoProfile() {
       try {
         setLoading(true);
         const data = await getPublicWorldInfoDetails(id);
+        
+        // Debug logging
+        console.log('🔍 Debug: Raw data from getPublicWorldInfoDetails:', data);
+        console.log('🔍 Debug: Entries array:', data.entries);
+        console.log('🔍 Debug: Entries length:', data.entries?.length);
+        console.log('🔍 Debug: First entry sample:', data.entries?.[0]);
+        
         setWorldInfo(data as unknown as WorldInfoData);
         
         // Fetch similar world infos
@@ -307,6 +314,11 @@ export default function PublicWorldInfoProfile() {
       keyword.toLowerCase().includes(searchTerm.toLowerCase())
     ) || entry.entry_text.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  // Debug logging for filtering
+  console.log('🔍 Debug: worldInfo?.entries before filtering:', worldInfo?.entries);
+  console.log('🔍 Debug: filteredEntries after filtering:', filteredEntries);
+  console.log('🔍 Debug: searchTerm:', searchTerm);
 
   if (loading) {
     return (
