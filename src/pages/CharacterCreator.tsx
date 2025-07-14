@@ -243,9 +243,9 @@ const CharacterCreator = () => {
         name: cardData.name || cardData.char_name || '',
         avatar: avatarUrl, // Use the uploaded PNG as avatar
         title: cardData.title || '',
-        description: cardData.description || cardData.char_persona || '',
+        description: cardData.personality || cardData.char_persona || '',
         personality: {
-          core_personality: cardData.personality || cardData.char_persona || cardData.description || '',
+          core_personality: cardData.description || cardData.char_persona || '',
           tags: [], // Tags will be handled separately if needed
           knowledge_base: cardData.scenario || '',
           scenario_definition: cardData.scenario || ''
