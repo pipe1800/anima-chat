@@ -88,19 +88,28 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData 
       return null;
     }
 
-    // Check if example_dialogue exists and is a string, then parse it
-    if (characterData.example_dialogue && typeof characterData.example_dialogue === 'string') {
-      characterData.example_dialogue = parseExampleDialogue(characterData.example_dialogue);
-    }
-
     // Validate that we have some essential character data
     if (!characterData || typeof characterData !== 'object') {
       console.error('Invalid character data format.');
       return null;
     }
 
-    console.log('Successfully parsed character data:', characterData);
-    return characterData;
+    // Check if this is a V2 character card
+    let finalCharacterData: CharacterCardData;
+    if (characterData.spec === 'chara_card_v2' && characterData.data) {
+      finalCharacterData = characterData.data;
+    } else {
+      // V1 format - use the entire object
+      finalCharacterData = characterData;
+    }
+
+    // Check if example_dialogue exists and is a string, then parse it
+    if (finalCharacterData.example_dialogue && typeof finalCharacterData.example_dialogue === 'string') {
+      finalCharacterData.example_dialogue = parseExampleDialogue(finalCharacterData.example_dialogue);
+    }
+
+    console.log('Successfully parsed character data:', finalCharacterData);
+    return finalCharacterData;
 
   } catch (error) {
     console.error("Unexpected error while parsing character card:", error);
