@@ -261,7 +261,7 @@ export const getCharacterDetails = async (characterId: string) => {
   console.log('🔍 Fetching character definition for characterId:', characterId)
   const { data: definitionData, error: definitionError } = await supabase
     .from('character_definitions')
-    .select('greeting, long_description, definition')
+    .select('greeting, description, personality_summary, scenario')
     .eq('character_id', characterId)
     .maybeSingle()
 
@@ -282,6 +282,7 @@ export const getCharacterDetails = async (characterId: string) => {
   const characterWithDetails = {
     ...data,
     creator: creatorData,
+    character_definitions: definitionData,
     definition: definitionData ? [definitionData] : [],
     tags: tagsData || []
   }

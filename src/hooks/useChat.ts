@@ -149,11 +149,14 @@ export const useSendMessage = () => {
           throw new Error('Failed to get character details');
         }
         
-        // Construct message history array
+        // Construct message history array  
+        const systemContent = characterDetails.data?.character_definitions?.personality_summary || 
+                             characterDetails.data?.character_definitions?.description || 
+                             'You are a helpful assistant.';
         const messages = [
           {
             role: 'system',
-            content: characterDetails.data?.character_definitions?.personality_summary || 'You are a helpful assistant.'
+            content: systemContent
           },
           {
             role: 'user',
@@ -199,7 +202,17 @@ export const useSendMessage = () => {
           const { done, value } = await reader.read();
           if (done) break;
           
-          aiResponseContent += decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });
+          aiResponseContent += chunk;
+          console.log('Received chunk:', chunk);
+        }
+        
+        console.log('Full AI response:', aiResponseContent);
+        
+        // Fallback if no proper response received
+        if (!aiResponseContent.trim()) {
+          aiResponseContent = `I apologize, but I couldn't process your message properly. This is a temporary response while we fix the streaming connection. Your message was: "${content}"`;
+          console.log('Using fallback response due to empty AI content');
         }
         
         // Save the AI response to the database
@@ -214,6 +227,8 @@ export const useSendMessage = () => {
           console.error('Failed to save AI message:', aiMessageError);
           throw new Error('Failed to save AI response');
         }
+        
+        console.log('AI response saved and credits consumed');
         
       } catch (error) {
         console.error('Error invoking AI:', error);
