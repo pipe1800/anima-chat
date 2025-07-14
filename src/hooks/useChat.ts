@@ -222,6 +222,7 @@ export const useHandleSendMessage = () => {
         },
         body: JSON.stringify({
           model,
+          character_id: characterId,
           messages,
           chat_id: chatId
         })
@@ -330,7 +331,7 @@ export const useHandleSendMessage = () => {
             msg.id === tempAiMessageId 
               ? { 
                   ...msg, 
-                  content: 'Error: Could not get response. Please try again.',
+                  content: 'Error: Could not get response.',
                   status: 'failed' as const
                 }
               : msg
@@ -347,6 +348,8 @@ export const useHandleSendMessage = () => {
         toast.error('Insufficient credits. Please purchase more credits to continue.');
       } else if (errorMessage.includes('not available')) {
         toast.error('This AI model is not available for your current plan.');
+      } else if (errorMessage.includes('Character definition not found')) {
+        toast.error('Character not found. Please try a different character.');
       } else {
         toast.error('Failed to generate response. Please try again.');
       }
