@@ -104,7 +104,73 @@ export const useCharacterDetails = (characterId: string) => {
   });
 };
 
-// Hook for sending messages
+// Hook for creating chat with greeting
+export const useCreateChatWithGreeting = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      characterId, 
+      characterName 
+    }: { 
+      characterId: string;
+      characterName: string;
+    }) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      // Create chat
+      const { data: newChat, error: chatError } = await createChat(
+        user.id, 
+        characterId, 
+        `Chat with ${characterName}`
+      );
+      if (chatError) throw chatError;
+      
+      // Add initial greeting message immediately
+      const characterDetails = await getCharacterDetails(characterId);
+      if (characterDetails.data?.character_definitions) {
+        const greeting = characterDetails.data.character_definitions.greeting || 
+                        `Hello! I'm ${characterName}. It's great to meet you. What would you like to talk about?`;
+        
+        const { error: greetingError } = await createMessage(newChat.id, user.id, greeting, true);
+        if (greetingError) {
+          console.error('Failed to save greeting message:', greetingError);
+          throw new Error('Failed to save greeting message');
+        }
+      }
+      
+      return { chatId: newChat.id };
+    },
+    onSuccess: ({ chatId }) => {
+      // Prefetch the new chat messages
+      queryClient.prefetchInfiniteQuery({
+        queryKey: ['chat', 'messages', chatId],
+        queryFn: async () => {
+          const result = await getRecentChatMessages(chatId, 20);
+          if (result.error) throw result.error;
+          
+          const messages: Message[] = result.data.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            isUser: !msg.is_ai_message,
+            timestamp: new Date(msg.created_at),
+            status: 'sent'
+          }));
+          
+          return {
+            messages,
+            hasMore: result.data.length === 20,
+            oldestTimestamp: result.data.length > 0 ? result.data[0].created_at : null
+          };
+        },
+        initialPageParam: undefined,
+      });
+    },
+  });
+};
+
+// Hook for sending messages with optimistic updates
 export const useSendMessage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -113,118 +179,161 @@ export const useSendMessage = () => {
     mutationFn: async ({ 
       chatId, 
       content, 
-      characterId, 
-      characterName 
+      characterId 
     }: { 
-      chatId: string | null; 
+      chatId: string; 
       content: string; 
       characterId: string;
-      characterName: string;
     }) => {
       if (!user) throw new Error('User not authenticated');
       
-      let finalChatId = chatId;
+      // Generate optimistic message ID
+      const optimisticId = `temp-${Date.now()}`;
       
-      // Create chat if it doesn't exist
-      if (!finalChatId) {
-        const { data: newChat, error: chatError } = await createChat(
-          user.id, 
-          characterId, 
-          `Chat with ${characterName}`
-        );
-        if (chatError) throw chatError;
-        finalChatId = newChat.id;
-        
-        // Add initial greeting message to database for new chats
-        const characterDetails = await getCharacterDetails(characterId);
-        if (characterDetails.data?.character_definitions) {
-          const greeting = characterDetails.data.character_definitions.greeting || 
-                          `Hello! I'm ${characterName}. It's great to meet you. What would you like to talk about?`;
-          
-          const { error: greetingError } = await createMessage(finalChatId, user.id, greeting, true);
-          if (greetingError) {
-            console.error('Failed to save greeting message:', greetingError);
-          }
+      // Add optimistic user message to cache immediately
+      queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+        if (!old || !old.pages.length) {
+          // Create initial structure if empty
+          return {
+            pages: [{
+              messages: [{
+                id: optimisticId,
+                content,
+                isUser: true,
+                timestamp: new Date(),
+                status: 'sending' as const
+              }],
+              hasMore: false,
+              oldestTimestamp: null
+            }],
+            pageParams: [undefined]
+          };
         }
-      }
+        
+        const optimisticMessage: Message = {
+          id: optimisticId,
+          content,
+          isUser: true,
+          timestamp: new Date(),
+          status: 'sending'
+        };
+        
+        const firstPage = old.pages[0];
+        const updatedFirstPage: ChatPage = {
+          ...firstPage,
+          messages: [...firstPage.messages, optimisticMessage]
+        };
+        
+        return {
+          ...old,
+          pages: [updatedFirstPage, ...old.pages.slice(1)]
+        };
+      });
       
-      // Save user message
-      const { error: messageError } = await createMessage(finalChatId, user.id, content, false);
-      if (messageError) throw messageError;
-      
-      // Add AI Invocation (The Missing Piece)
       try {
-        // Get character details for system prompt
-        const characterDetails = await getCharacterDetails(characterId);
-        if (characterDetails.error) {
-          console.error('Failed to get character details:', characterDetails.error);
-          throw new Error('Failed to get character details');
-        }
+        // Save user message to database
+        const { error: messageError } = await createMessage(chatId, user.id, content, false);
+        if (messageError) throw messageError;
         
-        // The edge function will fetch conversation history and build context
-        
-        // Get the session token for authentication
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('User not authenticated');
-        }
-        
-        // Invoke the Supabase Edge Function with streaming
-        const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            character_id: characterId,
-            chat_id: finalChatId,
-            model: 'openai/gpt-4o-mini',
-            user_message: content
-          }),
+        // Update optimistic message to 'sent'
+        queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+          if (!old) return old;
+          
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              messages: page.messages.map(msg => 
+                msg.id === optimisticId 
+                  ? { ...msg, status: 'sent' as const }
+                  : msg
+              )
+            }))
+          };
         });
         
-        if (!response.ok) {
-          throw new Error(`AI response failed: ${response.status}`);
-        }
+        // Invoke AI for response (don't await - let it happen in background)
+        invokeAIResponse(chatId, content, characterId, user.id);
         
-        // Process the JSON response from Edge Function
-        const responseData = await response.json();
-        
-        if (!responseData.success || !responseData.content) {
-          throw new Error('No valid response received from AI');
-        }
-        
-        const aiResponseContent = responseData.content;
-        
-        // Save the AI response to the database (frontend handles all DB operations)
-        const { error: aiMessageError } = await createMessage(
-          finalChatId,
-          user.id, // Use current user ID - distinguish with is_ai_message flag
-          aiResponseContent,
-          true // is_ai_message = true
-        );
-        
-        if (aiMessageError) {
-          console.error('Failed to save AI message:', aiMessageError);
-          throw new Error('Failed to save AI response');
-        }
-        
-        console.log('AI message saved successfully');
+        return { chatId, content, optimisticId };
         
       } catch (error) {
-        console.error('Error invoking AI:', error);
-        // Continue execution - user message was saved successfully
-        // The error will be logged but won't prevent the mutation from succeeding
+        // Update optimistic message to 'failed'
+        queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+          if (!old) return old;
+          
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              messages: page.messages.map(msg => 
+                msg.id === optimisticId 
+                  ? { ...msg, status: 'failed' as const }
+                  : msg
+              )
+            }))
+          };
+        });
+        throw error;
       }
-      
-      return { chatId: finalChatId, content };
     },
-    onSuccess: ({ chatId }) => {
-      // Invalidate user credits only - real-time handles message updates
+    onSuccess: () => {
+      // Invalidate credits
       queryClient.invalidateQueries({ queryKey: ['user', 'credits', user?.id] });
     },
   });
+};
+
+// Separate function for AI invocation (runs in background)
+const invokeAIResponse = async (
+  chatId: string, 
+  userMessage: string, 
+  characterId: string, 
+  userId: string
+) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('User not authenticated');
+    
+    const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        character_id: characterId,
+        chat_id: chatId,
+        model: 'openai/gpt-4o-mini',
+        user_message: userMessage
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`AI response failed: ${response.status}`);
+    }
+    
+    const responseData = await response.json();
+    
+    if (!responseData.success || !responseData.content) {
+      throw new Error('No valid response received from AI');
+    }
+    
+    // Save AI response to database (real-time will handle UI update)
+    const { error: aiMessageError } = await createMessage(
+      chatId,
+      userId,
+      responseData.content,
+      true // is_ai_message = true
+    );
+    
+    if (aiMessageError) {
+      console.error('Failed to save AI message:', aiMessageError);
+    }
+    
+  } catch (error) {
+    console.error('Error invoking AI:', error);
+  }
 };
 
 // Hook for consuming credits
@@ -288,7 +397,7 @@ export const useChatCache = () => {
   };
 };
 
-// Hook for real-time message updates
+// Hook for real-time message updates with simplified duplicate prevention
 export const useRealtimeMessages = (chatId: string | null) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -315,11 +424,21 @@ export const useRealtimeMessages = (chatId: string | null) => {
             status: 'sent'
           };
           
-          // Add new messages to the cache
+          // Add new messages to the cache with simplified duplicate prevention
           queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-            if (!old || !old.pages.length) return old;
+            if (!old || !old.pages.length) {
+              // Create initial structure if empty
+              return {
+                pages: [{
+                  messages: [newMessage],
+                  hasMore: false,
+                  oldestTimestamp: null
+                }],
+                pageParams: [undefined]
+              };
+            }
             
-            // Robust duplicate prevention
+            // Simple ID-based duplicate prevention only
             const messageExists = old.pages.some(page => 
               page.messages.some(msg => msg.id === newMessage.id)
             );
@@ -329,23 +448,33 @@ export const useRealtimeMessages = (chatId: string | null) => {
               return old;
             }
             
-            // Additional check: prevent duplicate content within 2 seconds
-            const allCurrentMessages = old.pages.flatMap(page => page.messages);
-            const duplicateContent = allCurrentMessages.find(msg => 
-              msg.content === newMessage.content &&
-              msg.isUser === newMessage.isUser &&
-              Math.abs(new Date(msg.timestamp).getTime() - new Date(newMessage.timestamp).getTime()) < 2000
-            );
-            
-            if (duplicateContent) {
-              console.log('Duplicate content prevented:', {
-                existing: duplicateContent.id,
-                new: newMessage.id,
-                content: newMessage.content.substring(0, 50)
-              });
-              return old;
+            // Replace optimistic messages with real ones (for user messages)
+            if (newMessage.isUser) {
+              const updatedPages = old.pages.map(page => ({
+                ...page,
+                messages: page.messages.map(msg => {
+                  // Replace temp optimistic message with real one
+                  if (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.isUser) {
+                    return newMessage;
+                  }
+                  return msg;
+                })
+              }));
+              
+              // Check if we actually replaced an optimistic message
+              const replacedOptimistic = updatedPages.some(page =>
+                page.messages.some(msg => msg.id === newMessage.id)
+              );
+              
+              if (replacedOptimistic) {
+                return {
+                  ...old,
+                  pages: updatedPages
+                };
+              }
             }
             
+            // Add new message to the end of the first page
             const firstPage = old.pages[0];
             const updatedFirstPage: ChatPage = {
               ...firstPage,

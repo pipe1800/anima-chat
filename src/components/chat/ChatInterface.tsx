@@ -9,6 +9,7 @@ import {
   useUserCredits,
   useCharacterDetails,
   useSendMessage,
+  useCreateChatWithGreeting,
   useChatCache,
   type Message
 } from '@/hooks/useChat';
@@ -45,6 +46,7 @@ const ChatInterface = ({
   const { data: creditsBalance = 0 } = useUserCredits();
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
+  const createChatMutation = useCreateChatWithGreeting();
 
   // Initialize chat for existing chat
   useEffect(() => {
@@ -76,31 +78,41 @@ const ChatInterface = ({
     setIsTyping(true);
 
     try {
-      // Send message using React Query mutation (no optimistic updates)
-      const result = await sendMessageMutation.mutateAsync({
-        chatId: currentChatId,
-        content: messageContent,
-        characterId: character.id,
-        characterName: character.name
-      });
-
-      // Update chat ID if it was created
+      // Create chat if needed
       if (!currentChatId) {
-        setCurrentChatId(result.chatId);
-      }
-
-      // Handle first message achievement
-      if (isFirstMessage) {
-        setIsFirstMessage(false);
-        onFirstMessage();
-        toast({
-          title: "🏆 Achievement Unlocked: First Contact!",
-          description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
-          duration: 5000
+        const newChatResult = await createChatMutation.mutateAsync({
+          characterId: character.id,
+          characterName: character.name
+        });
+        setCurrentChatId(newChatResult.chatId);
+        
+        // Handle first message achievement
+        if (isFirstMessage) {
+          setIsFirstMessage(false);
+          onFirstMessage();
+          toast({
+            title: "🏆 Achievement Unlocked: First Contact!",
+            description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
+            duration: 5000
+          });
+        }
+        
+        // Send message to the new chat
+        await sendMessageMutation.mutateAsync({
+          chatId: newChatResult.chatId,
+          content: messageContent,
+          characterId: character.id
+        });
+        
+      } else {
+        // Send message to existing chat
+        await sendMessageMutation.mutateAsync({
+          chatId: currentChatId,
+          content: messageContent,
+          characterId: character.id
         });
       }
 
-      // AI response will be handled by useSendMessage hook and appear via real-time subscription
       setIsTyping(false);
 
     } catch (error) {

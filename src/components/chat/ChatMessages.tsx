@@ -95,6 +95,18 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
     );
   }
 
+  // Show empty state when no chat is selected
+  if (!chatId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center text-gray-400">
+          <p className="text-lg">Start a conversation with {character.name}</p>
+          <p className="text-sm mt-2">Send a message below to begin</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={messagesContainerRef}
@@ -122,13 +134,23 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
       )}
 
       {/* Message Groups */}
-      {messageGroups.map(group => (
-        <MessageGroup 
-          key={group.id} 
-          group={group} 
-          character={character}
-        />
-      ))}
+      {messageGroups.length > 0 ? (
+        messageGroups.map(group => (
+          <MessageGroup 
+            key={group.id} 
+            group={group} 
+            character={character}
+          />
+        ))
+      ) : (
+        // Show empty state for chat with no messages yet
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center text-gray-400">
+            <p className="text-lg">Your conversation with {character.name} will appear here</p>
+            <p className="text-sm mt-2">Send your first message to get started!</p>
+          </div>
+        </div>
+      )}
       <div ref={messagesEndRef} />
     </div>
   );
