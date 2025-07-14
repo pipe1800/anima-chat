@@ -37,8 +37,6 @@ const ChatInterface = ({
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
-  const [newMessages, setNewMessages] = useState<Message[]>([]);
-  
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -47,29 +45,14 @@ const ChatInterface = ({
   const { data: creditsBalance = 0 } = useUserCredits();
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
-  const { addOptimisticMessage, updateMessageStatus } = useChatCache();
 
-  // Initialize greeting message for new chats (only once)
+  // Initialize chat for existing chat
   useEffect(() => {
-    if (!existingChatId && characterDetails && newMessages.length === 0) {
-      const greeting = characterDetails.definition?.[0]?.greeting || 
-                      `Hello! I'm ${character.name}. It's great to meet you. What would you like to talk about?`;
-      
-      const greetingMessage: Message = {
-        id: `greeting-${character.id}`,
-        content: greeting,
-        isUser: false,
-        timestamp: new Date(),
-        status: 'sent'
-      };
-      setNewMessages([greetingMessage]);
-    }
-    
     if (existingChatId) {
       setCurrentChatId(existingChatId);
       setIsFirstMessage(false);
     }
-  }, [existingChatId, characterDetails, character.name]);
+  }, [existingChatId]);
 
   // Focus input when component mounts
   useEffect(() => {
@@ -88,23 +71,12 @@ const ChatInterface = ({
       return;
     }
 
-    const tempId = `temp-${Date.now()}`;
-    const userMessage: Message = {
-      id: tempId,
-      content: inputValue,
-      isUser: true,
-      timestamp: new Date(),
-      status: 'sending'
-    };
-    
-    // Optimistically add user message
-    setNewMessages(prev => [...prev, userMessage]);
     const messageContent = inputValue;
     setInputValue('');
     setIsTyping(true);
 
     try {
-      // Send message using React Query mutation
+      // Send message using React Query mutation (no optimistic updates)
       const result = await sendMessageMutation.mutateAsync({
         chatId: currentChatId,
         content: messageContent,
@@ -116,9 +88,6 @@ const ChatInterface = ({
       if (!currentChatId) {
         setCurrentChatId(result.chatId);
       }
-
-      // Update message status to sent
-      updateMessageStatus(result.chatId, tempId, 'sent');
 
       // Handle first message achievement
       if (isFirstMessage) {
@@ -137,14 +106,6 @@ const ChatInterface = ({
     } catch (error) {
       console.error('Error handling message:', error);
       setIsTyping(false);
-      
-      // Update message status to failed
-      if (currentChatId) {
-        updateMessageStatus(currentChatId, tempId, 'failed');
-      } else {
-        // Remove the optimistic message if no chat was created
-        setNewMessages(prev => prev.filter(msg => msg.id !== tempId));
-      }
       
       toast({
         title: "Error",
@@ -178,8 +139,7 @@ const ChatInterface = ({
       {/* Messages Area */}
       <ChatMessages 
         chatId={currentChatId} 
-        character={character} 
-        newMessages={newMessages}
+        character={character}
       />
 
       {/* Typing Indicator */}

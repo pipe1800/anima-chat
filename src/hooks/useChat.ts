@@ -134,6 +134,18 @@ export const useSendMessage = () => {
         );
         if (chatError) throw chatError;
         finalChatId = newChat.id;
+        
+        // Add initial greeting message to database for new chats
+        const characterDetails = await getCharacterDetails(characterId);
+        if (characterDetails.data?.character_definitions) {
+          const greeting = characterDetails.data.character_definitions.greeting || 
+                          `Hello! I'm ${characterName}. It's great to meet you. What would you like to talk about?`;
+          
+          const { error: greetingError } = await createMessage(finalChatId, user.id, greeting, true);
+          if (greetingError) {
+            console.error('Failed to save greeting message:', greetingError);
+          }
+        }
       }
       
       // Save user message
@@ -249,7 +261,7 @@ export const useConsumeCredits = () => {
 };
 
 
-// Cache management utilities
+// Cache management utilities (simplified)
 export const useChatCache = () => {
   const queryClient = useQueryClient();
   
@@ -283,45 +295,9 @@ export const useChatCache = () => {
     queryClient.invalidateQueries({ queryKey: ['chat', 'messages', chatId] });
   };
   
-  const addOptimisticMessage = (chatId: string, message: Message) => {
-    queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-      if (!old || !old.pages.length) return old;
-      
-      const firstPage = old.pages[0];
-      const updatedFirstPage: ChatPage = {
-        ...firstPage,
-        messages: [...firstPage.messages, message]
-      };
-      
-      return {
-        ...old,
-        pages: [updatedFirstPage, ...old.pages.slice(1)]
-      };
-    });
-  };
-  
-  const updateMessageStatus = (chatId: string, tempId: string, status: 'sent' | 'failed', newId?: string) => {
-    queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-      if (!old || !old.pages.length) return old;
-      
-      const updatedPages = old.pages.map(page => ({
-        ...page,
-        messages: page.messages.map(msg => 
-          msg.id === tempId 
-            ? { ...msg, status, ...(newId && { id: newId }) }
-            : msg
-        )
-      }));
-      
-      return { ...old, pages: updatedPages };
-    });
-  };
-  
   return {
     prefetchChatMessages,
     invalidateChatMessages,
-    addOptimisticMessage,
-    updateMessageStatus,
   };
 };
 
@@ -356,30 +332,32 @@ export const useRealtimeMessages = (chatId: string | null) => {
           queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
             if (!old || !old.pages.length) return old;
             
-          // Check if message already exists to prevent duplicates
-          const messageExists = old.pages.some(page => 
-            page.messages.some(msg => msg.id === newMessage.id)
-          );
-          
-          if (messageExists) {
-            console.log('Duplicate message prevented:', newMessage.id);
-            return old;
-          }
-          
-          // Additional check: prevent duplicate content for AI messages within 1 second
-          if (!newMessage.isUser) {
-            const recentMessages = old.pages[0]?.messages || [];
-            const duplicateContent = recentMessages.find(msg => 
-              !msg.isUser && 
+            // Robust duplicate prevention
+            const messageExists = old.pages.some(page => 
+              page.messages.some(msg => msg.id === newMessage.id)
+            );
+            
+            if (messageExists) {
+              console.log('Duplicate message prevented by ID:', newMessage.id);
+              return old;
+            }
+            
+            // Additional check: prevent duplicate content within 2 seconds
+            const allCurrentMessages = old.pages.flatMap(page => page.messages);
+            const duplicateContent = allCurrentMessages.find(msg => 
               msg.content === newMessage.content &&
-              Math.abs(new Date(msg.timestamp).getTime() - new Date(newMessage.timestamp).getTime()) < 1000
+              msg.isUser === newMessage.isUser &&
+              Math.abs(new Date(msg.timestamp).getTime() - new Date(newMessage.timestamp).getTime()) < 2000
             );
             
             if (duplicateContent) {
-              console.log('Duplicate AI content prevented:', newMessage.content.substring(0, 50));
+              console.log('Duplicate content prevented:', {
+                existing: duplicateContent.id,
+                new: newMessage.id,
+                content: newMessage.content.substring(0, 50)
+              });
               return old;
             }
-          }
             
             const firstPage = old.pages[0];
             const updatedFirstPage: ChatPage = {

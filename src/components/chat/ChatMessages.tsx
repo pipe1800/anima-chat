@@ -17,10 +17,9 @@ interface Character {
 interface ChatMessagesProps {
   chatId: string | null;
   character: Character;
-  newMessages?: Message[];
 }
 
-const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps) => {
+const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
@@ -36,11 +35,10 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
   // Enable real-time updates
   useRealtimeMessages(chatId);
 
-  // Combine fetched messages with new messages
+  // Use only fetched messages from database (single source of truth)
   const allMessages = React.useMemo(() => {
-    const fetchedMessages = data?.pages?.flatMap(page => page.messages) || [];
-    return [...fetchedMessages, ...newMessages];
-  }, [data?.pages, newMessages]);
+    return data?.pages?.flatMap(page => page.messages) || [];
+  }, [data?.pages]);
 
   // Group messages for better visual organization
   const messageGroups = React.useMemo(() => {
@@ -49,10 +47,10 @@ const ChatMessages = ({ chatId, character, newMessages = [] }: ChatMessagesProps
 
   // Auto scroll to bottom for new messages
   useEffect(() => {
-    if (newMessages.length > 0) {
+    if (allMessages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [newMessages]);
+  }, [allMessages.length]);
 
   // Scroll to bottom on initial load
   useEffect(() => {
