@@ -189,27 +189,14 @@ export const useSendMessage = () => {
           throw new Error(`AI response failed: ${response.status}`);
         }
         
-        if (!response.body) {
-          throw new Error('No response body received from AI');
+        // Process the JSON response from Edge Function
+        const responseData = await response.json();
+        
+        if (!responseData.success || !responseData.content) {
+          throw new Error('No valid response received from AI');
         }
         
-        // Process the Stream and Save AI Response
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let aiResponseContent = '';
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
-          aiResponseContent += chunk;
-        }
-        
-        // Fallback if no proper response received
-        if (!aiResponseContent.trim()) {
-          aiResponseContent = `I apologize, but I couldn't process your message properly. Please try again.`;
-        }
+        const aiResponseContent = responseData.content;
         
         // Save the AI response to the database
         const { error: aiMessageError } = await createMessage(
@@ -325,37 +312,28 @@ export const useHandleSendMessage = () => {
         throw new Error(`Failed to get response: ${response.status}`);
       }
 
-      if (!response.body) {
-        throw new Error("No response body received");
+      // 4. Process the JSON response from Edge Function
+      const responseData = await response.json();
+      
+      if (!responseData.success || !responseData.content) {
+        throw new Error('No valid response received from AI');
       }
 
-      // 4. Process the stream to update the UI in real-time
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        fullResponse += decoder.decode(value, { stream: true });
-
-        // Update the AI message content in real-time
-        queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-          if (!old || !old.pages.length) return old;
-          
-          const updatedPages = old.pages.map(page => ({
-            ...page,
-            messages: page.messages.map(msg => 
-              msg.id === aiMessagePlaceholder.id
-                ? { ...msg, content: fullResponse }
-                : msg
-            )
-          }));
-          
-          return { ...old, pages: updatedPages };
-        });
-      }
+      // Update the AI message content with the final response
+      queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+        if (!old || !old.pages.length) return old;
+        
+        const updatedPages = old.pages.map(page => ({
+          ...page,
+          messages: page.messages.map(msg => 
+            msg.id === aiMessagePlaceholder.id
+              ? { ...msg, content: responseData.content }
+              : msg
+          )
+        }));
+        
+        return { ...old, pages: updatedPages };
+      });
 
     } catch (e) {
       console.error("Error invoking chat function:", e);

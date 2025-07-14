@@ -148,6 +148,7 @@ Begin the conversation naturally.`;
     const reader = openRouterResponse.body?.getReader();
     const decoder = new TextDecoder();
     let aiResponseContent = '';
+    let buffer = '';
     
     if (reader) {
       while (true) {
@@ -155,7 +156,32 @@ Begin the conversation naturally.`;
         if (done) break;
         
         const chunk = decoder.decode(value, { stream: true });
-        aiResponseContent += chunk;
+        buffer += chunk;
+        
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6); // Remove 'data: ' prefix
+            
+            if (jsonStr.trim() === '[DONE]') {
+              break;
+            }
+            
+            try {
+              const data = JSON.parse(jsonStr);
+              const content = data.choices?.[0]?.delta?.content;
+              if (content) {
+                aiResponseContent += content;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+              console.log('Skipping invalid JSON line:', jsonStr);
+            }
+          }
+        }
       }
     }
     
