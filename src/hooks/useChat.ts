@@ -140,6 +140,87 @@ export const useSendMessage = () => {
       const { error: messageError } = await createMessage(finalChatId, user.id, content, false);
       if (messageError) throw messageError;
       
+      // Add AI Invocation (The Missing Piece)
+      try {
+        // Get character details for system prompt
+        const characterDetails = await getCharacterDetails(characterId);
+        if (characterDetails.error) {
+          console.error('Failed to get character details:', characterDetails.error);
+          throw new Error('Failed to get character details');
+        }
+        
+        // Construct message history array
+        const messages = [
+          {
+            role: 'system',
+            content: characterDetails.data?.character_definitions?.personality_summary || 'You are a helpful assistant.'
+          },
+          {
+            role: 'user',
+            content: content
+          }
+        ];
+        
+        // Get the session token for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('User not authenticated');
+        }
+        
+        // Invoke the Supabase Edge Function with streaming
+        const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            character_id: characterId,
+            chat_id: finalChatId,
+            model: 'google/gemma-7b-it',
+            messages: messages
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`AI response failed: ${response.status}`);
+        }
+        
+        if (!response.body) {
+          throw new Error('No response body received from AI');
+        }
+        
+        // Process the Stream and Save AI Response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponseContent = '';
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          aiResponseContent += decoder.decode(value, { stream: true });
+        }
+        
+        // Save the AI response to the database
+        const { error: aiMessageError } = await createMessage(
+          finalChatId,
+          characterId, // Use characterId as author for AI messages
+          aiResponseContent,
+          true // is_ai_message = true
+        );
+        
+        if (aiMessageError) {
+          console.error('Failed to save AI message:', aiMessageError);
+          throw new Error('Failed to save AI response');
+        }
+        
+      } catch (error) {
+        console.error('Error invoking AI:', error);
+        // Continue execution - user message was saved successfully
+        // The error will be logged but won't prevent the mutation from succeeding
+      }
+      
       return { chatId: finalChatId, content };
     },
     onSuccess: ({ chatId }) => {
