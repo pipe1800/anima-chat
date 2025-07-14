@@ -283,7 +283,12 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
             {/* Persona Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 px-3">
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
+                  data-tutorial="persona-dropdown"
+                  onClick={() => handleStepAction('persona-dropdown-clicked')}
+                >
                   <div className="flex items-center space-x-2">
                     <Avatar className="w-6 h-6">
                       <AvatarImage src={selectedPersona?.avatar_url || undefined} alt={selectedPersona?.name} />

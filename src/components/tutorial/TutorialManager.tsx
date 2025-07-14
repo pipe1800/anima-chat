@@ -14,16 +14,46 @@ export const TutorialManager: React.FC<TutorialManagerProps> = ({ shouldStart })
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
-    if (shouldStart && user) {
-      // Check if tutorial should be shown
+    console.log('TutorialManager: Effect triggered with:', { shouldStart, user: !!user });
+    
+    const checkTutorial = () => {
+      if (!user) {
+        console.log('TutorialManager: No user found');
+        return;
+      }
+
       const chatTutorialCompleted = user.user_metadata?.chat_tutorial_completed;
       const onboardingCompleted = user.user_metadata?.onboarding_completed;
       
-      if (onboardingCompleted && !chatTutorialCompleted) {
+      console.log('TutorialManager: User metadata:', {
+        chatTutorialCompleted,
+        onboardingCompleted,
+        shouldStart
+      });
+      
+      // Multiple trigger conditions for robustness
+      const shouldShowTutorial = (
+        (shouldStart && onboardingCompleted && !chatTutorialCompleted) ||
+        (onboardingCompleted && !chatTutorialCompleted && !isActive) ||
+        // Fallback: check localStorage for recent onboarding completion
+        (localStorage.getItem('justCompletedOnboarding') === 'true' && !chatTutorialCompleted)
+      );
+      
+      console.log('TutorialManager: Should show tutorial:', shouldShowTutorial);
+      
+      if (shouldShowTutorial) {
         setShowWelcomeModal(true);
+        // Clear localStorage flag
+        localStorage.removeItem('justCompletedOnboarding');
       }
+    };
+
+    if (user) {
+      // Add delay to allow metadata to propagate
+      const timer = setTimeout(checkTutorial, 500);
+      return () => clearTimeout(timer);
     }
-  }, [shouldStart, user]);
+  }, [shouldStart, user, isActive]);
 
   const handleStartTutorial = () => {
     setShowWelcomeModal(false);

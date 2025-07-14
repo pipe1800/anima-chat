@@ -84,6 +84,9 @@ const Chat = () => {
             console.log('Onboarding marked as completed in handleFirstMessage');
             setOnboardingCompleted(true);
             
+            // Set localStorage flag for tutorial trigger
+            localStorage.setItem('justCompletedOnboarding', 'true');
+            
             // Hide onboarding after completion animation
             setTimeout(() => {
               setShowOnboarding(false);

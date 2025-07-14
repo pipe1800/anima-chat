@@ -70,8 +70,13 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
   const handleCharacterSelect = (character: Character) => {
     console.log('Selected character:', character);
     onCharacterSelect(character);
-    // Navigate to chat with selected character
-    navigate('/chat', { state: { selectedCharacter: character } });
+    // Navigate to chat with selected character and fromOnboarding flag
+    navigate('/chat', { 
+      state: { 
+        selectedCharacter: character,
+        fromOnboarding: true 
+      } 
+    });
   };
 
   const handleToggleFavorite = async (e: React.MouseEvent, characterId: string) => {

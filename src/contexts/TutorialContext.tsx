@@ -75,6 +75,15 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     id: 5,
+    title: 'Your Persona',
+    description: 'Select or create a persona that represents you in the chat. This persona will be taken into context by the AI to better interact with your character.',
+    target: '[data-tutorial="persona-dropdown"]',
+    action: 'click',
+    position: 'bottom',
+    requiredInteraction: true
+  },
+  {
+    id: 6,
     title: 'World Info Selection',
     description: 'Since Dynamic World Info is active, you can now select a world info to enhance your character interactions.',
     target: '[data-tutorial="world-info-dropdown"]',
@@ -83,7 +92,7 @@ const tutorialSteps: TutorialStep[] = [
     requiredInteraction: true
   },
   {
-    id: 6,
+    id: 7,
     title: 'Discover Page',
     description: 'Visit the Discover page to find new characters and world infos created by the community.',
     target: '[data-tutorial="discover-nav"]',
@@ -92,7 +101,7 @@ const tutorialSteps: TutorialStep[] = [
     requiredInteraction: false
   },
   {
-    id: 7,
+    id: 8,
     title: 'World Info Management',
     description: 'Create and manage your world infos here. Once created, they will appear in the world info dropdown in chat.',
     target: '[data-tutorial="world-info-nav"]',
@@ -101,7 +110,7 @@ const tutorialSteps: TutorialStep[] = [
     requiredInteraction: false
   },
   {
-    id: 8,
+    id: 9,
     title: 'Chat History & Details',
     description: 'Click this menu to access your chat history and view character details.',
     target: '[data-tutorial="right-panel-toggle"]',
@@ -110,7 +119,7 @@ const tutorialSteps: TutorialStep[] = [
     requiredInteraction: true
   },
   {
-    id: 9,
+    id: 10,
     title: 'Credits System',
     description: 'Credits are consumed with each message you send. Addons increase the credit cost based on their complexity.',
     target: '[data-tutorial="credits-display"]',
@@ -163,8 +172,8 @@ export const TutorialProvider: React.FC<TutorialProviderProps> = ({ children }) 
         setAddonDropdownOpen(true);
       }
       
-      // Show world info dropdown for step 5
-      if (nextStepIndex === 4) { // Step 5 (0-indexed)
+      // Show world info dropdown for step 6
+      if (nextStepIndex === 5) { // Step 6 (0-indexed)
         setWorldInfoDropdownVisible(true);
       }
     }
@@ -254,10 +263,16 @@ export const TutorialProvider: React.FC<TutorialProviderProps> = ({ children }) 
           setTimeout(() => nextStep(), 500);
         }
         break;
+      case 'persona-dropdown-clicked':
+        if (stepData.action === 'click' && stepData.target.includes('persona-dropdown')) {
+          markStepCompleted(stepData.id);
+          setTimeout(() => nextStep(), 500);
+        }
+        break;
       case 'world-info-selected':
         if (stepData.action === 'select' && stepData.target.includes('world-info-dropdown')) {
           markStepCompleted(stepData.id);
-          setTimeout(() => nextStep(), 500);
+          setTimeout(() => nextStep(), 500);  
         }
         break;
       case 'right-panel-toggled':
