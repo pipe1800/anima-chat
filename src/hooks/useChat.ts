@@ -204,21 +204,17 @@ export const useSendMessage = () => {
           
           const chunk = decoder.decode(value, { stream: true });
           aiResponseContent += chunk;
-          console.log('Received chunk:', chunk);
         }
-        
-        console.log('Full AI response:', aiResponseContent);
         
         // Fallback if no proper response received
         if (!aiResponseContent.trim()) {
-          aiResponseContent = `I apologize, but I couldn't process your message properly. This is a temporary response while we fix the streaming connection. Your message was: "${content}"`;
-          console.log('Using fallback response due to empty AI content');
+          aiResponseContent = `I apologize, but I couldn't process your message properly. Please try again.`;
         }
         
         // Save the AI response to the database
         const { error: aiMessageError } = await createMessage(
           finalChatId,
-          characterId, // Use characterId as author for AI messages
+          user.id, // Use current user ID - distinguish with is_ai_message flag
           aiResponseContent,
           true // is_ai_message = true
         );
@@ -228,7 +224,7 @@ export const useSendMessage = () => {
           throw new Error('Failed to save AI response');
         }
         
-        console.log('AI response saved and credits consumed');
+        // AI response saved successfully
         
       } catch (error) {
         console.error('Error invoking AI:', error);
@@ -487,8 +483,8 @@ export const useRealtimeMessages = (chatId: string | null) => {
             status: 'sent'
           };
           
-          // Only add messages from other sources (AI responses)
-          if (payload.new.author_id !== user.id) {
+          // Only add AI messages automatically (user messages are handled by UI)
+          if (payload.new.is_ai_message) {
             queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
               if (!old || !old.pages.length) return old;
               

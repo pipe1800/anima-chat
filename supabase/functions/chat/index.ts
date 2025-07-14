@@ -144,14 +144,41 @@ Begin the conversation naturally.`;
 
     console.log('OpenRouter API responded successfully');
 
-    // Return the streaming response
-    return new Response(openRouterResponse.body, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+    // Process and save the AI response
+    const reader = openRouterResponse.body?.getReader();
+    const decoder = new TextDecoder();
+    let aiResponseContent = '';
+    
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        aiResponseContent += chunk;
       }
+    }
+    
+    // Save the AI response to the database
+    const { error: saveError } = await supabase
+      .from('messages')
+      .insert({
+        chat_id: chat_id,
+        author_id: user.id, // Use current user ID - distinguish with is_ai_message flag
+        content: aiResponseContent,
+        is_ai_message: true
+      });
+    
+    if (saveError) {
+      console.error('Failed to save AI message:', saveError);
+      return new Response(JSON.stringify({ error: 'Failed to save AI response' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return new Response(JSON.stringify({ success: true, content: aiResponseContent }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
