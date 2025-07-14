@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
+import { Heart, MessageCircle } from 'lucide-react';
 import { getRecommendedCharacters, toggleCharacterFavorite, isCharacterFavorited } from '@/lib/supabase-queries';
 import { useCurrentUser } from '@/hooks/useProfile';
 import { toast } from 'sonner';
@@ -135,8 +135,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
         {characters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group cursor-pointer"
-            onClick={() => handleCharacterSelect(character)}
+            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
             style={{
               animationDelay: `${index * 0.1}s`
             }}
@@ -154,6 +153,18 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
                 <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate">
                   {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
                 </h3>
+              </div>
+
+              {/* Action Button - Center */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <Button
+                  onClick={() => handleCharacterSelect(character)}
+                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                  size="sm"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Start Chat
+                </Button>
               </div>
 
               {/* Favorite button */}

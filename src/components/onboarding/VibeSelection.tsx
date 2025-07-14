@@ -51,7 +51,7 @@ const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) 
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto text-center">
+    <div className="w-full max-w-7xl mx-auto text-center">
       <h1 className="text-4xl font-bold text-white mb-4">
         Choose Your Vibe
       </h1>
