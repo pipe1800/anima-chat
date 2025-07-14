@@ -8,6 +8,7 @@ import { Tooltip, TooltipProvider } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculateAddonCreditCost, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTutorial } from '@/contexts/TutorialContext';
 import { toast } from 'sonner';
 
 interface UserAddonDropdownProps {
@@ -17,6 +18,7 @@ interface UserAddonDropdownProps {
 
 export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProps) => {
   const { subscription } = useAuth();
+  const { handleStepAction } = useTutorial();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
     dynamicWorldInfo: false,
     enhancedMemory: false,
@@ -171,6 +173,11 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     }
 
     setTempAddonSettings(newSettings);
+    
+    // Handle tutorial progression for Dynamic World Info toggle
+    if (addonKey === 'dynamicWorldInfo') {
+      handleStepAction('dynamic-world-info-toggled');
+    }
   };
 
   const handleSaveAddons = async () => {
@@ -185,6 +192,9 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
       setAddonSettings(tempAddonSettings);
       setShowConfirmDialog(false);
       toast.success('Addon settings saved successfully');
+      
+      // Handle tutorial progression for addon save
+      handleStepAction('addons-saved');
     } catch (error) {
       console.error('Error saving addon settings:', error);
       toast.error('Failed to save addon settings. Please try again.');
@@ -230,6 +240,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
               className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
               disabled={saving}
               data-tutorial="addons-dropdown"
+              onClick={() => handleStepAction('addons-dropdown-clicked')}
             >
               <div className="flex items-center space-x-2">
                 <Settings className="w-4 h-4" />
