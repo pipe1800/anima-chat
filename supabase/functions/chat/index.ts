@@ -69,105 +69,16 @@ Deno.serve(async (req) => {
     console.log(`User plan: ${userPlan}`);
 
     // Parse the incoming request body
-    const { model, messages, chat_id } = await req.json();
+    const { model, messages, chat_id, character_id } = await req.json();
 
-    if (!model || !messages || !chat_id) {
-      return new Response(JSON.stringify({ error: 'Missing required fields: model, messages, chat_id' }), {
+    if (!model || !messages || !chat_id || !character_id) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: model, messages, chat_id, character_id' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`Processing chat request for chat: ${chat_id}, model: ${model}`);
-
-    // Create Supabase admin client for privileged operations
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    // Get character_id from chat
-    const { data: chat, error: chatError } = await supabaseAdmin
-      .from('chats')
-      .select('character_id')
-      .eq('id', chat_id)
-      .single();
-
-    if (chatError || !chat) {
-      return new Response(JSON.stringify({ error: 'Chat not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Fetch character data for system prompt
-    const { data: character, error: characterError } = await supabaseAdmin
-      .from('character_definitions')
-      .select('personality_summary, description, greeting, scenario')
-      .eq('character_id', chat.character_id)
-      .single();
-
-    if (characterError || !character) {
-      return new Response(JSON.stringify({ error: 'Character not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Get character name for additional context
-    const { data: characterInfo, error: characterInfoError } = await supabaseAdmin
-      .from('characters')
-      .select('name')
-      .eq('id', chat.character_id)
-      .single();
-
-    const characterName = characterInfo?.name || 'Character';
-
-    // Construct detailed system prompt
-    let systemPrompt = `You are ${characterName}, and you must stay in character at all times.
-
-PERSONALITY:
-${character.personality_summary}
-
-DESCRIPTION:
-${character.description || 'No additional description provided.'}`;
-
-    // Add scenario context if available
-    if (character.scenario) {
-      let scenarioText = '';
-      if (typeof character.scenario === 'string') {
-        scenarioText = character.scenario;
-      } else if (typeof character.scenario === 'object' && character.scenario !== null) {
-        // Handle JSONB scenario data
-        scenarioText = JSON.stringify(character.scenario, null, 2);
-      }
-      
-      if (scenarioText) {
-        systemPrompt += `\n\nSCENARIO/SETTING:
-${scenarioText}`;
-      }
-    }
-
-    // Add greeting context if available
-    if (character.greeting) {
-      systemPrompt += `\n\nYOUR GREETING MESSAGE:
-"${character.greeting}"`;
-    }
-
-    systemPrompt += `\n\nIMPORTANT INSTRUCTIONS:
-- Stay in character as ${characterName} at all times
-- Respond naturally and conversationally
-- Be consistent with your personality and background
-- Do not break character or mention that you are an AI
-- Engage with the user based on the scenario and your character traits`;
-
-    console.log('Constructed system prompt for character:', characterName);
-
-    // Prepend system prompt to messages array
-    const messagesWithSystemPrompt = [
-      { role: 'system', content: systemPrompt },
-      ...messages
-    ];
+    console.log(`Processing chat request for chat: ${chat_id}, model: ${model}, character: ${character_id}`);
 
     // Verify user has access to the requested model
     const allowedModels = modelTiers[userPlan] || modelTiers['Guest Pass'];
@@ -179,6 +90,48 @@ ${scenarioText}`;
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    // Create Supabase admin client for privileged operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    // Fetch Character Definition
+    const { data: character, error: characterError } = await supabaseAdmin
+      .from('character_definitions')
+      .select('personality_summary, description, scenario')
+      .eq('character_id', character_id)
+      .single();
+
+    if (characterError || !character) {
+      return new Response(JSON.stringify({ error: 'Character definition not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Construct the System Prompt
+    const systemPrompt = `You are to roleplay as the character defined below. Do not break character.
+
+**Character Description:**
+${character.description}
+
+**Personality Summary:**
+${character.personality_summary}
+
+**Scenario:**
+${character.scenario}
+
+Now, begin the conversation.`;
+
+    console.log('Constructed system prompt for character:', character_id);
+
+    // Prepend system prompt to messages array
+    const messagesWithSystemPrompt = [
+      { role: 'system', content: systemPrompt },
+      ...messages
+    ];
 
     // Credit check (pre-request)
     const { data: credits, error: creditsError } = await supabaseAdmin
