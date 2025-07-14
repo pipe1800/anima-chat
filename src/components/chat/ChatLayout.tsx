@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Menu, Search, Heart, Star, MessageCircle, Info, Edit, User, Plus, Upload, X, ChevronDown } from 'lucide-react';
+import { ChevronRight, Settings, Search, Heart, Star, MessageCircle, Info, Edit, User, Plus, Upload, X, ChevronDown, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserChats, getCharacterDetails } from '@/lib/supabase-queries';
@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { UserAddonDropdown } from './UserAddonDropdown';
 import { WorldInfoDropdown } from './WorldInfoDropdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
@@ -243,6 +244,33 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     }
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('chats')
+        .delete()
+        .eq('id', chatId)
+        .eq('user_id', currentUser.id);
+        
+      if (error) throw error;
+      
+      // Update UI
+      setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+      toast.success('Chat deleted successfully');
+      
+      // If we deleted the current chat, navigate away
+      if (chatId === currentChatId) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast.error('Failed to delete chat');
+    }
+  };
+
   const isCharacterOwner = currentUser && characterDetails && currentUser.id === characterDetails.creator_id;
 
   return (
@@ -336,7 +364,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Hamburger Menu (bigger) */}
+            {/* Settings Menu */}
             <Button
               variant="ghost"
               size="icon"
@@ -344,7 +372,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
               className="text-gray-400 hover:text-white hover:bg-gray-800"
               data-tutorial="right-panel-toggle"
             >
-              <Menu className="w-6 h-6" />
+              <Settings className="w-6 h-6" />
             </Button>
           </div>
         </header>
@@ -430,55 +458,89 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                         const isSameCharacter = chat.character?.id === character.id;
                         
                         return (
-                          <div
-                            key={chat.id}
-                            className={`p-3 rounded-lg transition-colors ${
-                              isActiveChat
-                                ? 'bg-[#FF7A00]/30 border border-[#FF7A00] cursor-default'
-                                : isSameCharacter
-                                ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30 cursor-pointer hover:bg-[#FF7A00]/25'
-                                : 'hover:bg-[#1a1a2e] cursor-pointer'
-                            }`}
-                            onClick={() => {
-                              if (!isActiveChat) {
-                                navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } });
-                              }
-                            }}
-                          >
-                          <div className="flex items-start space-x-3">
-                            <Avatar className="w-10 h-10 flex-shrink-0">
-                              <AvatarImage src={chat.character?.avatar_url} alt={chat.character?.name} />
-                              <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
-                                {chat.character?.name?.split(' ').map((n: string) => n[0]).join('') || 'C'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <h3 className={`font-medium text-sm truncate ${
-                                  isActiveChat ? 'text-[#FF7A00] font-bold' : 
-                                  isSameCharacter ? 'text-[#FF7A00]' : 'text-white'
-                                }`}>{chat.character?.name || 'Unknown Character'}</h3>
-                                <span className="text-gray-400 text-xs flex-shrink-0 ml-2">
-                                  {chat.last_message_at ? new Date(chat.last_message_at).toLocaleDateString() : 'No messages'}
-                                </span>
-                              </div>
-                              <p className={`text-sm truncate ${
-                                isActiveChat ? 'text-[#FF7A00]/80' : 'text-gray-400'
-                              }`}>
-                                {isActiveChat ? '• Active Chat' : 
-                                 chat.lastMessage ? (
-                                   <>
-                                     <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
-                                       {chat.lastMessageIsAI ? chat.character?.name?.split(' ')[0] : 'You'}:
-                                     </span>
-                                     {' '}{chat.lastMessage}
-                                   </>
-                                 ) : 'New conversation'
+                          <div key={chat.id} className="relative group">
+                            <div
+                              className={`p-3 rounded-lg transition-colors ${
+                                isActiveChat
+                                  ? 'bg-[#FF7A00]/30 border border-[#FF7A00] cursor-default'
+                                  : isSameCharacter
+                                  ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30 cursor-pointer hover:bg-[#FF7A00]/25'
+                                  : 'hover:bg-[#1a1a2e] cursor-pointer'
+                              }`}
+                              onClick={() => {
+                                if (!isActiveChat) {
+                                  navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } });
                                 }
-                              </p>
+                              }}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <Avatar className="w-10 h-10 flex-shrink-0">
+                                  <AvatarImage src={chat.character?.avatar_url} alt={chat.character?.name} />
+                                  <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
+                                    {chat.character?.name?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h3 className={`font-medium text-sm truncate ${
+                                      isActiveChat ? 'text-[#FF7A00] font-bold' : 
+                                      isSameCharacter ? 'text-[#FF7A00]' : 'text-white'
+                                    }`}>{chat.character?.name || 'Unknown Character'}</h3>
+                                    <span className="text-gray-400 text-xs flex-shrink-0 ml-2">
+                                      {chat.last_message_at ? new Date(chat.last_message_at).toLocaleDateString() : 'No messages'}
+                                    </span>
+                                  </div>
+                                  <p className={`text-sm truncate ${
+                                    isActiveChat ? 'text-[#FF7A00]/80' : 'text-gray-400'
+                                  }`}>
+                                    {isActiveChat ? '• Active Chat' : 
+                                     chat.lastMessage ? (
+                                       <>
+                                         <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
+                                           {chat.lastMessageIsAI ? chat.character?.name?.split(' ')[0] : 'You'}:
+                                         </span>
+                                         {' '}{chat.lastMessage}
+                                       </>
+                                     ) : 'New conversation'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
                             </div>
+                            
+                            {/* Delete Button */}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 w-6 h-6 p-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-[#1a1a2e] border-gray-700/50">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-white">Delete Chat</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-gray-300">
+                                    Are you sure you want to delete this chat with {chat.character?.name}? This action cannot be undone and all messages will be permanently lost.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] text-gray-300">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteChat(chat.id)}
+                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                  >
+                                    Delete Chat
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
-                        </div>
                         );
                       })
                     )}

@@ -113,21 +113,6 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
       ref={messagesContainerRef}
       className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif]"
     >
-      {/* Debug indicator for real-time status */}
-      {chatId && (
-        <div className="fixed top-4 right-4 z-50 text-xs bg-black/80 px-3 py-2 rounded-lg border border-white/20">
-          <div className="mb-1">
-            {isSubscribed ? '🟢 Real-time connected' : '🔴 Real-time disconnected (polling)'}
-          </div>
-          {debugInfo.length > 0 && (
-            <div className="text-xs text-gray-300 space-y-1">
-              {debugInfo.map((info, index) => (
-                <div key={index}>{info}</div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
       {/* Load Earlier Messages Button */}
       {hasNextPage && (
         <div className="flex justify-center mb-4">

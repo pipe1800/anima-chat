@@ -9,7 +9,7 @@ import {
   useUserCredits,
   useCharacterDetails,
   useSendMessage,
-  useChatCache,
+  useChatMessages,
   type Message
 } from '@/hooks/useChat';
 
@@ -36,6 +36,9 @@ const ChatInterface = ({
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
+  
+  // Listen to message updates to stop typing when AI responds
+  const { data: messagesData } = useChatMessages(currentChatId);
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -60,6 +63,19 @@ const ChatInterface = ({
       inputRef.current.focus();
     }
   }, []);
+
+  // Stop typing indicator when AI message appears
+  useEffect(() => {
+    if (!isTyping || !messagesData?.pages) return;
+    
+    const allMessages = messagesData.pages.flatMap(page => page.messages);
+    const latestMessage = allMessages[allMessages.length - 1];
+    
+    // If latest message is from AI and we're showing typing indicator, stop it
+    if (latestMessage && !latestMessage.isUser) {
+      setIsTyping(false);
+    }
+  }, [messagesData, isTyping]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +110,7 @@ const ChatInterface = ({
         });
       }
 
-      setIsTyping(false);
+      // Note: Don't set isTyping(false) here - let the useEffect handle it when AI message arrives
 
     } catch (error) {
       console.error('Error sending message:', error);

@@ -74,13 +74,6 @@ export function MessageGroup({ group, character }: MessageGroupProps) {
               }`}
             >
               {message.content}
-              {isUser && message.status && (
-                <div className="text-xs opacity-70 mt-1">
-                  {message.status === 'sending' && '●'}
-                  {message.status === 'sent' && '✓'}
-                  {message.status === 'failed' && '✗'}
-                </div>
-              )}
             </div>
           ))}
         </div>
