@@ -222,9 +222,7 @@ export const useSendMessage = () => {
       return { chatId: finalChatId, content };
     },
     onSuccess: ({ chatId }) => {
-      // Invalidate messages for this chat
-      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', chatId] });
-      // Invalidate user credits
+      // Invalidate user credits only - real-time handles message updates
       queryClient.invalidateQueries({ queryKey: ['user', 'credits', user?.id] });
     },
   });
@@ -250,113 +248,6 @@ export const useConsumeCredits = () => {
   });
 };
 
-// Hook for handling streaming AI responses
-export const useHandleSendMessage = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { addOptimisticMessage, updateMessageStatus } = useChatCache();
-  
-  const handleSendMessage = async (content: string, chatId: string, characterId: string) => {
-    if (!characterId) {
-      console.error("Character ID is not available.");
-      return;
-    }
-
-    // 1. Add the user's new message to the state immediately
-    const userMessage: Message = {
-      id: `temp-${Date.now()}`,
-      content: content,
-      isUser: true,
-      timestamp: new Date(),
-    };
-    addOptimisticMessage(chatId, userMessage);
-
-    // 2. Add a blank placeholder for the AI's response to render the bubble
-    const aiMessagePlaceholder: Message = {
-      id: `ai-temp-${Date.now()}`,
-      content: '',
-      isUser: false,
-      timestamp: new Date(),
-    };
-    addOptimisticMessage(chatId, aiMessagePlaceholder);
-
-    // Get current messages to build context
-    const currentData = queryClient.getQueryData(['chat', 'messages', chatId]) as InfiniteData<ChatPage> | undefined;
-    const currentMessages = currentData?.pages.flatMap(page => page.messages.map(msg => ({
-      role: msg.isUser ? 'user' : 'assistant',
-      content: msg.content
-    }))) || [];
-
-    try {
-      // Get the session token for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('User not authenticated');
-      }
-
-      // 3. Invoke the live Supabase Edge Function with a streaming response
-      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          character_id: characterId,
-          model: 'openai/gpt-4o-mini',
-          messages: [...currentMessages, { role: 'user', content: content }], // Send the full history plus the new message
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to get response: ${response.status}`);
-      }
-
-      // 4. Process the JSON response from Edge Function
-      const responseData = await response.json();
-      
-      if (!responseData.success || !responseData.content) {
-        throw new Error('No valid response received from AI');
-      }
-
-      // Update the AI message content with the final response
-      queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-        if (!old || !old.pages.length) return old;
-        
-        const updatedPages = old.pages.map(page => ({
-          ...page,
-          messages: page.messages.map(msg => 
-            msg.id === aiMessagePlaceholder.id
-              ? { ...msg, content: responseData.content }
-              : msg
-          )
-        }));
-        
-        return { ...old, pages: updatedPages };
-      });
-
-    } catch (e) {
-      console.error("Error invoking chat function:", e);
-      // 5. Update the UI with a clear error message on failure
-      queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-        if (!old || !old.pages.length) return old;
-        
-        const updatedPages = old.pages.map(page => ({
-          ...page,
-          messages: page.messages.map(msg => 
-            msg.id === aiMessagePlaceholder.id
-              ? { ...msg, content: `Error: ${(e as Error).message}` }
-              : msg
-          )
-        }));
-        
-        return { ...old, pages: updatedPages };
-      });
-    }
-  };
-
-  return { handleSendMessage };
-};
 
 // Cache management utilities
 export const useChatCache = () => {
@@ -461,23 +352,28 @@ export const useRealtimeMessages = (chatId: string | null) => {
             status: 'sent'
           };
           
-          // Only add AI messages automatically (user messages are handled by UI)
-          if (payload.new.is_ai_message) {
-            queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-              if (!old || !old.pages.length) return old;
-              
-              const firstPage = old.pages[0];
-              const updatedFirstPage: ChatPage = {
-                ...firstPage,
-                messages: [...firstPage.messages, newMessage]
-              };
-              
-              return {
-                ...old,
-                pages: [updatedFirstPage, ...old.pages.slice(1)]
-              };
-            });
-          }
+          // Add new messages to the cache
+          queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+            if (!old || !old.pages.length) return old;
+            
+            // Check if message already exists to prevent duplicates
+            const messageExists = old.pages.some(page => 
+              page.messages.some(msg => msg.id === newMessage.id)
+            );
+            
+            if (messageExists) return old;
+            
+            const firstPage = old.pages[0];
+            const updatedFirstPage: ChatPage = {
+              ...firstPage,
+              messages: [...firstPage.messages, newMessage]
+            };
+            
+            return {
+              ...old,
+              pages: [updatedFirstPage, ...old.pages.slice(1)]
+            };
+          });
         }
       )
       .subscribe();

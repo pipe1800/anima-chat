@@ -10,7 +10,6 @@ import {
   useCharacterDetails,
   useSendMessage,
   useChatCache,
-  useRealtimeMessages,
   type Message
 } from '@/hooks/useChat';
 
@@ -49,9 +48,6 @@ const ChatInterface = ({
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
   const { addOptimisticMessage, updateMessageStatus } = useChatCache();
-  
-  // Enable real-time updates for current chat
-  useRealtimeMessages(currentChatId);
 
   // Initialize greeting message for new chats
   useEffect(() => {
