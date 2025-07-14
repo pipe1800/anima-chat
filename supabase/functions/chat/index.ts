@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
+// Define standard CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,20 +20,14 @@ const modelCreditCost = {
   'nousresearch/nous-hermes-2-mixtral-8x7b-dpo': 7
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get authorization token
+    // Create Supabase client using user's Authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'No authorization header' }), {
@@ -42,8 +36,20 @@ serve(async (req) => {
       });
     }
 
-    // Verify user and get user ID
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+
+    // Fetch the user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
@@ -51,26 +57,28 @@ serve(async (req) => {
       });
     }
 
-    const { model, messages, stream = true } = await req.json();
-
-    console.log(`Processing chat request for user: ${user.id}, model: ${model}`);
-
-    // Get user's subscription and plan
-    const { data: subscription, error: subError } = await supabase
+    // Determine the user's plan
+    const { data: subscription } = await supabase
       .from('subscriptions')
-      .select(`
-        *,
-        plans!inner(name, monthly_credits_allowance)
-      `)
+      .select('plans(name)')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
 
-    // Default to Guest Pass if no active subscription
     const userPlan = subscription?.plans?.name || 'Guest Pass';
     console.log(`User plan: ${userPlan}`);
 
-    // Check if user is allowed to use this model
+    // Parse the incoming request body
+    const { model, messages, chat_id } = await req.json();
+
+    if (!model || !messages || !chat_id) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: model, messages, chat_id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify user has access to the requested model
     const allowedModels = modelTiers[userPlan] || modelTiers['Guest Pass'];
     if (!allowedModels.includes(model)) {
       return new Response(JSON.stringify({ 
@@ -81,17 +89,14 @@ serve(async (req) => {
       });
     }
 
-    // Get credit cost for this model
-    const creditCost = modelCreditCost[model];
-    if (!creditCost) {
-      return new Response(JSON.stringify({ error: 'Unknown model' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // Create Supabase admin client for privileged operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
-    // Check user's credit balance
-    const { data: credits, error: creditsError } = await supabase
+    // Credit check (pre-request)
+    const { data: credits, error: creditsError } = await supabaseAdmin
       .from('credits')
       .select('balance')
       .eq('user_id', user.id)
@@ -104,22 +109,23 @@ serve(async (req) => {
       });
     }
 
-    if (credits.balance < creditCost) {
+    const costPerMessage = modelCreditCost[model];
+    if (credits.balance < costPerMessage) {
       return new Response(JSON.stringify({ 
-        error: `Insufficient credits. Required: ${creditCost}, Available: ${credits.balance}` 
+        error: `Insufficient credits. Required: ${costPerMessage}, Available: ${credits.balance}` 
       }), {
         status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`User has ${credits.balance} credits, model costs ${creditCost}`);
+    console.log(`User has ${credits.balance} credits, model costs ${costPerMessage}`);
 
-    // Make request to OpenRouter API
+    // Streaming proxy to OpenRouter
     const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENROUTER_API_KEY')}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
         'X-Title': 'AnimaChat'
@@ -127,7 +133,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model,
         messages,
-        stream
+        stream: true
       })
     });
 
@@ -140,36 +146,82 @@ serve(async (req) => {
       });
     }
 
-    // Deduct credits after successful API call
-    const { error: deductError } = await supabase
-      .from('credits')
-      .update({ balance: credits.balance - creditCost })
-      .eq('user_id', user.id);
+    // Variables to store usage data
+    let prompt_tokens = 0;
+    let completion_tokens = 0;
 
-    if (deductError) {
-      console.error('Failed to deduct credits:', deductError);
-      // Note: We don't return an error here as the API call was successful
-      // The credits deduction failure should be logged for manual review
-    } else {
-      console.log(`Successfully deducted ${creditCost} credits from user ${user.id}`);
-    }
-
-    // Stream the response back to the client
-    if (stream) {
-      return new Response(openRouterResponse.body, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+    // Create a TransformStream to intercept the data chunks
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        // Convert chunk to string
+        const chunkStr = new TextDecoder().decode(chunk);
+        
+        // Parse each line for SSE data
+        const lines = chunkStr.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6); // Remove 'data: ' prefix
+            
+            if (data === '[DONE]') {
+              // Stream is complete
+              continue;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              
+              // Check if this chunk contains usage data
+              if (parsed.usage) {
+                prompt_tokens = parsed.usage.prompt_tokens || 0;
+                completion_tokens = parsed.usage.completion_tokens || 0;
+                console.log(`Usage data: prompt_tokens=${prompt_tokens}, completion_tokens=${completion_tokens}`);
+              }
+            } catch (e) {
+              // Not valid JSON, continue
+            }
+          }
         }
-      });
-    } else {
-      const data = await openRouterResponse.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+        
+        // Pass the original chunk through to the client
+        controller.enqueue(chunk);
+      },
+      
+      flush() {
+        // Stream is complete, perform credit deduction
+        if (prompt_tokens > 0 || completion_tokens > 0) {
+          const totalTokens = prompt_tokens + completion_tokens;
+          const totalCost = Math.ceil(totalTokens / 1000) * costPerMessage;
+          
+          console.log(`Deducting ${totalCost} credits for ${totalTokens} tokens`);
+          
+          // Update user's credit balance
+          supabaseAdmin
+            .from('credits')
+            .update({ balance: credits.balance - totalCost })
+            .eq('user_id', user.id)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Failed to deduct credits:', error);
+              } else {
+                console.log(`Successfully deducted ${totalCost} credits from user ${user.id}`);
+              }
+            });
+        }
+      }
+    });
+
+    // Pipe the OpenRouter response through our transform stream
+    const readable = openRouterResponse.body!.pipeThrough(transformStream);
+
+    // Return the transformed stream to the client
+    return new Response(readable, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      }
+    });
 
   } catch (error) {
     console.error('Chat function error:', error);
