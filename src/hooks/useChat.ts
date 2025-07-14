@@ -161,20 +161,7 @@ export const useSendMessage = () => {
           throw new Error('Failed to get character details');
         }
         
-        // Construct message history array  
-        const systemContent = characterDetails.data?.character_definitions?.personality_summary || 
-                             characterDetails.data?.character_definitions?.description || 
-                             'You are a helpful assistant.';
-        const messages = [
-          {
-            role: 'system',
-            content: systemContent
-          },
-          {
-            role: 'user',
-            content: content
-          }
-        ];
+        // The edge function will fetch conversation history and build context
         
         // Get the session token for authentication
         const { data: { session } } = await supabase.auth.getSession();
@@ -193,7 +180,7 @@ export const useSendMessage = () => {
             character_id: characterId,
             chat_id: finalChatId,
             model: 'openai/gpt-4o-mini',
-            messages: messages
+            user_message: content
           }),
         });
         

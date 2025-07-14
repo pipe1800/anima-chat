@@ -50,11 +50,11 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse the incoming request body
-    const { model, messages, chat_id, character_id } = await req.json();
+    const { model, user_message, chat_id, character_id } = await req.json();
 
-    if (!model || !messages || !chat_id || !character_id) {
+    if (!model || !user_message || !chat_id || !character_id) {
       console.error('Missing required fields');
-      return new Response(JSON.stringify({ error: 'Missing required fields: model, messages, chat_id, character_id' }), {
+      return new Response(JSON.stringify({ error: 'Missing required fields: model, user_message, chat_id, character_id' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -95,6 +95,20 @@ Deno.serve(async (req) => {
 
     console.log('Character definition found');
 
+    // Fetch conversation history for context
+    const { data: messageHistory, error: historyError } = await supabase
+      .from('messages')
+      .select('content, is_ai_message, created_at')
+      .eq('chat_id', chat_id)
+      .order('created_at', { ascending: true })
+      .limit(20); // Last 20 messages for context
+
+    if (historyError) {
+      console.error('Failed to fetch conversation history:', historyError);
+    }
+
+    console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
+
     // Construct the System Prompt
     const systemPrompt = `You are to roleplay as the character defined below. Stay in character and respond naturally.
 
@@ -107,13 +121,28 @@ ${character.personality_summary || 'Friendly and helpful'}
 **Scenario:**
 ${character.scenario || 'Casual conversation'}
 
-Begin the conversation naturally.`;
+Respond naturally to the conversation, keeping the character's personality consistent.`;
 
-    // Prepend system prompt to messages array
-    const messagesWithSystemPrompt = [
-      { role: 'system', content: systemPrompt },
-      ...messages
+    // Build conversation history with system prompt
+    const conversationMessages = [
+      { role: 'system', content: systemPrompt }
     ];
+
+    // Add conversation history if available
+    if (messageHistory && messageHistory.length > 0) {
+      for (const msg of messageHistory) {
+        conversationMessages.push({
+          role: msg.is_ai_message ? 'assistant' : 'user',
+          content: msg.content
+        });
+      }
+    }
+
+    // Add the current user message
+    conversationMessages.push({
+      role: 'user',
+      content: user_message
+    });
 
     console.log('Calling OpenRouter API...');
 
@@ -128,7 +157,7 @@ Begin the conversation naturally.`;
       },
       body: JSON.stringify({
         model: 'openai/gpt-4o-mini',
-        messages: messagesWithSystemPrompt,
+        messages: conversationMessages,
         stream: true
       })
     });
