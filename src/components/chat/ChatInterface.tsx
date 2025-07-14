@@ -9,12 +9,10 @@ import {
   useUserCredits,
   useCharacterDetails,
   useSendMessage,
-  useConsumeCredits,
   useChatCache,
   useRealtimeMessages,
   type Message
 } from '@/hooks/useChat';
-import { createMessage } from '@/lib/supabase-queries';
 
 interface Character {
   id: string;
@@ -50,7 +48,6 @@ const ChatInterface = ({
   const { data: creditsBalance = 0 } = useUserCredits();
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
-  const consumeCreditsMutation = useConsumeCredits();
   const { addOptimisticMessage, updateMessageStatus } = useChatCache();
   
   // Enable real-time updates for current chat
@@ -138,29 +135,8 @@ const ChatInterface = ({
         });
       }
 
-      // Generate AI response
-      setTimeout(async () => {
-        setIsTyping(false);
-        const aiResponse: Message = {
-          id: `ai-${Date.now()}`,
-          content: getAIResponse(messageContent, character.id),
-          isUser: false,
-          timestamp: new Date(),
-          status: 'sent'
-        };
-        
-        setNewMessages(prev => [...prev, aiResponse]);
-
-        // Save AI response to database and consume credits
-        try {
-          await createMessage(result.chatId, user.id, aiResponse.content, true);
-          await consumeCreditsMutation.mutateAsync(1);
-          
-          console.log('AI response saved and credits consumed');
-        } catch (error) {
-          console.error('Error saving AI response or consuming credits:', error);
-        }
-      }, 2000);
+      // AI response will be handled by useSendMessage hook and appear via real-time subscription
+      setIsTyping(false);
 
     } catch (error) {
       console.error('Error handling message:', error);
@@ -182,16 +158,6 @@ const ChatInterface = ({
     }
   };
 
-  const getAIResponse = (userInput: string, characterId: string) => {
-    const responses = {
-      luna: "🔮 I see... the stars whisper interesting things about your words. Tell me more about what draws you to the mystical arts?",
-      zyx: "⚡ Fascinating! In my timeline, we solved similar questions using quantum probability matrices. What's your take on this?",
-      sakura: "😊 That's so cool! You know what? That reminds me of this amazing thing that happened to me yesterday...",
-      raven: "🖤 *nods knowingly* Yes... I've seen this pattern before in the ancient texts. The shadows speak of deeper meanings...",
-      phoenix: "🔥 Oh, you've got fire in you! I love that energy. Let's turn up the heat on this conversation!"
-    };
-    return responses[characterId as keyof typeof responses] || "That's really interesting! I'd love to hear more about your thoughts on this.";
-  };
 
   const handleUpgrade = () => {
     // Navigate to upgrade page or show upgrade modal

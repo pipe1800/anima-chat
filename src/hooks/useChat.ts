@@ -180,7 +180,7 @@ export const useSendMessage = () => {
           body: JSON.stringify({
             character_id: characterId,
             chat_id: finalChatId,
-            model: 'google/gemma-7b-it',
+            model: 'openai/gpt-4o-mini',
             messages: messages
           }),
         });
@@ -320,7 +320,7 @@ export const useHandleSendMessage = () => {
         },
         body: JSON.stringify({
           character_id: characterId,
-          model: 'google/gemma-7b-it', // NOTE: This should eventually be dynamic based on user plan
+          model: 'openai/gpt-4o-mini',
           messages: [...currentMessages, { role: 'user', content: content }], // Send the full history plus the new message
         }),
       });
