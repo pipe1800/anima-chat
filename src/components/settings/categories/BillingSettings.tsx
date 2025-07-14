@@ -285,13 +285,14 @@ export const BillingSettings = () => {
                 </Button>
               )}
               
-              {/* Cancel Subscription Dialog */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/10">
-                    Cancel Subscription
-                  </Button>
-                </AlertDialogTrigger>
+              {/* Cancel Subscription Dialog - Only show for paid plans with PayPal subscription */}
+              {userSubscription.paypal_subscription_id && userSubscription.plans.name !== 'Guest Pass' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/10">
+                      Cancel Subscription
+                    </Button>
+                  </AlertDialogTrigger>
                 <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-white">Cancel Subscription</AlertDialogTitle>
@@ -343,7 +344,8 @@ export const BillingSettings = () => {
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-              </AlertDialog>
+                </AlertDialog>
+              )}
             </div>
           )}
         </div>
