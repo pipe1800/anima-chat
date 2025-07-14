@@ -219,31 +219,25 @@ const CharacterCreator = () => {
         }
       }
 
-      // Explicitly parse example dialogue if it exists as a string
+      // Parse example dialogue from mes_example field (standard character card format)
       let processedExampleDialogue = [];
-      if (cardData.example_dialogue) {
-        if (Array.isArray(cardData.example_dialogue)) {
-          // Already parsed as array
-          processedExampleDialogue = cardData.example_dialogue;
-        } else if (typeof cardData.example_dialogue === 'string') {
-          // Parse the string to array
-          processedExampleDialogue = parseExampleDialogue(cardData.example_dialogue);
-        }
-      } else if (cardData.mes_example) {
-        // Parse mes_example field as fallback
+      if (cardData.mes_example) {
+        console.log('Processing mes_example:', cardData.mes_example);
         processedExampleDialogue = parseExampleDialogue(cardData.mes_example);
       }
+      console.log('Processed example dialogues:', processedExampleDialogue);
 
-      // Map character card data to our form structure
+      // Map character card data to our form structure with proper field names
+      console.log('Mapping character card data:', cardData);
       const mappedData = {
-        name: cardData.name || '',
+        name: cardData.name || cardData.char_name || '',
         avatar: avatarUrl, // Use the uploaded PNG as avatar
         title: cardData.title || '',
-        description: cardData.description || '',
+        description: cardData.description || cardData.char_persona || '',
         personality: {
-          core_personality: cardData.personality || cardData.description || '',
+          core_personality: cardData.personality || cardData.char_persona || cardData.description || '',
           tags: [], // Tags will be handled separately if needed
-          knowledge_base: cardData.world_scenario || cardData.scenario || '',
+          knowledge_base: cardData.scenario || '',
           scenario_definition: cardData.scenario || ''
         },
         dialogue: {
@@ -266,11 +260,12 @@ const CharacterCreator = () => {
       };
 
       // Update the character data with the fully structured data
+      console.log('Setting character data:', mappedData);
       setCharacterData(mappedData);
 
       toast({
         title: "Character Card Loaded!",
-        description: `Successfully imported character "${cardData.name || 'Unknown'}" with avatar.`,
+        description: `Successfully imported character "${cardData.name || cardData.char_name || 'Unknown'}" with avatar and content.`,
       });
 
     } catch (error) {
