@@ -178,23 +178,45 @@ export const useHandleSendMessage = () => {
   const { addOptimisticMessage, updateMessageStatus } = useChatCache();
   
   const handleSendMessage = async ({
+    messageContent,
     chatId,
     model,
-    messages,
-    characterId
+    characterId,
+    currentMessages = []
   }: {
+    messageContent: string;
     chatId: string;
     model: string;
-    messages: Array<{ role: string; content: string }>;
     characterId: string;
+    currentMessages?: Array<{ role: string; content: string }>;
   }) => {
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    // Create optimistic AI message
+    // Prepare the Data
+    // Create a new message object for the user's input
+    const userMessage = {
+      role: 'user',
+      content: messageContent
+    };
+
+    // Append this new message to the existing array of messages
+    const updatedMessages = [...currentMessages, userMessage];
+
+    // Create user message for optimistic update
+    const tempUserMessageId = `temp-user-${Date.now()}`;
+    const optimisticUserMessage: Message = {
+      id: tempUserMessageId,
+      content: messageContent,
+      isUser: true,
+      timestamp: new Date(),
+      status: 'sending'
+    };
+
+    // Create placeholder message for AI response
     const tempAiMessageId = `temp-ai-${Date.now()}`;
-    const aiMessage: Message = {
+    const aiPlaceholderMessage: Message = {
       id: tempAiMessageId,
       content: '',
       isUser: false,
@@ -202,43 +224,56 @@ export const useHandleSendMessage = () => {
       status: 'sending'
     };
 
-    // Add optimistic message to cache
-    addOptimisticMessage(chatId, aiMessage);
+    // Add both messages to cache optimistically
+    addOptimisticMessage(chatId, optimisticUserMessage);
+    addOptimisticMessage(chatId, aiPlaceholderMessage);
 
+    // Save user message to database first
     try {
-      // Get the current session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No authentication session found');
+      const { data: savedUserMessage, error: userSaveError } = await createMessage(
+        chatId,
+        user.id,
+        messageContent,
+        false // is_ai_message = false
+      );
+
+      if (userSaveError) {
+        updateMessageStatus(chatId, tempUserMessageId, 'failed');
+        throw userSaveError;
       }
 
-      // Make direct fetch call to Edge Function for streaming support
-      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbHB5aXBleXRxYmFtaXdjdWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3NDY0MjAsImV4cCI6MjA2NzMyMjQyMH0.D6IvUZBtLF5MdBGA2Re-1UMEc6bGaT2JhP0V1JuU_KU'
-        },
-        body: JSON.stringify({
-          model,
+      // Update user message with real ID
+      updateMessageStatus(chatId, tempUserMessageId, 'sent', savedUserMessage.id);
+
+    } catch (error) {
+      console.error('Failed to save user message:', error);
+      updateMessageStatus(chatId, tempUserMessageId, 'failed');
+      toast.error('Failed to send message');
+      throw error;
+    }
+
+    // Invoke the Edge Function (The Core Fix)
+    try {
+      // Call supabase.functions.invoke with streaming
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
           character_id: characterId,
-          messages,
+          model: model,
+          messages: updatedMessages,
           chat_id: chatId
-        })
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get response from AI');
+      if (error) {
+        throw error;
       }
 
-      if (!response.body) {
-        throw new Error('No response body received');
+      if (!data) {
+        throw new Error('No response data received');
       }
 
-      // Handle the streaming response
-      const reader = response.body.getReader();
+      // Process the Stream
+      const reader = data.getReader();
       const decoder = new TextDecoder();
       let accumulatedContent = '';
 
@@ -270,7 +305,7 @@ export const useHandleSendMessage = () => {
                 const newContent = parsed.choices[0].delta.content;
                 accumulatedContent += newContent;
                 
-                // Update the message content in real-time
+                // Update the AI's placeholder message content in real-time
                 queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
                   if (!old || !old.pages.length) return old;
                   
@@ -304,7 +339,6 @@ export const useHandleSendMessage = () => {
 
       if (saveError) {
         console.error('Failed to save AI message:', saveError);
-        // Update status to failed but keep the content
         updateMessageStatus(chatId, tempAiMessageId, 'failed');
         toast.error('Failed to save AI response');
         return;
@@ -321,7 +355,8 @@ export const useHandleSendMessage = () => {
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
       
-      // Update the AI message to show error
+      // Finalize and Error Handling
+      // Update the AI's placeholder message to display error
       queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
         if (!old || !old.pages.length) return old;
         
@@ -331,7 +366,7 @@ export const useHandleSendMessage = () => {
             msg.id === tempAiMessageId 
               ? { 
                   ...msg, 
-                  content: 'Error: Could not get response.',
+                  content: 'Error: Failed to get response.',
                   status: 'failed' as const
                 }
               : msg
