@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useChatMessages, useRealtimeMessages } from '@/hooks/useChat';
+import { useChatMessages, useRealtimeMessages, useMessagePolling } from '@/hooks/useChat';
 import type { Message } from '@/hooks/useChat';
 import { MessageGroup } from './MessageGroup';
 import { groupMessages } from '@/utils/messageGrouping';
@@ -32,8 +32,9 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
     error
   } = useChatMessages(chatId);
 
-  // Enable real-time updates
-  useRealtimeMessages(chatId);
+  // Enable real-time updates with fallback polling
+  const { isSubscribed } = useRealtimeMessages(chatId);
+  useMessagePolling(chatId, isSubscribed);
 
   // Use only fetched messages from database (single source of truth)
   const allMessages = React.useMemo(() => {
@@ -112,6 +113,12 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
       ref={messagesContainerRef}
       className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif]"
     >
+      {/* Debug indicator for real-time status */}
+      {chatId && (
+        <div className="fixed top-4 right-4 z-50 text-xs bg-black/50 px-2 py-1 rounded">
+          {isSubscribed ? '🟢 Real-time connected' : '🔴 Real-time disconnected (polling)'}
+        </div>
+      )}
       {/* Load Earlier Messages Button */}
       {hasNextPage && (
         <div className="flex justify-center mb-4">

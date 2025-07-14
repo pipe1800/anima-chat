@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { 
   getRecentChatMessages, 
   getEarlierChatMessages,
@@ -333,13 +333,25 @@ export const useChatCache = () => {
   };
 };
 
-// Hook for real-time message updates with simplified duplicate prevention
+// Hook for real-time message updates with enhanced reliability
 export const useRealtimeMessages = (chatId: string | null) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const channelRef = useRef<any>(null);
   
   useEffect(() => {
-    if (!chatId || !user) return;
+    if (!chatId || !user) {
+      setIsSubscribed(false);
+      return;
+    }
+    
+    console.log(`🔄 Setting up real-time subscription for chat: ${chatId}`);
+    
+    // Clean up any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
     
     const channel = supabase
       .channel(`chat-${chatId}`)
@@ -352,6 +364,8 @@ export const useRealtimeMessages = (chatId: string | null) => {
           filter: `chat_id=eq.${chatId}`
         },
         (payload) => {
+          console.log(`📨 Real-time message received:`, payload.new);
+          
           const newMessage: Message = {
             id: payload.new.id,
             content: payload.new.content,
@@ -360,10 +374,10 @@ export const useRealtimeMessages = (chatId: string | null) => {
             status: 'sent'
           };
           
-          // Add new messages to the cache with simplified duplicate prevention
+          // Add new messages to the cache with ID-only duplicate prevention
           queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
             if (!old || !old.pages.length) {
-              // Create initial structure if empty
+              console.log(`📝 Creating initial message structure with:`, newMessage);
               return {
                 pages: [{
                   messages: [newMessage],
@@ -374,30 +388,32 @@ export const useRealtimeMessages = (chatId: string | null) => {
               };
             }
             
-            // Simple ID-based duplicate prevention only
+            // Only check for duplicate IDs
             const messageExists = old.pages.some(page => 
               page.messages.some(msg => msg.id === newMessage.id)
             );
             
             if (messageExists) {
-              console.log('Duplicate message prevented by ID:', newMessage.id);
+              console.log(`⚠️ Duplicate message prevented by ID: ${newMessage.id}`);
               return old;
             }
             
-            // Replace optimistic messages with real ones (for user messages)
+            console.log(`✅ Adding new message to cache:`, newMessage);
+            
+            // For user messages, replace optimistic ones
             if (newMessage.isUser) {
               const updatedPages = old.pages.map(page => ({
                 ...page,
                 messages: page.messages.map(msg => {
-                  // Replace temp optimistic message with real one
                   if (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.isUser) {
+                    console.log(`🔄 Replacing optimistic message ${msg.id} with real ${newMessage.id}`);
                     return newMessage;
                   }
                   return msg;
                 })
               }));
               
-              // Check if we actually replaced an optimistic message
+              // Check if we replaced an optimistic message
               const replacedOptimistic = updatedPages.some(page =>
                 page.messages.some(msg => msg.id === newMessage.id)
               );
@@ -424,10 +440,47 @@ export const useRealtimeMessages = (chatId: string | null) => {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`📡 Real-time subscription status for chat ${chatId}:`, status);
+        setIsSubscribed(status === 'SUBSCRIBED');
+        
+        if (status === 'CLOSED') {
+          console.log(`❌ Real-time connection closed for chat ${chatId}`);
+          setIsSubscribed(false);
+        }
+      });
+    
+    channelRef.current = channel;
     
     return () => {
-      supabase.removeChannel(channel);
+      console.log(`🔌 Cleaning up real-time subscription for chat: ${chatId}`);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      setIsSubscribed(false);
     };
   }, [chatId, user, queryClient]);
+  
+  return { isSubscribed };
+};
+
+// Hook to poll for messages as fallback when real-time fails
+export const useMessagePolling = (chatId: string | null, isRealtimeConnected: boolean) => {
+  const queryClient = useQueryClient();
+  
+  useEffect(() => {
+    if (!chatId || isRealtimeConnected) return;
+    
+    console.log(`🔄 Starting message polling for chat ${chatId} (real-time disconnected)`);
+    
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', chatId] });
+    }, 2000); // Poll every 2 seconds
+    
+    return () => {
+      console.log(`⏹️ Stopping message polling for chat ${chatId}`);
+      clearInterval(interval);
+    };
+  }, [chatId, isRealtimeConnected, queryClient]);
 };
