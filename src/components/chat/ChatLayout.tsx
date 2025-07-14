@@ -11,14 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { UserAddonDropdown } from './UserAddonDropdown';
-import { WorldInfoDropdown } from './WorldInfoDropdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
 import { useTutorial } from '@/contexts/TutorialContext';
+import { ChatConfigurationTab } from './ChatConfigurationTab';
 
 interface Character {
   id: string;
@@ -36,7 +35,7 @@ interface ChatLayoutProps {
 
 export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutProps) => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'history' | 'details'>('details');
+  const [activeTab, setActiveTab] = useState<'history' | 'details' | 'config'>('details');
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [characterDetails, setCharacterDetails] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -297,73 +296,6 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* World Info Dropdown */}
-            <WorldInfoDropdown 
-              isVisible={worldInfoDropdownVisible} 
-              onWorldInfoSelect={handleWorldInfoSelect}
-            />
-            
-            {/* Addons Dropdown */}
-            {currentUser && (
-              <UserAddonDropdown characterId={character.id} userId={currentUser.id} />
-            )}
-            
-            {/* Persona Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
-                  data-tutorial="persona-dropdown"
-                  onClick={() => handleStepAction('persona-dropdown-clicked')}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={selectedPersona?.avatar_url || undefined} alt={selectedPersona?.name} />
-                      <AvatarFallback className="bg-[#FF7A00] text-white text-xs">
-                        {selectedPersona?.name?.split(' ').map(n => n[0]).join('') || 'P'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{selectedPersona?.name || 'Select Persona'}</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 bg-[#1a1a2e] border-gray-700/50 z-50">
-                {personas.map((persona) => (
-                  <DropdownMenuItem
-                    key={persona.id}
-                    onClick={() => setSelectedPersona(persona)}
-                    className="flex items-center space-x-2 p-3 hover:bg-[#FF7A00]/20 cursor-pointer"
-                  >
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={persona.avatar_url || undefined} alt={persona.name} />
-                      <AvatarFallback className="bg-[#FF7A00] text-white text-xs">
-                        {persona.name?.split(' ').map(n => n[0]).join('') || 'P'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white font-medium truncate">{persona.name}</div>
-                      {persona.bio && (
-                        <div className="text-gray-400 text-sm truncate">{persona.bio}</div>
-                      )}
-                    </div>
-                    {selectedPersona?.id === persona.id && (
-                      <div className="w-2 h-2 bg-[#FF7A00] rounded-full" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                {personas.length > 0 && <DropdownMenuSeparator className="bg-gray-700/50" />}
-                <DropdownMenuItem
-                  onClick={() => setShowPersonaModal(true)}
-                  className="flex items-center space-x-2 p-3 hover:bg-[#FF7A00]/20 cursor-pointer text-[#FF7A00]"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create New Persona</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Settings Menu */}
             <Button
               variant="ghost"
@@ -393,7 +325,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           />
           
           {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-80 bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
+          <div className="fixed right-0 top-0 h-full w-[544px] bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
             {/* Panel Header */}
             <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
@@ -432,6 +364,17 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                   <Info className="w-4 h-4" />
                   <span>Details</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('config')}
+                  className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'config'
+                      ? 'bg-[#FF7A00] text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Config</span>
+                </button>
               </div>
             </div>
 
@@ -455,91 +398,80 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                     ) : (
                       chatHistory.map((chat) => {
                         const isActiveChat = chat.id === currentChatId;
-                        const isSameCharacter = chat.character?.id === character.id;
                         
                         return (
                           <div key={chat.id} className="relative group">
                             <div
-                              className={`p-3 rounded-lg transition-colors ${
+                              className={`p-3 rounded-lg transition-colors cursor-pointer ${
                                 isActiveChat
-                                  ? 'bg-[#FF7A00]/30 border border-[#FF7A00] cursor-default'
-                                  : isSameCharacter
-                                  ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/30 cursor-pointer hover:bg-[#FF7A00]/25'
-                                  : 'hover:bg-[#1a1a2e] cursor-pointer'
+                                  ? 'bg-[#FF7A00]/30 border border-[#FF7A00]'
+                                  : 'bg-[#1a1a2e] border border-transparent hover:border-gray-600'
                               }`}
                               onClick={() => {
                                 if (!isActiveChat) {
-                                  navigate('/chat', { state: { selectedCharacter: chat.character, existingChatId: chat.id } });
+                                  navigate(`/chat/${chat.character?.id}/${chat.id}`);
                                 }
                               }}
                             >
-                              <div className="flex items-start space-x-3">
-                                <Avatar className="w-10 h-10 flex-shrink-0">
+                              <div className="flex items-center space-x-3">
+                                <Avatar className="w-8 h-8">
                                   <AvatarImage src={chat.character?.avatar_url} alt={chat.character?.name} />
-                                  <AvatarFallback className="bg-[#FF7A00] text-white text-sm">
-                                    {chat.character?.name?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                                  <AvatarFallback className="bg-[#FF7A00] text-white text-xs">
+                                    {chat.character?.name?.charAt(0) || 'C'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <h3 className={`font-medium text-sm truncate ${
-                                      isActiveChat ? 'text-[#FF7A00] font-bold' : 
-                                      isSameCharacter ? 'text-[#FF7A00]' : 'text-white'
-                                    }`}>{chat.character?.name || 'Unknown Character'}</h3>
-                                    <span className="text-gray-400 text-xs flex-shrink-0 ml-2">
-                                      {chat.last_message_at ? new Date(chat.last_message_at).toLocaleDateString() : 'No messages'}
-                                    </span>
+                                  <div className="flex items-center justify-between">
+                                    <h4 className={`font-medium text-sm truncate ${
+                                      isActiveChat ? 'text-white' : 'text-gray-300'
+                                    }`}>
+                                      {chat.character?.name || 'Unknown Character'}
+                                    </h4>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="w-6 h-6 text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="bg-[#1a1a2e] border-gray-700">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle className="text-white">Delete Chat</AlertDialogTitle>
+                                          <AlertDialogDescription className="text-gray-300">
+                                            Are you sure you want to delete this chat? This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600">
+                                            Cancel
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={() => handleDeleteChat(chat.id)}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
                                   </div>
-                                  <p className={`text-sm truncate ${
-                                    isActiveChat ? 'text-[#FF7A00]/80' : 'text-gray-400'
+                                  <p className={`text-xs truncate ${
+                                    isActiveChat ? 'text-gray-300' : 'text-gray-400'
                                   }`}>
-                                    {isActiveChat ? '• Active Chat' : 
-                                     chat.lastMessage ? (
-                                       <>
-                                         <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
-                                           {chat.lastMessageIsAI ? chat.character?.name?.split(' ')[0] : 'You'}:
-                                         </span>
-                                         {' '}{chat.lastMessage}
-                                       </>
-                                     ) : 'New conversation'
-                                    }
+                                    {chat.title || 'New conversation'}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {chat.last_message_at 
+                                      ? new Date(chat.last_message_at).toLocaleDateString() 
+                                      : new Date(chat.created_at).toLocaleDateString()}
                                   </p>
                                 </div>
                               </div>
                             </div>
-                            
-                            {/* Delete Button */}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 w-6 h-6 p-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-[#1a1a2e] border-gray-700/50">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-white">Delete Chat</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-gray-300">
-                                    Are you sure you want to delete this chat with {chat.character?.name}? This action cannot be undone and all messages will be permanently lost.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] text-gray-300">
-                                    Cancel
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleDeleteChat(chat.id)}
-                                    className="bg-red-500 hover:bg-red-600 text-white"
-                                  >
-                                    Delete Chat
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
                         );
                       })
@@ -636,6 +568,19 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                     </div>
                   )}
                 </div>
+              )}
+
+              {activeTab === 'config' && currentUser && (
+                <ChatConfigurationTab 
+                  characterId={character.id}
+                  userId={currentUser.id}
+                  personas={personas}
+                  selectedPersona={selectedPersona}
+                  setSelectedPersona={setSelectedPersona}
+                  setShowPersonaModal={setShowPersonaModal}
+                  worldInfoDropdownVisible={worldInfoDropdownVisible}
+                  onWorldInfoSelect={handleWorldInfoSelect}
+                />
               )}
             </div>
           </div>
