@@ -42,14 +42,14 @@ function parsePNGChunks(buffer: ArrayBuffer) {
 /**
  * Parses a PNG character card file to extract embedded character data
  * @param file - The PNG file containing character card data
- * @returns Promise<CharacterCardData> - The parsed character data
- * @throws Error if file is invalid or parsing fails
+ * @returns Promise<CharacterCardData | null> - The parsed character data or null if parsing fails
  */
-export async function parseCharacterCard(file: File): Promise<CharacterCardData> {
+export async function parseCharacterCard(file: File): Promise<CharacterCardData | null> {
   try {
     // Validate file type
     if (!file.type.includes('png')) {
-      throw new Error('File must be a PNG image');
+      console.error('File must be a PNG image');
+      return null;
     }
 
     // Read file as array buffer
@@ -58,25 +58,34 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
     // Parse PNG chunks
     const chunks = parsePNGChunks(arrayBuffer);
     
-    // Look for the 'chara' text chunk
-    if (!chunks.chara) {
-      throw new Error('No character data found in PNG file. This does not appear to be a character card.');
+    // Look for character data - first try 'chara', then 'character'
+    let characterDataText: string | null = null;
+    if (chunks.chara) {
+      characterDataText = chunks.chara;
+    } else if (chunks.character) {
+      characterDataText = chunks.character;
+    } else {
+      console.error('No character data found in PNG file. No "chara" or "character" tEXt chunks found.');
+      return null;
     }
 
-    // Decode the Base64 string
-    let decodedData: string;
+    // First attempt: try to decode from Base64
+    let decodedData: string | null = null;
     try {
-      decodedData = atob(chunks.chara);
-    } catch (error) {
-      throw new Error('Failed to decode character data. The embedded data may be corrupted.');
+      decodedData = atob(characterDataText);
+    } catch (base64Error) {
+      console.log('Base64 decoding failed, trying plain text JSON...');
+      // Second attempt: try to parse as plain text JSON
+      decodedData = characterDataText;
     }
 
     // Parse the JSON
     let characterData: CharacterCardData;
     try {
       characterData = JSON.parse(decodedData);
-    } catch (error) {
-      throw new Error('Failed to parse character data as JSON. The data format may be invalid.');
+    } catch (jsonError) {
+      console.error('Failed to parse character data as JSON from both Base64 and plain text:', jsonError);
+      return null;
     }
 
     // Check if example_dialogue exists and is a string, then parse it
@@ -86,21 +95,16 @@ export async function parseCharacterCard(file: File): Promise<CharacterCardData>
 
     // Validate that we have some essential character data
     if (!characterData || typeof characterData !== 'object') {
-      throw new Error('Invalid character data format.');
+      console.error('Invalid character data format.');
+      return null;
     }
 
     console.log('Successfully parsed character data:', characterData);
     return characterData;
 
   } catch (error) {
-    console.error("Error parsing character card:", error);
-    // Re-throw with more context if it's already our custom error
-    if (error instanceof Error) {
-      throw error;
-    }
-    
-    // Handle unexpected errors
-    throw new Error(`Unexpected error while parsing character card: ${String(error)}`);
+    console.error("Unexpected error while parsing character card:", error);
+    return null;
   }
 }
 

@@ -178,7 +178,17 @@ const CharacterCreator = () => {
         description: "Reading character data from PNG file...",
       });
 
-      const cardData: CharacterCardData = await parseCharacterCard(file);
+      const cardData = await parseCharacterCard(file);
+      
+      if (!cardData) {
+        toast({
+          title: "Failed to load character card",
+          description: "Could not parse character data from the PNG file. Please ensure it's a valid character card.",
+          variant: "destructive",
+        });
+        setIsParsingCard(false);
+        return;
+      }
 
       // Upload the PNG file to Supabase storage for the avatar
       let avatarUrl = '';
