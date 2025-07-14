@@ -9,7 +9,6 @@ import {
   useUserCredits,
   useCharacterDetails,
   useSendMessage,
-  useCreateChatWithGreeting,
   useChatCache,
   type Message
 } from '@/hooks/useChat';
@@ -46,7 +45,6 @@ const ChatInterface = ({
   const { data: creditsBalance = 0 } = useUserCredits();
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
-  const createChatMutation = useCreateChatWithGreeting();
 
   // Initialize chat for existing chat
   useEffect(() => {
@@ -65,7 +63,7 @@ const ChatInterface = ({
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !user) return;
+    if (!inputValue.trim() || !user || !currentChatId) return;
 
     // Check if user has enough credits (need at least 1 credit per message)
     if (creditsBalance < 1) {
@@ -78,45 +76,28 @@ const ChatInterface = ({
     setIsTyping(true);
 
     try {
-      // Create chat if needed
-      if (!currentChatId) {
-        const newChatResult = await createChatMutation.mutateAsync({
-          characterId: character.id,
-          characterName: character.name
-        });
-        setCurrentChatId(newChatResult.chatId);
-        
-        // Handle first message achievement
-        if (isFirstMessage) {
-          setIsFirstMessage(false);
-          onFirstMessage();
-          toast({
-            title: "🏆 Achievement Unlocked: First Contact!",
-            description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
-            duration: 5000
-          });
-        }
-        
-        // Send message to the new chat
-        await sendMessageMutation.mutateAsync({
-          chatId: newChatResult.chatId,
-          content: messageContent,
-          characterId: character.id
-        });
-        
-      } else {
-        // Send message to existing chat
-        await sendMessageMutation.mutateAsync({
-          chatId: currentChatId,
-          content: messageContent,
-          characterId: character.id
+      // Send message to existing chat
+      await sendMessageMutation.mutateAsync({
+        chatId: currentChatId,
+        content: messageContent,
+        characterId: character.id
+      });
+
+      // Handle first message achievement if needed
+      if (isFirstMessage) {
+        setIsFirstMessage(false);
+        onFirstMessage();
+        toast({
+          title: "🏆 Achievement Unlocked: First Contact!",
+          description: "You've earned 100 free credits for completing your first quest. Use them to unlock premium features!",
+          duration: 5000
         });
       }
 
       setIsTyping(false);
 
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error('Error sending message:', error);
       setIsTyping(false);
       
       toast({

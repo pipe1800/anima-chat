@@ -76,17 +76,6 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-white flex items-center gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Loading chat...
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -102,6 +91,17 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
         <div className="text-center text-gray-400">
           <p className="text-lg">Start a conversation with {character.name}</p>
           <p className="text-sm mt-2">Send a message below to begin</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-white flex items-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          Loading messages...
         </div>
       </div>
     );

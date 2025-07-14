@@ -104,71 +104,7 @@ export const useCharacterDetails = (characterId: string) => {
   });
 };
 
-// Hook for creating chat with greeting
-export const useCreateChatWithGreeting = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ 
-      characterId, 
-      characterName 
-    }: { 
-      characterId: string;
-      characterName: string;
-    }) => {
-      if (!user) throw new Error('User not authenticated');
-      
-      // Create chat
-      const { data: newChat, error: chatError } = await createChat(
-        user.id, 
-        characterId, 
-        `Chat with ${characterName}`
-      );
-      if (chatError) throw chatError;
-      
-      // Add initial greeting message immediately
-      const characterDetails = await getCharacterDetails(characterId);
-      if (characterDetails.data?.character_definitions) {
-        const greeting = characterDetails.data.character_definitions.greeting || 
-                        `Hello! I'm ${characterName}. It's great to meet you. What would you like to talk about?`;
-        
-        const { error: greetingError } = await createMessage(newChat.id, user.id, greeting, true);
-        if (greetingError) {
-          console.error('Failed to save greeting message:', greetingError);
-          throw new Error('Failed to save greeting message');
-        }
-      }
-      
-      return { chatId: newChat.id };
-    },
-    onSuccess: ({ chatId }) => {
-      // Prefetch the new chat messages
-      queryClient.prefetchInfiniteQuery({
-        queryKey: ['chat', 'messages', chatId],
-        queryFn: async () => {
-          const result = await getRecentChatMessages(chatId, 20);
-          if (result.error) throw result.error;
-          
-          const messages: Message[] = result.data.map(msg => ({
-            id: msg.id,
-            content: msg.content,
-            isUser: !msg.is_ai_message,
-            timestamp: new Date(msg.created_at),
-            status: 'sent'
-          }));
-          
-          return {
-            messages,
-            hasMore: result.data.length === 20,
-            oldestTimestamp: result.data.length > 0 ? result.data[0].created_at : null
-          };
-        },
-        initialPageParam: undefined,
-      });
-    },
-  });
-};
+// This hook is now deprecated - chats are created via edge function before navigation
 
 // Hook for sending messages with optimistic updates
 export const useSendMessage = () => {

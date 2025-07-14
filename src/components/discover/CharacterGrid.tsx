@@ -40,8 +40,47 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
     error 
   } = usePublicCharacters(50, 0);
 
-  const handleStartChat = (character: PublicCharacter) => {
-    navigate('/chat', { state: { selectedCharacter: character } });
+  const handleStartChat = async (character: PublicCharacter) => {
+    try {
+      // Get auth token
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      // Create chat immediately with greeting
+      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/create-chat-with-greeting`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          character_id: character.id,
+          character_name: character.name
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create chat');
+      }
+
+      const { chat_id } = await response.json();
+
+      // Navigate to chat with the created chat ID
+      navigate('/chat', { 
+        state: { 
+          selectedCharacter: character,
+          existingChatId: chat_id
+        } 
+      });
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      // Fallback to old behavior
+      navigate('/chat', { state: { selectedCharacter: character } });
+    }
   };
 
   const handleViewCharacter = (character: PublicCharacter) => {
