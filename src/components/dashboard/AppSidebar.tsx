@@ -30,8 +30,8 @@ logoImage.src = LOGO_URL;
 const baseMainItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Create Character", url: "/character-creator", icon: Plus },
-  { title: "World Infos", url: "/world-info", icon: BookOpen },
-  { title: "Discover", url: "/discover", icon: Compass },
+  { title: "World Infos", url: "/world-info", icon: BookOpen, tutorialAttr: "world-info-nav" },
+  { title: "Discover", url: "/discover", icon: Compass, tutorialAttr: "discover-nav" },
   { title: "Profile", url: "/profile", icon: User },
 ];
 
@@ -156,6 +156,7 @@ const AppSidebar = () => {
                   key={item.title}
                   to={item.url} 
                   className={getNavClasses(isActive(item.url))}
+                  data-tutorial={(item as any).tutorialAttr}
                 >
                   {isSubscriptionItem && hasActiveSubscription ? (
                     <Crown className="w-5 h-5 flex-shrink-0 fill-yellow-500 text-yellow-500" />

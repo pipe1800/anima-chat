@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getPrivateProfile, getUserActiveSubscription } from '@/lib/supabase-queries';
 import type { Profile, Subscription, Plan } from '@/types/database';
+import { TutorialProvider } from './TutorialContext';
 
 interface AuthContextType {
   user: User | null;
@@ -142,7 +143,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <TutorialProvider>
+        {children}
+      </TutorialProvider>
     </AuthContext.Provider>
   );
 };

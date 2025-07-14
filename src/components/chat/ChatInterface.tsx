@@ -256,7 +256,7 @@ const ChatInterface = ({
         </form>
         
         {/* Credit balance indicator */}
-        <div className="mt-2 text-center">
+        <div className="mt-2 text-center" data-tutorial="credits-display">
           <p className="text-gray-400 text-xs">
             {creditsBalance.toLocaleString()} credits remaining
           </p>

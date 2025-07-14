@@ -229,6 +229,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
               variant="ghost" 
               className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
               disabled={saving}
+              data-tutorial="addons-dropdown"
             >
               <div className="flex items-center space-x-2">
                 <Settings className="w-4 h-4" />
@@ -265,7 +266,9 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                           details.available 
                             ? 'bg-[#0f0f0f] border-gray-700/30' 
                             : 'bg-gray-900/50 border-gray-700/20 opacity-60'
-                        }`}>
+                        }`}
+                        data-tutorial={key === 'dynamicWorldInfo' ? 'dynamic-world-info-addon' : undefined}
+                        >
                           <div className="flex-1 min-w-0 pr-3">
                             <div className="flex items-center">
                               <span className={`font-medium text-sm ${
@@ -366,6 +369,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                     <Button 
                       className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
                       disabled={saving || !hasUnsavedChanges}
+                      data-tutorial="save-addons-button"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       Save Changes

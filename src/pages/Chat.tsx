@@ -7,6 +7,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
+import { TutorialManager } from '@/components/tutorial/TutorialManager';
 
 const Chat = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -19,6 +20,7 @@ const Chat = () => {
   
   const selectedCharacter = location.state?.selectedCharacter;
   const existingChatId = location.state?.existingChatId;
+  const fromOnboarding = location.state?.fromOnboarding;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -134,6 +136,9 @@ const Chat = () => {
             existingChatId={existingChatId}
           />
         </ChatLayout>
+
+        {/* Tutorial Manager */}
+        <TutorialManager shouldStart={fromOnboarding && onboardingCompleted} />
       </div>
     </SidebarProvider>
   );

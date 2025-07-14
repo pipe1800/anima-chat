@@ -12,10 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserAddonDropdown } from './UserAddonDropdown';
+import { WorldInfoDropdown } from './WorldInfoDropdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
+import { useTutorial } from '@/contexts/TutorialContext';
 
 interface Character {
   id: string;
@@ -52,6 +54,10 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     avatar_url: null as string | null
   });
   const [isCreatingPersona, setIsCreatingPersona] = useState(false);
+  
+  // Tutorial state
+  const { handleStepAction, worldInfoDropdownVisible, disableInteractions } = useTutorial();
+  const [selectedWorldInfo, setSelectedWorldInfo] = useState<any>(null);
   
   const navigate = useNavigate();
 
@@ -161,6 +167,15 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     }
   };
 
+  const handleRightPanelToggle = () => {
+    setRightPanelOpen(!rightPanelOpen);
+    handleStepAction('right-panel-toggled');
+  };
+
+  const handleWorldInfoSelect = (worldInfo: any) => {
+    setSelectedWorldInfo(worldInfo);
+  };
+
   // Persona handlers
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -254,6 +269,12 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           </div>
           
           <div className="flex items-center space-x-3">
+            {/* World Info Dropdown */}
+            <WorldInfoDropdown 
+              isVisible={worldInfoDropdownVisible} 
+              onWorldInfoSelect={handleWorldInfoSelect}
+            />
+            
             {/* Addons Dropdown */}
             {currentUser && (
               <UserAddonDropdown characterId={character.id} userId={currentUser.id} />
@@ -314,8 +335,9 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              onClick={handleRightPanelToggle}
               className="text-gray-400 hover:text-white hover:bg-gray-800"
+              data-tutorial="right-panel-toggle"
             >
               <Menu className="w-6 h-6" />
             </Button>
@@ -323,7 +345,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
         </header>
 
         {/* Chat Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden" style={{ pointerEvents: disableInteractions ? 'none' : 'auto' }}>
           {children}
         </div>
       </div>
