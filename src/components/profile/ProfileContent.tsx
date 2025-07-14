@@ -10,8 +10,8 @@ export const ProfileContent = () => {
       {/* Stats Section */}
       <ProfileStats />
       
-      {/* Achievements Section */}
-      <AchievementsSection />
+      {/* Achievements Section - Hidden for post-launch */}
+      {/* <AchievementsSection /> */}
       
       {/* Tabbed Content */}
       <ProfileTabs />

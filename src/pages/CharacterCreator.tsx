@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { parseCharacterCard, parseExampleDialogue, type CharacterCardData } from '@/lib/utils/characterCard';
 import type { Tables } from '@/integrations/supabase/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 type Tag = Tables<'tags'>;
 
@@ -435,6 +437,28 @@ const CharacterCreator = () => {
       <div className="flex-1 overflow-auto">
         {renderCurrentStep()}
       </div>
+
+      {/* Loading Modal for PNG Character Card */}
+      <Dialog open={isParsingCard} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-[#FF7A00]" />
+              Reading Character Card
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="text-center">
+              <p className="text-gray-400 mb-2">
+                Extracting character information from your PNG file...
+              </p>
+              <p className="text-sm text-gray-500">
+                This may take a moment
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
