@@ -36,7 +36,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
       try {
         setLoading(true);
         console.log('CharacterSelection: Starting to fetch characters with vibes:', selectedVibes);
-        const { data: recommendedChars, error } = await getRecommendedCharacters(selectedVibes, 4);
+        const { data: recommendedChars, error } = await getRecommendedCharacters(selectedVibes, 8);
         
         console.log('CharacterSelection: getRecommendedCharacters result:', { data: recommendedChars, error });
         
@@ -131,7 +131,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
       </div>
 
       {/* Character Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {characters.map((character, index) => (
           <Card
             key={character.id}
@@ -193,17 +193,10 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
       </div>
 
       {/* Footer actions */}
-      <div className="text-center space-y-4">
+      <div className="text-center">
         <p className="text-gray-500 text-sm">
           Click on any character to begin your first conversation
         </p>
-        <Button
-          variant="outline"
-          onClick={onSkip}
-          className="text-gray-400 border-gray-600 hover:bg-gray-800/50 hover:text-white"
-        >
-          Skip for now
-        </Button>
       </div>
     </div>
   );
