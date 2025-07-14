@@ -198,7 +198,7 @@ export const useSendMessage = () => {
         
         const aiResponseContent = responseData.content;
         
-        // Save the AI response to the database
+        // Save the AI response to the database (frontend handles all DB operations)
         const { error: aiMessageError } = await createMessage(
           finalChatId,
           user.id, // Use current user ID - distinguish with is_ai_message flag
@@ -211,7 +211,7 @@ export const useSendMessage = () => {
           throw new Error('Failed to save AI response');
         }
         
-        // AI response saved successfully
+        console.log('AI message saved successfully');
         
       } catch (error) {
         console.error('Error invoking AI:', error);
@@ -356,12 +356,30 @@ export const useRealtimeMessages = (chatId: string | null) => {
           queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
             if (!old || !old.pages.length) return old;
             
-            // Check if message already exists to prevent duplicates
-            const messageExists = old.pages.some(page => 
-              page.messages.some(msg => msg.id === newMessage.id)
+          // Check if message already exists to prevent duplicates
+          const messageExists = old.pages.some(page => 
+            page.messages.some(msg => msg.id === newMessage.id)
+          );
+          
+          if (messageExists) {
+            console.log('Duplicate message prevented:', newMessage.id);
+            return old;
+          }
+          
+          // Additional check: prevent duplicate content for AI messages within 1 second
+          if (!newMessage.isUser) {
+            const recentMessages = old.pages[0]?.messages || [];
+            const duplicateContent = recentMessages.find(msg => 
+              !msg.isUser && 
+              msg.content === newMessage.content &&
+              Math.abs(new Date(msg.timestamp).getTime() - new Date(newMessage.timestamp).getTime()) < 1000
             );
             
-            if (messageExists) return old;
+            if (duplicateContent) {
+              console.log('Duplicate AI content prevented:', newMessage.content.substring(0, 50));
+              return old;
+            }
+          }
             
             const firstPage = old.pages[0];
             const updatedFirstPage: ChatPage = {

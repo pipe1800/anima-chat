@@ -185,23 +185,8 @@ Begin the conversation naturally.`;
       }
     }
     
-    // Save the AI response to the database
-    const { error: saveError } = await supabase
-      .from('messages')
-      .insert({
-        chat_id: chat_id,
-        author_id: user.id, // Use current user ID - distinguish with is_ai_message flag
-        content: aiResponseContent,
-        is_ai_message: true
-      });
-    
-    if (saveError) {
-      console.error('Failed to save AI message:', saveError);
-      return new Response(JSON.stringify({ error: 'Failed to save AI response' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // Edge Function only generates AI response - frontend handles database operations
+    console.log('AI response generated successfully, length:', aiResponseContent.length);
     
     return new Response(JSON.stringify({ success: true, content: aiResponseContent }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

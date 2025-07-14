@@ -49,19 +49,19 @@ const ChatInterface = ({
   const sendMessageMutation = useSendMessage();
   const { addOptimisticMessage, updateMessageStatus } = useChatCache();
 
-  // Initialize greeting message for new chats
+  // Initialize greeting message for new chats (only once)
   useEffect(() => {
-    if (!existingChatId && characterDetails) {
+    if (!existingChatId && characterDetails && newMessages.length === 0) {
       const greeting = characterDetails.definition?.[0]?.greeting || 
                       `Hello! I'm ${character.name}. It's great to meet you. What would you like to talk about?`;
       
-        const greetingMessage: Message = {
-          id: 'greeting',
-          content: greeting,
-          isUser: false,
-          timestamp: new Date(),
-          status: 'sent'
-        };
+      const greetingMessage: Message = {
+        id: `greeting-${character.id}`,
+        content: greeting,
+        isUser: false,
+        timestamp: new Date(),
+        status: 'sent'
+      };
       setNewMessages([greetingMessage]);
     }
     
