@@ -74,15 +74,22 @@ const OnboardingProgressBar = ({
           </div>
         </div>
 
-        {/* Next Button */}
-        <Button
-          onClick={onNext}
-          disabled={!canGoNext}
-          className="flex items-center gap-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-        >
-          Next Step
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+        {/* Next Button - Hide on final step */}
+        {currentStep < totalSteps - 1 && (
+          <Button
+            onClick={onNext}
+            disabled={!canGoNext}
+            className="flex items-center gap-2 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          >
+            Next Step
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
+        
+        {/* Spacer for final step to maintain layout */}
+        {currentStep === totalSteps - 1 && (
+          <div className="flex-shrink-0 w-[120px]" />
+        )}
       </div>
     </div>
   );
