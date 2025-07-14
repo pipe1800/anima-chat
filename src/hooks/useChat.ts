@@ -177,219 +177,111 @@ export const useHandleSendMessage = () => {
   const queryClient = useQueryClient();
   const { addOptimisticMessage, updateMessageStatus } = useChatCache();
   
-  const handleSendMessage = async ({
-    messageContent,
-    chatId,
-    model,
-    characterId,
-    currentMessages = []
-  }: {
-    messageContent: string;
-    chatId: string;
-    model: string;
-    characterId: string;
-    currentMessages?: Array<{ role: string; content: string }>;
-  }) => {
-    if (!user) {
-      throw new Error('User not authenticated');
+  const handleSendMessage = async (content: string, chatId: string, characterId: string) => {
+    if (!characterId) {
+      console.error("Character ID is not available.");
+      return;
     }
 
-    // Prepare the Data
-    // Create a new message object for the user's input
-    const userMessage = {
-      role: 'user',
-      content: messageContent
-    };
-
-    // Append this new message to the existing array of messages
-    const updatedMessages = [...currentMessages, userMessage];
-
-    // Create user message for optimistic update
-    const tempUserMessageId = `temp-user-${Date.now()}`;
-    const optimisticUserMessage: Message = {
-      id: tempUserMessageId,
-      content: messageContent,
+    // 1. Add the user's new message to the state immediately
+    const userMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: content,
       isUser: true,
       timestamp: new Date(),
-      status: 'sending'
     };
+    addOptimisticMessage(chatId, userMessage);
 
-    // Create placeholder message for AI response
-    const tempAiMessageId = `temp-ai-${Date.now()}`;
-    const aiPlaceholderMessage: Message = {
-      id: tempAiMessageId,
+    // 2. Add a blank placeholder for the AI's response to render the bubble
+    const aiMessagePlaceholder: Message = {
+      id: `ai-temp-${Date.now()}`,
       content: '',
       isUser: false,
       timestamp: new Date(),
-      status: 'sending'
     };
+    addOptimisticMessage(chatId, aiMessagePlaceholder);
 
-    // Add both messages to cache optimistically
-    addOptimisticMessage(chatId, optimisticUserMessage);
-    addOptimisticMessage(chatId, aiPlaceholderMessage);
+    // Get current messages to build context
+    const currentData = queryClient.getQueryData(['chat', 'messages', chatId]) as InfiniteData<ChatPage> | undefined;
+    const currentMessages = currentData?.pages.flatMap(page => page.messages.map(msg => ({
+      role: msg.isUser ? 'user' : 'assistant',
+      content: msg.content
+    }))) || [];
 
-    // Save user message to database first
     try {
-      const { data: savedUserMessage, error: userSaveError } = await createMessage(
-        chatId,
-        user.id,
-        messageContent,
-        false // is_ai_message = false
-      );
-
-      if (userSaveError) {
-        updateMessageStatus(chatId, tempUserMessageId, 'failed');
-        throw userSaveError;
+      // Get the session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('User not authenticated');
       }
 
-      // Update user message with real ID
-      updateMessageStatus(chatId, tempUserMessageId, 'sent', savedUserMessage.id);
-
-    } catch (error) {
-      console.error('Failed to save user message:', error);
-      updateMessageStatus(chatId, tempUserMessageId, 'failed');
-      toast.error('Failed to send message');
-      throw error;
-    }
-
-    // Invoke the Edge Function (The Core Fix)
-    try {
-      // Call supabase.functions.invoke with streaming
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: {
+      // 3. Invoke the live Supabase Edge Function with a streaming response
+      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           character_id: characterId,
-          model: model,
-          messages: updatedMessages,
-          chat_id: chatId
-        }
+          model: 'google/gemma-7b-it', // NOTE: This should eventually be dynamic based on user plan
+          messages: [...currentMessages, { role: 'user', content: content }], // Send the full history plus the new message
+        }),
       });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        throw new Error(`Failed to get response: ${response.status}`);
       }
 
-      if (!data) {
-        throw new Error('No response data received');
+      if (!response.body) {
+        throw new Error("No response body received");
       }
 
-      // Process the Stream
-      const reader = data.getReader();
+      // 4. Process the stream to update the UI in real-time
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulatedContent = '';
+      let fullResponse = '';
 
       while (true) {
         const { done, value } = await reader.read();
-        
-        if (done) {
-          break;
-        }
+        if (done) break;
 
-        // Decode the chunk
-        const chunk = decoder.decode(value, { stream: true });
-        
-        // Parse Server-Sent Events (SSE) format
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6); // Remove 'data: ' prefix
-            
-            if (data === '[DONE]') {
-              continue;
-            }
-            
-            try {
-              const parsed = JSON.parse(data);
-              
-              // Extract content from the streaming response
-              if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
-                const newContent = parsed.choices[0].delta.content;
-                accumulatedContent += newContent;
-                
-                // Update the AI's placeholder message content in real-time
-                queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
-                  if (!old || !old.pages.length) return old;
-                  
-                  const updatedPages = old.pages.map(page => ({
-                    ...page,
-                    messages: page.messages.map(msg => 
-                      msg.id === tempAiMessageId 
-                        ? { ...msg, content: accumulatedContent, status: 'sending' as const }
-                        : msg
-                    )
-                  }));
-                  
-                  return { ...old, pages: updatedPages };
-                });
-              }
-            } catch (parseError) {
-              // Skip invalid JSON lines
-              console.warn('Failed to parse SSE data:', parseError);
-            }
-          }
-        }
+        fullResponse += decoder.decode(value, { stream: true });
+
+        // Update the AI message content in real-time
+        queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
+          if (!old || !old.pages.length) return old;
+          
+          const updatedPages = old.pages.map(page => ({
+            ...page,
+            messages: page.messages.map(msg => 
+              msg.id === aiMessagePlaceholder.id
+                ? { ...msg, content: fullResponse }
+                : msg
+            )
+          }));
+          
+          return { ...old, pages: updatedPages };
+        });
       }
 
-      // Save the final AI message to database
-      const { data: savedMessage, error: saveError } = await createMessage(
-        chatId, 
-        characterId, // Use characterId as author for AI messages
-        accumulatedContent, 
-        true // is_ai_message = true
-      );
-
-      if (saveError) {
-        console.error('Failed to save AI message:', saveError);
-        updateMessageStatus(chatId, tempAiMessageId, 'failed');
-        toast.error('Failed to save AI response');
-        return;
-      }
-
-      // Update the message with the real ID and mark as sent
-      updateMessageStatus(chatId, tempAiMessageId, 'sent', savedMessage.id);
-      
-      // Invalidate credits cache as they would have been consumed
-      queryClient.invalidateQueries({ queryKey: ['user', 'credits', user.id] });
-      
-      toast.success('Response generated successfully');
-
-    } catch (error) {
-      console.error('Error in handleSendMessage:', error);
-      
-      // Finalize and Error Handling
-      // Update the AI's placeholder message to display error
+    } catch (e) {
+      console.error("Error invoking chat function:", e);
+      // 5. Update the UI with a clear error message on failure
       queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
         if (!old || !old.pages.length) return old;
         
         const updatedPages = old.pages.map(page => ({
           ...page,
           messages: page.messages.map(msg => 
-            msg.id === tempAiMessageId 
-              ? { 
-                  ...msg, 
-                  content: 'Error: Failed to get response.',
-                  status: 'failed' as const
-                }
+            msg.id === aiMessagePlaceholder.id
+              ? { ...msg, content: `Error: ${(e as Error).message}` }
               : msg
           )
         }));
         
         return { ...old, pages: updatedPages };
       });
-
-      // Show user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      if (errorMessage.includes('Insufficient credits')) {
-        toast.error('Insufficient credits. Please purchase more credits to continue.');
-      } else if (errorMessage.includes('not available')) {
-        toast.error('This AI model is not available for your current plan.');
-      } else if (errorMessage.includes('Character definition not found')) {
-        toast.error('Character not found. Please try a different character.');
-      } else {
-        toast.error('Failed to generate response. Please try again.');
-      }
-
-      throw error;
     }
   };
 
