@@ -71,14 +71,19 @@ export const TutorialOverlay = () => {
       
       {/* Highlight ring */}
       <div
-        className="fixed pointer-events-none z-[9999] rounded-lg"
+        className={cn(
+          "fixed pointer-events-none z-[9999] rounded-lg transition-all duration-300",
+          currentStepData?.requiredInteraction ? "cursor-pointer" : ""
+        )}
         style={{
           left: highlightedRect.left - 4,
           top: highlightedRect.top - 4,
           width: highlightedRect.width + 8,
           height: highlightedRect.height + 8,
-          boxShadow: '0 0 0 3px #FF7A00, 0 0 20px rgba(255, 122, 0, 0.5)',
-          animation: 'pulse 2s infinite',
+          boxShadow: currentStepData?.requiredInteraction 
+            ? '0 0 0 3px #22c55e, 0 0 20px rgba(34, 197, 94, 0.5)' // Green for interactive
+            : '0 0 0 3px #FF7A00, 0 0 20px rgba(255, 122, 0, 0.5)', // Orange for info
+          animation: currentStepData?.requiredInteraction ? 'pulse 1.5s infinite' : 'pulse 2s infinite',
         }}
       />
 
@@ -88,9 +93,9 @@ export const TutorialOverlay = () => {
         step={currentStepData}
       />
 
-      {/* Interaction blocker */}
+      {/* Interaction blocker - only blocks when interactions should be disabled */}
       {disableInteractions && (
-        <div className="fixed inset-0 z-[9997] pointer-events-auto cursor-not-allowed" />
+        <div className="fixed inset-0 z-[9997] pointer-events-auto cursor-not-allowed bg-transparent" />
       )}
     </>
   );

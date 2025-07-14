@@ -145,7 +145,7 @@ export const TutorialProvider: React.FC<TutorialProviderProps> = ({ children }) 
   const [worldInfoDropdownVisible, setWorldInfoDropdownVisible] = useState(false);
 
   const currentStepData = tutorialSteps[currentStep] || null;
-  const disableInteractions = isActive && currentStepData?.requiredInteraction !== false;
+  const disableInteractions = isActive && currentStepData?.requiredInteraction === false;
 
   const startTutorial = useCallback(() => {
     setIsActive(true);
