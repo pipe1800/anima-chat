@@ -116,7 +116,7 @@ const Subscription = () => {
       setPlanToUpgradeTo(targetPlan);
       setShowUpgradeConfirmation(true);
     } else {
-      // For other cases (new subscriptions), proceed directly
+      // For other cases (new subscriptions from guest users), proceed directly
       processSubscriptionAction(targetPlan);
     }
   };
@@ -133,7 +133,7 @@ const Subscription = () => {
         // True Fan upgrading to The Whale - use initiate-upgrade like in BillingSettings
         response = await supabase.functions.invoke('initiate-upgrade');
       } else if (!userSubscription) {
-        // Guest user - create new subscription
+        // Guest user (no active subscription) - create new subscription
         response = await supabase.functions.invoke('create-paypal-subscription', {
           body: { planId: targetPlan.id }
         });
@@ -311,18 +311,23 @@ const Subscription = () => {
 
         {/* Subscription Tier Cards */}
         {(() => {
+          // New simplified logic: null subscription = Guest Pass user
+          const isGuestUser = !userSubscription;
           const currentPlan = userSubscription?.plan?.name;
           let plansToShow = [];
 
-          if (!userSubscription) {
-            // Guest Pass - show Guest plan and all paid plans
-            plansToShow = plans;
+          if (isGuestUser) {
+            // Guest users (no subscription) - show all paid plans
+            plansToShow = plans.filter(plan => plan.price_monthly > 0);
           } else if (currentPlan === 'True Fan') {
             // True Fan - show current plan and The Whale upgrade option
             plansToShow = plans.filter(plan => plan.name === 'True Fan' || plan.name === 'The Whale');
           } else if (currentPlan === 'The Whale') {
             // The Whale - show only current plan
             plansToShow = plans.filter(plan => plan.name === 'The Whale');
+          } else {
+            // Fallback - show all plans
+            plansToShow = plans;
           }
 
           // Dynamic container classes based on number of plans
@@ -348,8 +353,7 @@ const Subscription = () => {
                 plansToShow.map((plan) => {
                   const isPopular = plan.name === 'True Fan';
                   const isPremium = plan.name === 'The Whale';
-                  const isFree = plan.price_monthly === 0;
-                  const isCurrentPlan = (!userSubscription && isFree) || userSubscription?.plan?.name === plan.name;
+                  const isCurrentPlan = userSubscription?.plan?.name === plan.name;
                   const canUpgrade = currentPlan === 'True Fan' && plan.name === 'The Whale';
                   
                   return (
@@ -383,8 +387,8 @@ const Subscription = () => {
                       </CardTitle>
                       <div className="space-y-2">
                         <div className="text-3xl font-bold text-[#FF7A00]">
-                          {isFree ? 'Free' : `$${plan.price_monthly}`}
-                          {!isFree && <span className="text-lg text-gray-400 font-normal">/month</span>}
+                          ${plan.price_monthly}
+                          <span className="text-lg text-gray-400 font-normal">/month</span>
                         </div>
                         <div className="text-lg text-gray-300">
                           {plan.monthly_credits_allowance.toLocaleString()} Credits
@@ -425,8 +429,8 @@ const Subscription = () => {
                           >
                             {isUpgrading ? 'Processing...' : 'Upgrade Plan'}
                           </Button>
-                        ) : !userSubscription && !isFree ? (
-                          // User has no subscription, show subscribe button for paid plans
+                        ) : isGuestUser ? (
+                          // Guest user - show subscribe button for all paid plans
                           <Button 
                             onClick={() => handleSubscriptionAction(plan)}
                             className="w-full py-3 bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white"
@@ -435,12 +439,12 @@ const Subscription = () => {
                             {isUpgrading ? 'Processing...' : 'Subscribe'}
                           </Button>
                         ) : (
-                          // Fallback disabled button for free plan or invalid states
+                          // Fallback disabled button for invalid states
                           <Button 
                             className="w-full py-3 bg-gray-600 text-gray-400 cursor-not-allowed hover:bg-gray-600"
                             disabled={true}
                           >
-                            {isFree ? 'Current Plan' : 'Subscribe'}
+                            Subscribe
                           </Button>
                         )}
                       </div>

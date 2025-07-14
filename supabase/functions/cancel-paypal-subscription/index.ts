@@ -46,7 +46,12 @@ serve(async (req) => {
       .maybeSingle();
 
     if (subError || !subscription || !subscription.paypal_subscription_id) {
-      throw new Error("No active PayPal subscription found");
+      throw new Error("No active PayPal subscription found to cancel");
+    }
+
+    // Additional safety check - prevent cancellation of free/guest subscriptions
+    if (subscription.plan && subscription.plan.price_monthly === 0) {
+      throw new Error("Cannot cancel free subscription plans");
     }
 
     logStep("Active subscription found", { 

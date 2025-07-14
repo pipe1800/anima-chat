@@ -285,8 +285,8 @@ export const BillingSettings = () => {
                 </Button>
               )}
               
-              {/* Cancel Subscription Dialog - Only show for paid plans with PayPal subscription */}
-              {userSubscription.paypal_subscription_id && userSubscription.plans.name !== 'Guest Pass' && (
+              {/* Cancel Subscription Dialog - Only show for active subscriptions with PayPal ID */}
+              {userSubscription && userSubscription.paypal_subscription_id && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/10">
