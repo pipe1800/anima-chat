@@ -33,7 +33,7 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
   } = useChatMessages(chatId);
 
   // Enable real-time updates with fallback polling
-  const { isSubscribed } = useRealtimeMessages(chatId);
+  const { isSubscribed, debugInfo } = useRealtimeMessages(chatId);
   useMessagePolling(chatId, isSubscribed);
 
   // Use only fetched messages from database (single source of truth)
@@ -115,8 +115,17 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
     >
       {/* Debug indicator for real-time status */}
       {chatId && (
-        <div className="fixed top-4 right-4 z-50 text-xs bg-black/50 px-2 py-1 rounded">
-          {isSubscribed ? '🟢 Real-time connected' : '🔴 Real-time disconnected (polling)'}
+        <div className="fixed top-4 right-4 z-50 text-xs bg-black/80 px-3 py-2 rounded-lg border border-white/20">
+          <div className="mb-1">
+            {isSubscribed ? '🟢 Real-time connected' : '🔴 Real-time disconnected (polling)'}
+          </div>
+          {debugInfo.length > 0 && (
+            <div className="text-xs text-gray-300 space-y-1">
+              {debugInfo.map((info, index) => (
+                <div key={index}>{info}</div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {/* Load Earlier Messages Button */}
