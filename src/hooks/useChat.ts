@@ -260,7 +260,7 @@ const invokeAIResponse = async (
     const requestPayload = {
       character_id: characterId,
       chat_id: chatId,
-      model: 'mistral/mistral-7b-instruct',
+      model: 'mistralai/mistral-7b-instruct',
       user_message: userMessage,
       tracked_context: trackedContext,
       addon_settings: addonSettings
