@@ -179,15 +179,11 @@ export function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#121212]">
-      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-6 sticky top-0 z-10">
+      {/* Header - Desktop Only */}
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-6 sticky top-0 z-10 hidden md:block">
         <div className="flex items-center justify-between">
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <MobileNavMenu userCredits={userCredits} username={username} />
-          </div>
-          
-          {/* Title - responsive */}
-          <div className="flex-1 md:flex-none">
+          {/* Title */}
+          <div>
             <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-bold">
               <span className="hidden sm:inline">Welcome back to ANIMA, @{username}</span>
               <span className="sm:hidden">ANIMA Dashboard</span>

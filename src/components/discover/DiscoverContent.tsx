@@ -110,21 +110,15 @@ export function DiscoverContent() {
   return (
     <div className="min-h-screen bg-[#121212] w-full">
       {/* Header */}
-      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-4">
+      {/* Header - Desktop Only */}
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-4 hidden md:block">
         <div className="flex items-center justify-between">
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <MobileNavMenu userCredits={userCredits} username={username} />
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className="text-white text-xl sm:text-2xl font-bold">
-                <span className="hidden sm:inline">Discovery Hub</span>
-                <span className="sm:hidden">Discover</span>
-              </h1>
-              <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Explore characters and world infos</p>
-            </div>
+          <div>
+            <h1 className="text-white text-xl sm:text-2xl font-bold">
+              <span className="hidden sm:inline">Discovery Hub</span>
+              <span className="sm:hidden">Discover</span>
+            </h1>
+            <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Explore characters and world infos</p>
           </div>
         </div>
       </header>

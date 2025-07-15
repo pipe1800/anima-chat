@@ -451,11 +451,14 @@ const CharacterCreator = () => {
           <MobileNavMenu 
             userCredits={userCredits} 
             username={profile?.username || 'User'} 
+            pageTitle={isEditing ? 'Edit Character' : 'Create Character'}
           />
-          <h1 className="text-white text-lg font-semibold">
-            {isEditing ? 'Edit Character' : 'Create Character'}
-          </h1>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div className="flex-1">
+            <h1 className="text-white text-lg font-semibold text-center">
+              {isEditing ? 'Edit Character' : 'Create Character'}
+            </h1>
+          </div>
+          <div className="w-16"></div> {/* Spacer for centering */}
         </div>
       </div>
 

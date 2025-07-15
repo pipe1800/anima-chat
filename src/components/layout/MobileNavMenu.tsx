@@ -2,7 +2,7 @@ import React from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, Home, Compass, MessageSquare, User, Settings, Crown, Zap, Users, Plus, LogOut } from 'lucide-react';
+import { Menu, Home, Compass, MessageSquare, User, Settings, Crown, Zap, Users, Plus, LogOut, Star } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,9 +15,11 @@ logoImg.src = LOGO_URL;
 interface MobileNavMenuProps {
   userCredits?: number;
   username?: string;
+  pageTitle?: string;
+  showFavoriteIcon?: boolean;
 }
 
-export const MobileNavMenu = ({ userCredits = 0, username = 'User' }: MobileNavMenuProps) => {
+export const MobileNavMenu = ({ userCredits = 0, username = 'User', pageTitle, showFavoriteIcon = true }: MobileNavMenuProps) => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
@@ -42,12 +44,13 @@ export const MobileNavMenu = ({ userCredits = 0, username = 'User' }: MobileNavM
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-gray-700">
-          <Menu className="h-6 w-6" />
-        </Button>
-      </SheetTrigger>
+    <div className="flex items-center space-x-3">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-gray-700 p-2">
+            <Menu className="h-7 w-7" />
+          </Button>
+        </SheetTrigger>
       <SheetContent side="left" className="w-80 bg-[#121212] border-gray-700 p-0">
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -119,7 +122,15 @@ export const MobileNavMenu = ({ userCredits = 0, username = 'User' }: MobileNavM
             </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+      
+      {/* Favorite Icon */}
+      {showFavoriteIcon && (
+        <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-gray-700 p-2">
+          <Star className="h-6 w-6" />
+        </Button>
+      )}
+    </div>
   );
 };
