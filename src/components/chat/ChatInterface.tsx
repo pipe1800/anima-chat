@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Wand2 } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { InsufficientCreditsModal } from './InsufficientCreditsModal';
 import ChatMessages from './ChatMessages';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserCharacterAddonSettings } from '@/lib/user-addon-operations';
 import { 
   useUserCredits,
   useCharacterDetails,
@@ -37,8 +36,6 @@ const ChatInterface = ({
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
-  const [hasEnhancedMemory, setHasEnhancedMemory] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   
   // Listen to message updates to stop typing when AI responds
   const { data: messagesData } = useChatMessages(currentChatId);
@@ -52,30 +49,13 @@ const ChatInterface = ({
   const { data: characterDetails } = useCharacterDetails(character.id);
   const sendMessageMutation = useSendMessage();
 
-  // Initialize chat for existing chat and load addon settings
+  // Initialize chat for existing chat
   useEffect(() => {
     if (existingChatId) {
       setCurrentChatId(existingChatId);
       setIsFirstMessage(false);
     }
-    
-    // Load addon settings to check for enhanced memory and background image
-    const loadAddonSettings = async () => {
-      if (user && currentChatId) {
-        try {
-          const settings = await getUserCharacterAddonSettings(user.id, character.id);
-          setHasEnhancedMemory(settings.enhancedMemory);
-          
-          // TODO: Load chat-specific background image from storage or database
-          // For now, we'll use a placeholder implementation
-        } catch (error) {
-          console.error('Error loading addon settings:', error);
-        }
-      }
-    };
-    
-    loadAddonSettings();
-  }, [existingChatId, user, character.id]);
+  }, [existingChatId]);
 
   // Focus input when component mounts
   useEffect(() => {
@@ -156,15 +136,7 @@ const ChatInterface = ({
 
 
   return (
-    <div 
-      className="flex flex-col h-full"
-      style={{
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+    <div className="flex flex-col h-full">
       {/* Insufficient Credits Modal */}
       <InsufficientCreditsModal
         isOpen={showInsufficientCreditsModal}
@@ -194,26 +166,17 @@ const ChatInterface = ({
       )}
 
       {/* Input Area */}
-      <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-t border-gray-700/50 p-4 flex-shrink-0">
+      <div className="bg-[#1a1a2e] border-t border-gray-700/50 p-4 flex-shrink-0">
         <form onSubmit={handleSendMessage} className="flex space-x-3">
-          <div className="flex-1 relative">
-            {hasEnhancedMemory && (
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
-                <Wand2 className="w-5 h-5 text-[#FF7A00]" />
-              </div>
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              placeholder={`Message ${character.name}...`}
-              className={`w-full bg-[#121212] border border-gray-700/50 rounded-xl py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif] ${
-                hasEnhancedMemory ? 'pl-12 pr-4' : 'px-4'
-              }`}
-              disabled={creditsBalance < 1}
-            />
-          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            placeholder={`Message ${character.name}...`}
+            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif]"
+            disabled={creditsBalance < 1}
+          />
           <Button
             type="submit"
             className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"

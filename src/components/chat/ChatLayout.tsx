@@ -262,7 +262,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
       
       // If we deleted the current chat, navigate away
       if (chatId === currentChatId) {
-        navigate(`/chat/${character.id}`);
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error deleting chat:', error);
@@ -304,7 +304,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
               className="text-gray-400 hover:text-white hover:bg-gray-800"
               data-tutorial="right-panel-toggle"
             >
-              <Settings className="w-8 h-8" />
+              <Settings className="w-6 h-6" />
             </Button>
           </div>
         </header>
@@ -325,7 +325,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
           />
           
           {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-[925px] bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
+          <div className="fixed right-0 top-0 h-full w-[544px] bg-[#0f0f0f] border-l border-gray-700/50 z-50 flex flex-col animate-slide-in-right">
             {/* Panel Header */}
             <div className="p-4 border-b border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
