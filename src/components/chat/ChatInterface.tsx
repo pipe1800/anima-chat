@@ -14,6 +14,7 @@ import {
   type TrackedContext
 } from '@/hooks/useChat';
 import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
+import { useAddonSettings } from './useAddonSettings';
 
 interface Character {
   id: string;
@@ -42,7 +43,11 @@ const ChatInterface = ({
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
-  const [addonSettings, setAddonSettings] = useState<AddonSettings>({
+  // Use the addon settings hook for real-time updates
+  const { data: addonSettings } = useAddonSettings(character.id);
+  
+  // Fallback to default settings if loading
+  const currentAddonSettings = addonSettings || {
     dynamicWorldInfo: false,
     enhancedMemory: false,
     moodTracking: false,
@@ -52,7 +57,7 @@ const ChatInterface = ({
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
-  });
+  };
   const [trackedContext, setTrackedContext] = useState<TrackedContext>({
     moodTracking: 'No context',
     clothingInventory: 'No context',
@@ -88,21 +93,7 @@ const ChatInterface = ({
     }
   }, []);
 
-  // Load addon settings
-  useEffect(() => {
-    const loadAddonSettings = async () => {
-      if (user && character.id) {
-        try {
-          const settings = await getUserCharacterAddonSettings(user.id, character.id);
-          console.log('Loaded addon settings:', settings);
-          setAddonSettings(settings);
-        } catch (error) {
-          console.error('Error loading addon settings:', error);
-        }
-      }
-    };
-    loadAddonSettings();
-  }, [user, character.id]);
+  // Addon settings are now loaded via useAddonSettings hook
 
   // Stop typing indicator when AI message appears
   useEffect(() => {
@@ -138,7 +129,7 @@ const ChatInterface = ({
         content: messageContent,
         characterId: character.id,
         trackedContext: trackedContext,
-        addonSettings: addonSettings
+        addonSettings: currentAddonSettings
       });
 
       // Update tracked context if returned
@@ -228,7 +219,7 @@ const ChatInterface = ({
           />
           <div className="flex items-center space-x-2">
             {/* Enhanced Memory indicator */}
-            {addonSettings.enhancedMemory && (
+            {currentAddonSettings.enhancedMemory && (
               <div className="flex items-center justify-center w-10 h-10 text-[#FF7A00]">
                 <Wand2 className="w-5 h-5" />
               </div>

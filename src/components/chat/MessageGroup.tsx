@@ -22,9 +22,16 @@ interface MessageGroupProps {
   group: MessageGroupData;
   character: Character;
   trackedContext?: TrackedContext;
+  addonSettings?: {
+    moodTracking?: boolean;
+    clothingInventory?: boolean;
+    locationTracking?: boolean;
+    timeAndWeather?: boolean;
+    relationshipStatus?: boolean;
+  };
 }
 
-export function MessageGroup({ group, character, trackedContext }: MessageGroupProps) {
+export function MessageGroup({ group, character, trackedContext, addonSettings }: MessageGroupProps) {
   const { messages, isUser, showTimestamp } = group;
 
   return (
@@ -91,7 +98,9 @@ export function MessageGroup({ group, character, trackedContext }: MessageGroupP
                 <div key={`${msg.id}-context`} className="mb-2">
                   <ContextDisplay 
                     contextUpdates={msg.contextUpdates} 
-                    currentContext={msg.current_context}
+                    currentContext={msg.current_context || trackedContext}
+                    addonSettings={addonSettings}
+                    className="mt-2"
                   />
                 </div>
               );

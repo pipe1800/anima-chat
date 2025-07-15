@@ -156,14 +156,16 @@ Deno.serve(async (req) => {
 
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
 
-    // Load existing context from database
-    let currentContext: any = {
-      moodTracking: 'No context',
-      clothingInventory: 'No context',
-      locationTracking: 'No context',
-      timeAndWeather: 'No context',
-      relationshipStatus: 'No context'
-    };
+    // Load existing context from database - only initialize for enabled addons
+    const addonSettingsObj = addon_settings || {};
+    let currentContext: any = {};
+    
+    // Only initialize context for enabled addons
+    if (addonSettingsObj.moodTracking) currentContext.moodTracking = 'No context';
+    if (addonSettingsObj.clothingInventory) currentContext.clothingInventory = 'No context';
+    if (addonSettingsObj.locationTracking) currentContext.locationTracking = 'No context';
+    if (addonSettingsObj.timeAndWeather) currentContext.timeAndWeather = 'No context';
+    if (addonSettingsObj.relationshipStatus) currentContext.relationshipStatus = 'No context';
 
     if (tracked_context) {
       currentContext = { ...currentContext, ...tracked_context };
@@ -180,19 +182,29 @@ Deno.serve(async (req) => {
         for (const row of contextData) {
           switch (row.context_type) {
             case 'mood':
-              currentContext.moodTracking = row.current_context || 'No context';
+              if (addonSettingsObj.moodTracking) {
+                currentContext.moodTracking = row.current_context || 'No context';
+              }
               break;
             case 'clothing':
-              currentContext.clothingInventory = row.current_context || 'No context';
+              if (addonSettingsObj.clothingInventory) {
+                currentContext.clothingInventory = row.current_context || 'No context';
+              }
               break;
             case 'location':
-              currentContext.locationTracking = row.current_context || 'No context';
+              if (addonSettingsObj.locationTracking) {
+                currentContext.locationTracking = row.current_context || 'No context';
+              }
               break;
             case 'time_weather':
-              currentContext.timeAndWeather = row.current_context || 'No context';
+              if (addonSettingsObj.timeAndWeather) {
+                currentContext.timeAndWeather = row.current_context || 'No context';
+              }
               break;
             case 'relationship':
-              currentContext.relationshipStatus = row.current_context || 'No context';
+              if (addonSettingsObj.relationshipStatus) {
+                currentContext.relationshipStatus = row.current_context || 'No context';
+              }
               break;
           }
         }
@@ -201,13 +213,25 @@ Deno.serve(async (req) => {
 
     console.log('Current context loaded:', currentContext);
 
-    // Construct context injection for system prompt
-    const contextPrompt = `[Current Context:
-${currentContext.moodTracking !== 'No context' ? `Mood: ${currentContext.moodTracking}` : ''}
-${currentContext.clothingInventory !== 'No context' ? `Clothing: ${currentContext.clothingInventory}` : ''}
-${currentContext.locationTracking !== 'No context' ? `Location: ${currentContext.locationTracking}` : ''}
-${currentContext.timeAndWeather !== 'No context' ? `Time & Weather: ${currentContext.timeAndWeather}` : ''}
-${currentContext.relationshipStatus !== 'No context' ? `Relationship: ${currentContext.relationshipStatus}` : ''}]`;
+    // Construct context injection for system prompt - only for enabled addons
+    const contextParts = [];
+    if (addonSettingsObj.moodTracking && currentContext.moodTracking && currentContext.moodTracking !== 'No context') {
+      contextParts.push(`Mood: ${currentContext.moodTracking}`);
+    }
+    if (addonSettingsObj.clothingInventory && currentContext.clothingInventory && currentContext.clothingInventory !== 'No context') {
+      contextParts.push(`Clothing: ${currentContext.clothingInventory}`);
+    }
+    if (addonSettingsObj.locationTracking && currentContext.locationTracking && currentContext.locationTracking !== 'No context') {
+      contextParts.push(`Location: ${currentContext.locationTracking}`);
+    }
+    if (addonSettingsObj.timeAndWeather && currentContext.timeAndWeather && currentContext.timeAndWeather !== 'No context') {
+      contextParts.push(`Time & Weather: ${currentContext.timeAndWeather}`);
+    }
+    if (addonSettingsObj.relationshipStatus && currentContext.relationshipStatus && currentContext.relationshipStatus !== 'No context') {
+      contextParts.push(`Relationship: ${currentContext.relationshipStatus}`);
+    }
+    
+    const contextPrompt = contextParts.length > 0 ? `[Current Context:\n${contextParts.join('\n')}]` : '';
 
     // Construct the System Prompt with context injection
     const systemPrompt = `You are to roleplay as the character defined below. Stay in character and respond naturally.
@@ -329,7 +353,6 @@ Respond naturally to the conversation, keeping the character's personality consi
     console.log('AI response generated successfully, length:', aiResponseContent.length);
 
     // Check if any addons are enabled before extracting context
-    const addonSettingsObj = addon_settings || {};
     const hasEnabledAddons = addonSettingsObj.moodTracking || 
                            addonSettingsObj.clothingInventory || 
                            addonSettingsObj.locationTracking || 

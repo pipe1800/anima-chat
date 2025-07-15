@@ -100,7 +100,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         available: isTrueFanOrWhale || tempAddonSettings.locationTracking || activeStatefulAddons < 2,
         dynamicCost: null
       },
-      timeWeather: { 
+      timeAndWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',

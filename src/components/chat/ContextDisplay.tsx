@@ -21,10 +21,17 @@ interface ContextDisplayProps {
     };
   };
   currentContext?: TrackedContext;
+  addonSettings?: {
+    moodTracking?: boolean;
+    clothingInventory?: boolean;
+    locationTracking?: boolean;
+    timeAndWeather?: boolean;
+    relationshipStatus?: boolean;
+  };
   className?: string;
 }
 
-export const ContextDisplay = ({ context, contextUpdates, currentContext, className = '' }: ContextDisplayProps) => {
+export const ContextDisplay = ({ context, contextUpdates, currentContext, addonSettings, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Handle context display with inheritance
@@ -33,7 +40,11 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, classN
   // If we have contextUpdates, show them (these are actual changes)
   if (contextUpdates && Object.keys(contextUpdates).length > 0) {
     contextItems = Object.entries(contextUpdates)
-      .filter(([_, update]) => update && update.current !== 'No context')
+      .filter(([key, update]) => {
+        // Only show updates for enabled addons
+        const isEnabled = addonSettings ? addonSettings[key as keyof typeof addonSettings] : true;
+        return isEnabled && update && update.current !== 'No context';
+      })
       .map(([key, update]) => ({
         label: key === 'moodTracking' ? 'Mood Tracking' :
                key === 'clothingInventory' ? 'Clothing Inventory' :
@@ -54,7 +65,16 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, classN
       { label: 'Location Tracking', value: currentContext.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: currentContext.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: currentContext.relationshipStatus, key: 'relationship' },
-    ].filter(item => item.value && item.value !== 'No context');
+    ].filter(item => {
+      // Only show context for enabled addons
+      const addonKey = item.key === 'mood' ? 'moodTracking' :
+                       item.key === 'clothing' ? 'clothingInventory' :
+                       item.key === 'location' ? 'locationTracking' :
+                       item.key === 'weather' ? 'timeAndWeather' :
+                       'relationshipStatus';
+      const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
+      return isEnabled && item.value && item.value !== 'No context';
+    });
   }
   // Legacy format: show all non-empty context
   else if (context) {
@@ -64,7 +84,16 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, classN
       { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
-    ].filter(item => item.value && item.value !== 'No context');
+    ].filter(item => {
+      // Only show context for enabled addons
+      const addonKey = item.key === 'mood' ? 'moodTracking' :
+                       item.key === 'clothing' ? 'clothingInventory' :
+                       item.key === 'location' ? 'locationTracking' :
+                       item.key === 'weather' ? 'timeAndWeather' :
+                       'relationshipStatus';
+      const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
+      return isEnabled && item.value && item.value !== 'No context';
+    });
   }
 
   // Show debug info if no context

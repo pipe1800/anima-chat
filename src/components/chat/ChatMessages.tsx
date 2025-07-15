@@ -6,6 +6,7 @@ import type { Message, TrackedContext } from '@/hooks/useChat';
 import { MessageGroup } from './MessageGroup';
 import { groupMessages } from '@/utils/messageGrouping';
 import { ContextDisplay } from './ContextDisplay';
+import { useAddonSettings } from './useAddonSettings';
 
 interface Character {
   id: string;
@@ -38,6 +39,9 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
   // Enable real-time updates with fallback polling
   const { isSubscribed, debugInfo } = useRealtimeMessages(chatId);
   useMessagePolling(chatId, isSubscribed);
+  
+  // Load addon settings for context filtering
+  const { data: addonSettings } = useAddonSettings(character.id);
 
   // Load background image for current chat
   useEffect(() => {
@@ -182,6 +186,7 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
             group={group} 
             character={character}
             trackedContext={trackedContext}
+            addonSettings={addonSettings}
           />
         ))
       ) : (
