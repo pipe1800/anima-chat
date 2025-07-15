@@ -202,19 +202,29 @@ export const ChatConfigurationTab = ({
     setTempAddonSettings(newSettings);
   };
 
-  const handleSaveAddons = async () => {
+  const handleSaveConfiguration = async () => {
     setSaving(true);
     
     try {
-      const result = await saveUserCharacterAddonSettings(userId, characterId, tempAddonSettings);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save addon settings');
+      // Save addon settings
+      const addonResult = await saveUserCharacterAddonSettings(userId, characterId, tempAddonSettings);
+      if (!addonResult.success) {
+        throw new Error(addonResult.error || 'Failed to save addon settings');
       }
       
       setAddonSettings(tempAddonSettings);
+
+      // Apply background image immediately if there's one set
+      if (backgroundImage && currentChatId) {
+        // Trigger background update event for ChatMessages component
+        window.dispatchEvent(new CustomEvent('background-image-updated', { 
+          detail: { chatId: currentChatId, backgroundImage } 
+        }));
+      }
+      
       toast.success('Configuration saved successfully');
     } catch (error) {
-      console.error('Error saving addon settings:', error);
+      console.error('Error saving configuration:', error);
       toast.error('Failed to save configuration. Please try again.');
     } finally {
       setSaving(false);
@@ -483,7 +493,7 @@ export const ChatConfigurationTab = ({
 
       {/* Save Configuration */}
       <Button 
-        onClick={handleSaveAddons}
+        onClick={handleSaveConfiguration}
         className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
         disabled={saving || !hasUnsavedChanges}
       >

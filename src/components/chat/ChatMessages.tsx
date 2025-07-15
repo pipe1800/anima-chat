@@ -47,6 +47,22 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
     }
   }, [chatId]);
 
+  // Listen for background image updates from configuration
+  useEffect(() => {
+    const handleBackgroundUpdate = (event: CustomEvent) => {
+      const { chatId: eventChatId, backgroundImage: newBackground } = event.detail;
+      if (eventChatId === chatId) {
+        setBackgroundImage(newBackground);
+      }
+    };
+
+    window.addEventListener('background-image-updated', handleBackgroundUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('background-image-updated', handleBackgroundUpdate as EventListener);
+    };
+  }, [chatId]);
+
   // Use only fetched messages from database (single source of truth)
   const allMessages = React.useMemo(() => {
     return data?.pages?.flatMap(page => page.messages) || [];

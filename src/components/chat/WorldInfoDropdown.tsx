@@ -41,20 +41,13 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
       if (!user) return;
       
       try {
-        // Get user's own world infos and public ones
+        // Get user's own world infos
         const { data: ownWorldInfos } = await supabase
           .from('world_infos')
           .select('id, name, short_description, visibility, creator_id')
           .eq('creator_id', user.id);
 
-        const { data: publicWorldInfos } = await supabase
-          .from('world_infos')
-          .select('id, name, short_description, visibility, creator_id')
-          .eq('visibility', 'public')
-          .neq('creator_id', user.id)
-          .limit(10);
-
-        // Get user's world info collection
+        // Get user's world info collection (only these, no public world infos)
         const { data: userWorldInfos } = await supabase
           .from('world_info_users')
           .select(`
@@ -73,10 +66,9 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
           ?.map(item => item.world_infos)
           .filter(Boolean) as WorldInfo[] || [];
 
-        // Combine and deduplicate
+        // Combine user's own world infos + world infos in collection
         const allWorldInfos = [
           ...(ownWorldInfos || []),
-          ...(publicWorldInfos || []),
           ...collectionWorldInfos
         ];
 
@@ -98,6 +90,18 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
       loadWorldInfos();
     }
   }, [isVisible, user]);
+
+  // Sync selectedWorldInfoId prop with internal state
+  useEffect(() => {
+    if (selectedWorldInfoId && worldInfos.length > 0) {
+      const worldInfo = worldInfos.find(w => w.id === selectedWorldInfoId);
+      if (worldInfo) {
+        setSelectedWorldInfo(worldInfo);
+      }
+    } else if (!selectedWorldInfoId) {
+      setSelectedWorldInfo(null);
+    }
+  }, [selectedWorldInfoId, worldInfos]);
 
   const handleWorldInfoSelect = (worldInfo: WorldInfo | null) => {
     if (disabled) return;
@@ -144,7 +148,7 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
           <div className="flex items-center space-x-2">
             <BookOpen className="w-4 h-4" />
             <span className="text-sm">
-              {disabled ? 'World Info (Disabled)' : selectedWorldInfo ? selectedWorldInfo.name : 'Select World Info'}
+              {disabled ? 'World Info (Disabled)' : (selectedWorldInfo?.name || 'Select World Info')}
             </span>
             <ChevronDown className="w-4 h-4" />
           </div>

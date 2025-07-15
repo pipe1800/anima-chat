@@ -191,6 +191,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
 
   const handleWorldInfoSelect = async (worldInfo: any) => {
     setSelectedWorldInfo(worldInfo);
+    setSelectedWorldInfoId(worldInfo?.id || null);
     
     // Save user's world info selection to database
     if (!currentUser) return;
