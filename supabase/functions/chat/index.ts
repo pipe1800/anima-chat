@@ -95,6 +95,38 @@ Deno.serve(async (req) => {
 
     console.log('Character definition found');
 
+    // Fetch user's addon settings for dynamic world info
+    const { data: addonSettings, error: addonError } = await supabase
+      .from('user_character_addons')
+      .select('addon_settings')
+      .eq('user_id', user.id)
+      .eq('character_id', character_id)
+      .maybeSingle();
+
+    const isWorldInfoEnabled = addonSettings?.addon_settings?.dynamicWorldInfo || false;
+    console.log('Dynamic World Info enabled:', isWorldInfoEnabled);
+
+    // Fetch world info entries if addon is enabled
+    let worldInfoEntries = [];
+    if (isWorldInfoEnabled) {
+      const { data: worldInfoData, error: worldInfoError } = await supabaseAdmin
+        .from('character_world_info_link')
+        .select(`
+          world_info_entries (
+            keywords,
+            entry_text
+          )
+        `)
+        .eq('character_id', character_id);
+
+      if (worldInfoError) {
+        console.error('Failed to fetch world info:', worldInfoError);
+      } else {
+        worldInfoEntries = worldInfoData?.map(link => link.world_info_entries).filter(Boolean) || [];
+        console.log('World info entries fetched:', worldInfoEntries.length);
+      }
+    }
+
     // Fetch conversation history for context
     const { data: messageHistory, error: historyError } = await supabase
       .from('messages')
@@ -135,6 +167,47 @@ Respond naturally to the conversation, keeping the character's personality consi
           role: msg.is_ai_message ? 'assistant' : 'user',
           content: msg.content
         });
+      }
+    }
+
+    // Process dynamic world info if enabled
+    if (isWorldInfoEnabled && worldInfoEntries.length > 0) {
+      console.log('Processing world info for keyword matching...');
+      
+      // Create keyword map for efficient lookups
+      const worldInfoMap = new Map();
+      for (const entry of worldInfoEntries) {
+        for (const keyword of entry.keywords || []) {
+          // Store both the keyword and entry text for deduplication
+          const key = keyword.toLowerCase();
+          if (!worldInfoMap.has(key)) {
+            worldInfoMap.set(key, entry.entry_text);
+          }
+        }
+      }
+
+      // Scan user message for keywords (case-insensitive)
+      const userMessageLower = user_message.toLowerCase();
+      const matchedEntries = new Set(); // Use Set to avoid duplicates
+      
+      for (const [keyword, entryText] of worldInfoMap) {
+        if (userMessageLower.includes(keyword)) {
+          matchedEntries.add(entryText);
+          console.log('Keyword matched:', keyword);
+        }
+      }
+
+      // Inject world info as system message if keywords found
+      if (matchedEntries.size > 0) {
+        const worldInfoContext = Array.from(matchedEntries).join('\n\n');
+        const worldInfoMessage = {
+          role: 'system' as const,
+          content: `[World Context: ${worldInfoContext}]`
+        };
+        
+        // Insert after main system prompt but before conversation history
+        conversationMessages.splice(1, 0, worldInfoMessage);
+        console.log('Injected world info context for', matchedEntries.size, 'entries');
       }
     }
 
