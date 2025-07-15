@@ -213,11 +213,20 @@ const StreamingChatInterface = ({
       // CRITICAL: Only save the clean final message, never the streaming accumulation
       const messageToSave = finalCleanContent || streamingDisplay;
       
-      // Additional fail-safe context stripping before database save
-      const cleanMessage = messageToSave
+      // BULLETPROOF fail-safe context stripping before database save
+      let cleanMessage = messageToSave
         .replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '')
         .replace(/\[CONTEXT_DATA\][\s\S]*$/g, '')
         .replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '')
+        .replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '')
+        .replace(/\[CONTEXTDATA\][\s\S]*$/g, '')
+        .replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '')
+        .replace(/\{[\s\S]*"mood"[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*"location"[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*"clothing"[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*"time_weather"[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*"relationship"[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*"character_position"[\s\S]*\}/g, '')
         .trim();
 
       if (cleanMessage) {

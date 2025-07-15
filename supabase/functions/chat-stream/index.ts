@@ -228,6 +228,7 @@ Stay in character and respond naturally. After your response, provide context da
             if (!reader) throw new Error('No reader available');
 
             let fullResponse = '';
+            let rawResponse = '';  // Store raw response for context extraction
             let extractedContext = null;
 
             while (true) {
@@ -241,9 +242,9 @@ Stay in character and respond naturally. After your response, provide context da
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    // Process context before closing - ENHANCED STRIPPING
-                    if (fullResponse.includes('[CONTEXT_DATA]')) {
-                      const contextMatch = fullResponse.match(/\[CONTEXT_DATA\]\s*(\{[\s\S]*?\})\s*\[\/CONTEXT_DATA\]/);
+                    // Process context from raw response before closing
+                    if (rawResponse.includes('[CONTEXT_DATA]')) {
+                      const contextMatch = rawResponse.match(/\[CONTEXT_DATA\]\s*(\{[\s\S]*?\})\s*\[\/CONTEXT_DATA\]/);
                       if (contextMatch) {
                         try {
                           extractedContext = JSON.parse(contextMatch[1]);
@@ -254,10 +255,8 @@ Stay in character and respond naturally. After your response, provide context da
                       }
                     }
 
-                    // CRITICAL FIX: Always strip context data from fullResponse
+                    // Additional final cleanup for any remaining context data
                     fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
-                    
-                    // Also strip any partial context data
                     fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '').trim();
                     fullResponse = fullResponse.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
                     
@@ -350,42 +349,49 @@ Stay in character and respond naturally. After your response, provide context da
                   try {
                     const parsed = JSON.parse(data);
                     if (parsed.choices?.[0]?.delta?.content) {
-                      fullResponse += parsed.choices[0].delta.content;
+                      let rawContent = parsed.choices[0].delta.content;
                       
-                      // ENHANCED CONTEXT STRIPPING: Remove context data from streaming content in real-time
-                      let streamContent = parsed.choices[0].delta.content;
+                      // Store raw content for context extraction
+                      rawResponse += rawContent;
                       
-                      // Super aggressive context data removal - prevent any context data from streaming
-                      if (streamContent.includes('[CONTEXT') || streamContent.includes('CONTEXT_DATA') || 
-                          streamContent.includes('"mood"') || streamContent.includes('"location"') ||
-                          streamContent.includes('"clothing"') || streamContent.includes('"time_weather"') ||
-                          streamContent.includes('"relationship"') || streamContent.includes('"character_position"') ||
-                          streamContent.includes('{') || streamContent.includes('}') || 
-                          streamContent.includes('[/CONTEXT') || streamContent.includes(':/') ||
-                          /\[[A-Z_]+\]/.test(streamContent) || /"[a-z_]+"\s*:/.test(streamContent)) {
+                      // CRITICAL FIX: Strip context data from raw content BEFORE adding to fullResponse
+                      let cleanContent = rawContent;
+                      
+                      // Super aggressive context data removal - prevent any context data from accumulating
+                      if (cleanContent.includes('[CONTEXT') || cleanContent.includes('CONTEXT_DATA') || 
+                          cleanContent.includes('"mood"') || cleanContent.includes('"location"') ||
+                          cleanContent.includes('"clothing"') || cleanContent.includes('"time_weather"') ||
+                          cleanContent.includes('"relationship"') || cleanContent.includes('"character_position"') ||
+                          cleanContent.includes('{') || cleanContent.includes('}') || 
+                          cleanContent.includes('[/CONTEXT') || cleanContent.includes(':/') ||
+                          /\[[A-Z_]+\]/.test(cleanContent) || /"[a-z_]+"\s*:/.test(cleanContent)) {
                         
                         // Remove any context-related content completely
-                        streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                        streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
-                        streamContent = streamContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                        streamContent = streamContent.replace(/\[CONTEXT[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
-                        streamContent = streamContent.replace(/\{[\s\S]*$/g, '');
-                        streamContent = streamContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
-                        streamContent = streamContent.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
+                        cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        cleanContent = cleanContent.replace(/\[CONTEXT[^}]*$/g, '');
+                        cleanContent = cleanContent.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/\{[\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
                         
-                        console.log('🧹 Stripped context from stream chunk:', streamContent);
+                        console.log('🧹 Stripped context from chunk - raw:', rawContent);
+                        console.log('🧹 Stripped context from chunk - clean:', cleanContent);
                       }
                       
+                      // Add ONLY clean content to fullResponse
+                      fullResponse += cleanContent;
+                      
                       // Only send clean content to client if there's actual content
-                      if (streamContent.trim()) {
+                      if (cleanContent.trim()) {
                         const cleanParsed = {
                           ...parsed,
                           choices: [{
                             ...parsed.choices[0],
                             delta: {
                               ...parsed.choices[0].delta,
-                              content: streamContent
+                              content: cleanContent
                             }
                           }]
                         };
