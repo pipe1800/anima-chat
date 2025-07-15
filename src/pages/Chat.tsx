@@ -15,7 +15,8 @@ const Chat = () => {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [characterData, setCharacterData] = useState(null); // Move this to top
+  const [characterData, setCharacterData] = useState<any>(null);
+  const [characterLoading, setCharacterLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { characterId, chatId } = useParams();
@@ -24,6 +25,7 @@ const Chat = () => {
   const existingChatId = chatId || location.state?.existingChatId;
   const fromOnboarding = location.state?.fromOnboarding;
 
+  // ALL useEffect hooks must be at the top, before any conditional returns
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -67,6 +69,51 @@ const Chat = () => {
     return () => subscription.unsubscribe();
   }, [navigate, loading]);
 
+  // Character data fetching effect - MOVED TO TOP
+  useEffect(() => {
+    // Skip if no user or still loading
+    if (!user || loading) return;
+    
+    // Initialize character data from selectedCharacter if available
+    if (selectedCharacter) {
+      setCharacterData(selectedCharacter);
+      return;
+    }
+    
+    // If no selectedCharacter and no characterId, redirect to dashboard
+    if (!characterId) {
+      navigate('/dashboard');
+      return;
+    }
+    
+    // Fetch character data from the URL parameter
+    const fetchCharacter = async () => {
+      setCharacterLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('characters')
+          .select('*')
+          .eq('id', characterId)
+          .single();
+        
+        if (error || !data) {
+          console.error('Error fetching character:', error);
+          navigate('/dashboard');
+          return;
+        }
+        
+        setCharacterData(data);
+      } catch (error) {
+        console.error('Error fetching character:', error);
+        navigate('/dashboard');
+      } finally {
+        setCharacterLoading(false);
+      }
+    };
+    
+    fetchCharacter();
+  }, [user, loading, characterId, selectedCharacter, navigate]);
+
   const handleFirstMessage = async () => {
     if (isFirstMessage && !onboardingCompleted) {
       setIsFirstMessage(false);
@@ -109,56 +156,37 @@ const Chat = () => {
     );
   }
 
-  // If we have characterId from URL but no selectedCharacter, fetch it
+  // Return early if no user - redirect handled by useEffect
   if (!user) {
-    navigate('/onboarding');
-    return null;
-  }
-  
-  if (!selectedCharacter && !characterId) {
-    navigate('/onboarding');
-    return null;
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-white">Redirecting...</div>
+      </div>
+    );
   }
 
-  // Character data fetching effect
-  useEffect(() => {
-    // Initialize character data from selectedCharacter if available
-    if (selectedCharacter) {
-      setCharacterData(selectedCharacter);
-      return; // Early return to prevent further execution
-    }
-    
-    if (characterId && !selectedCharacter) {
-      // Fetch character data from the URL parameter
-      const fetchCharacter = async () => {
-        try {
-          const { data } = await supabase
-            .from('characters')
-            .select('*')
-            .eq('id', characterId)
-            .single();
-          
-          if (data) {
-            setCharacterData(data);
-          } else {
-            navigate('/dashboard');
-          }
-        } catch (error) {
-          console.error('Error fetching character:', error);
-          navigate('/dashboard');
-        }
-      };
-      
-      fetchCharacter(); // Call the async function but don't return its promise
-    }
-    
-    // useEffect must not return anything (or return a cleanup function)
-  }, [characterId, selectedCharacter, navigate]);
-
-  if (!characterData) {
+  // Show loading while character is being fetched
+  if (characterLoading || (!characterData && (selectedCharacter || characterId))) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-white">Loading character...</div>
+      </div>
+    );
+  }
+
+  // If no character data available, show error
+  if (!characterData) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="mb-4">No character selected</div>
+          <button 
+            onClick={() => navigate('/dashboard')} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Go to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
