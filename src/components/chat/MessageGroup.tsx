@@ -78,10 +78,15 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
                   : 'rounded-br-lg rounded-bl-sm'
               }`}
             >
-              <OptimizedMessageFormatter 
-                content={message.content} 
-                isAiMessage={!isUser}
-                characterName={character.name}
+              <div 
+                className="whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{
+                  __html: message.content
+                    .replace(/\*([^*]+)\*/g, '<span class="text-purple-300 italic">*$1*</span>')
+                    .replace(/"([^"]+)"/g, '<span class="text-blue-300">"$1"</span>')
+                    .replace(/_([^_]+)_/g, '<span class="font-semibold text-yellow-300">$1</span>')
+                    .replace(/\(([^)]+)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+                }}
               />
             </div>
           ))}
