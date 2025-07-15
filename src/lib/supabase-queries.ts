@@ -532,7 +532,8 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
       content,
       is_ai_message,
       created_at,
-      author_id
+      author_id,
+      current_context
     `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: false })
@@ -580,7 +581,7 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
   const messagesWithContext = messages.map(msg => ({
     ...msg,
     message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
-    current_context: currentContext // Always include current context state for inheritance
+    current_context: msg.current_context || currentContext // Use message-specific context if available, otherwise use chat context
   }));
   
   return { data: messagesWithContext, error: null };
@@ -598,7 +599,8 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
       content,
       is_ai_message,
       created_at,
-      author_id
+      author_id,
+      current_context
     `)
     .eq('chat_id', chatId)
     .lt('created_at', beforeTimestamp)
@@ -647,7 +649,7 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
   const messagesWithContext = messages.map(msg => ({
     ...msg,
     message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
-    current_context: currentContext // Always include current context state for inheritance
+    current_context: msg.current_context || currentContext // Use message-specific context if available, otherwise use chat context
   }));
   
   return { data: messagesWithContext, error: null };

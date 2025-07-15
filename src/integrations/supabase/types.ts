@@ -395,6 +395,7 @@ export type Database = {
           chat_id: string
           content: string
           created_at: string
+          current_context: Json | null
           id: string
           is_ai_message: boolean
           model_id: string | null
@@ -405,6 +406,7 @@ export type Database = {
           chat_id: string
           content: string
           created_at?: string
+          current_context?: Json | null
           id?: string
           is_ai_message?: boolean
           model_id?: string | null
@@ -415,6 +417,7 @@ export type Database = {
           chat_id?: string
           content?: string
           created_at?: string
+          current_context?: Json | null
           id?: string
           is_ai_message?: boolean
           model_id?: string | null
