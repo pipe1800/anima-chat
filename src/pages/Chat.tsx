@@ -8,6 +8,7 @@ import ChatInterface from '@/components/chat/ChatInterface';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
 import { TutorialManager } from '@/components/tutorial/TutorialManager';
+import type { TrackedContext } from '@/hooks/useChat';
 
 const Chat = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +18,13 @@ const Chat = () => {
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [characterData, setCharacterData] = useState<any>(null);
   const [characterLoading, setCharacterLoading] = useState(false);
+  const [trackedContext, setTrackedContext] = useState<TrackedContext>({
+    moodTracking: 'No context',
+    clothingInventory: 'No context',
+    locationTracking: 'No context',
+    timeAndWeather: 'No context',
+    relationshipStatus: 'No context'
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { characterId, chatId } = useParams();
@@ -211,11 +219,18 @@ const Chat = () => {
         )}
 
         {/* Main Chat Layout */}
-        <ChatLayout character={character} currentChatId={existingChatId}>
+        <ChatLayout 
+          character={character} 
+          currentChatId={existingChatId}
+          trackedContext={trackedContext}
+          onContextUpdate={setTrackedContext}
+        >
           <ChatInterface
             character={character}
             onFirstMessage={handleFirstMessage}
             existingChatId={existingChatId}
+            trackedContext={trackedContext}
+            onContextUpdate={setTrackedContext}
           />
         </ChatLayout>
 

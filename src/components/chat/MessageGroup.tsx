@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatMessageTime } from "@/utils/messageGrouping";
+import { ContextDisplay } from "./ContextDisplay";
+import type { TrackedContext } from "@/hooks/useChat";
 
 interface Message {
   id: string;
@@ -27,9 +29,10 @@ interface Character {
 interface MessageGroupProps {
   group: MessageGroupData;
   character: Character;
+  trackedContext?: TrackedContext;
 }
 
-export function MessageGroup({ group, character }: MessageGroupProps) {
+export function MessageGroup({ group, character, trackedContext }: MessageGroupProps) {
   const { messages, isUser, showTimestamp } = group;
 
   return (
@@ -82,6 +85,13 @@ export function MessageGroup({ group, character }: MessageGroupProps) {
           <div className="w-8 h-8 flex-shrink-0" />
         )}
       </div>
+      
+      {/* Show context display for AI messages */}
+      {!isUser && trackedContext && (
+        <div className="mt-3 ml-11">
+          <ContextDisplay context={trackedContext} />
+        </div>
+      )}
     </div>
   );
 }

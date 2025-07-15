@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse the incoming request body
-    const { model, user_message, chat_id, character_id } = await req.json();
+    const { model, user_message, chat_id, character_id, tracked_context } = await req.json();
 
     if (!model || !user_message || !chat_id || !character_id) {
       console.error('Missing required fields');
@@ -154,7 +154,60 @@ Deno.serve(async (req) => {
 
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
 
-    // Construct the System Prompt
+    // Load existing context from database
+    let currentContext: any = {
+      moodTracking: 'No context',
+      clothingInventory: 'No context',
+      locationTracking: 'No context',
+      timeAndWeather: 'No context',
+      relationshipStatus: 'No context'
+    };
+
+    if (tracked_context) {
+      currentContext = { ...currentContext, ...tracked_context };
+    } else {
+      // Load from database if not provided
+      const { data: contextData } = await supabase
+        .from('user_chat_context')
+        .select('context_type, current_context')
+        .eq('user_id', user.id)
+        .eq('character_id', character_id)
+        .eq('chat_id', chat_id);
+
+      if (contextData) {
+        for (const row of contextData) {
+          switch (row.context_type) {
+            case 'mood':
+              currentContext.moodTracking = row.current_context || 'No context';
+              break;
+            case 'clothing':
+              currentContext.clothingInventory = row.current_context || 'No context';
+              break;
+            case 'location':
+              currentContext.locationTracking = row.current_context || 'No context';
+              break;
+            case 'time_weather':
+              currentContext.timeAndWeather = row.current_context || 'No context';
+              break;
+            case 'relationship':
+              currentContext.relationshipStatus = row.current_context || 'No context';
+              break;
+          }
+        }
+      }
+    }
+
+    console.log('Current context loaded:', currentContext);
+
+    // Construct context injection for system prompt
+    const contextPrompt = `[Current Context:
+${currentContext.moodTracking !== 'No context' ? `Mood: ${currentContext.moodTracking}` : ''}
+${currentContext.clothingInventory !== 'No context' ? `Clothing: ${currentContext.clothingInventory}` : ''}
+${currentContext.locationTracking !== 'No context' ? `Location: ${currentContext.locationTracking}` : ''}
+${currentContext.timeAndWeather !== 'No context' ? `Time & Weather: ${currentContext.timeAndWeather}` : ''}
+${currentContext.relationshipStatus !== 'No context' ? `Relationship: ${currentContext.relationshipStatus}` : ''}]`;
+
+    // Construct the System Prompt with context injection
     const systemPrompt = `You are to roleplay as the character defined below. Stay in character and respond naturally.
 
 **Character Description:**
@@ -166,7 +219,9 @@ ${character.personality_summary || 'Friendly and helpful'}
 **Scenario:**
 ${character.scenario || 'Casual conversation'}
 
-Respond naturally to the conversation, keeping the character's personality consistent.`;
+${contextPrompt}
+
+Respond naturally to the conversation, keeping the character's personality consistent. Use the current context to inform your responses when relevant.`;
 
     // Build conversation history with system prompt
     const conversationMessages = [
@@ -244,7 +299,7 @@ Respond naturally to the conversation, keeping the character's personality consi
       body: JSON.stringify({
         model: 'openai/gpt-4o-mini',
         messages: conversationMessages,
-        stream: true
+        stream: false // Changed to false for context extraction
       })
     });
 
@@ -259,51 +314,113 @@ Respond naturally to the conversation, keeping the character's personality consi
 
     console.log('OpenRouter API responded successfully');
 
-    // Process and save the AI response
-    const reader = openRouterResponse.body?.getReader();
-    const decoder = new TextDecoder();
-    let aiResponseContent = '';
-    let buffer = '';
+    // Get the full response (non-streaming)
+    const responseData = await openRouterResponse.json();
+    const aiResponseContent = responseData.choices?.[0]?.message?.content || '';
+
+    console.log('AI response generated successfully, length:', aiResponseContent.length);
+
+    // Now extract context using a cheaper model
+    console.log('Extracting context from conversation...');
     
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided.
+
+Rules:
+1. Only update a field if new information is EXPLICITLY mentioned in the "User Message" or "Character Response"
+2. If a field is not mentioned or updated, you MUST return its "Previous Value"
+3. If the previous value was "No context" and there is still no new information, keep it as "No context"
+4. Your response MUST be a valid JSON object and nothing else
+
+Previous Context:
+${JSON.stringify(currentContext, null, 2)}
+
+Conversation Turn:
+User Message: "${user_message}"
+Character Response: "${aiResponseContent}"
+
+Extract the current state for the following fields and provide your response in JSON format:
+{
+  "moodTracking": "...",
+  "clothingInventory": "...",
+  "locationTracking": "...",
+  "timeAndWeather": "...",
+  "relationshipStatus": "..."
+}`;
+
+    // Call extraction LLM
+    const extractionResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
+        'X-Title': 'AnimaChat-Context'
+      },
+      body: JSON.stringify({
+        model: 'mistralai/mistral-7b-instruct',
+        messages: [
+          { role: 'user', content: extractionPrompt }
+        ],
+        temperature: 0.1
+      })
+    });
+
+    let updatedContext = currentContext;
+    
+    if (extractionResponse.ok) {
+      try {
+        const extractionData = await extractionResponse.json();
+        const extractedContextStr = extractionData.choices?.[0]?.message?.content || '{}';
         
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
+        // Try to parse the JSON response
+        const extractedContext = JSON.parse(extractedContextStr);
+        updatedContext = {
+          moodTracking: extractedContext.moodTracking || currentContext.moodTracking,
+          clothingInventory: extractedContext.clothingInventory || currentContext.clothingInventory,
+          locationTracking: extractedContext.locationTracking || currentContext.locationTracking,
+          timeAndWeather: extractedContext.timeAndWeather || currentContext.timeAndWeather,
+          relationshipStatus: extractedContext.relationshipStatus || currentContext.relationshipStatus
+        };
         
-        // Process complete lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        console.log('Context extracted successfully:', updatedContext);
         
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const jsonStr = line.slice(6); // Remove 'data: ' prefix
-            
-            if (jsonStr.trim() === '[DONE]') {
-              break;
-            }
-            
-            try {
-              const data = JSON.parse(jsonStr);
-              const content = data.choices?.[0]?.delta?.content;
-              if (content) {
-                aiResponseContent += content;
-              }
-            } catch (e) {
-              // Skip invalid JSON lines
-              console.log('Skipping invalid JSON line:', jsonStr);
-            }
+        // Save updated context to database
+        const contextMappings = [
+          { type: 'mood', value: updatedContext.moodTracking },
+          { type: 'clothing', value: updatedContext.clothingInventory },
+          { type: 'location', value: updatedContext.locationTracking },
+          { type: 'time_weather', value: updatedContext.timeAndWeather },
+          { type: 'relationship', value: updatedContext.relationshipStatus }
+        ];
+
+        for (const mapping of contextMappings) {
+          // Only save if context changed and is not "No context"
+          if (mapping.value !== 'No context' && mapping.value !== currentContext[mapping.type === 'mood' ? 'moodTracking' : mapping.type === 'clothing' ? 'clothingInventory' : mapping.type === 'location' ? 'locationTracking' : mapping.type === 'time_weather' ? 'timeAndWeather' : 'relationshipStatus']) {
+            await supabase
+              .from('user_chat_context')
+              .upsert({
+                user_id: user.id,
+                character_id: character_id,
+                chat_id: chat_id,
+                context_type: mapping.type,
+                current_context: mapping.value
+              });
           }
         }
+        
+      } catch (parseError) {
+        console.error('Failed to parse extracted context:', parseError);
       }
+    } else {
+      console.error('Context extraction failed:', extractionResponse.status);
     }
-    
-    // Edge Function only generates AI response - frontend handles database operations
-    console.log('AI response generated successfully, length:', aiResponseContent.length);
-    
-    return new Response(JSON.stringify({ success: true, content: aiResponseContent }), {
+
+    // Return both response and context
+    return new Response(JSON.stringify({ 
+      success: true, 
+      content: aiResponseContent,
+      updatedContext 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

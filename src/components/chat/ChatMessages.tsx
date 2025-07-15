@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useChatMessages, useRealtimeMessages, useMessagePolling } from '@/hooks/useChat';
-import type { Message } from '@/hooks/useChat';
+import type { Message, TrackedContext } from '@/hooks/useChat';
 import { MessageGroup } from './MessageGroup';
 import { groupMessages } from '@/utils/messageGrouping';
+import { ContextDisplay } from './ContextDisplay';
 
 interface Character {
   id: string;
@@ -17,9 +18,10 @@ interface Character {
 interface ChatMessagesProps {
   chatId: string | null;
   character: Character;
+  trackedContext?: TrackedContext;
 }
 
-const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
+const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [backgroundImage, setBackgroundImage] = React.useState<string | null>(null);
@@ -179,6 +181,7 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
             key={group.id} 
             group={group} 
             character={character}
+            trackedContext={trackedContext}
           />
         ))
       ) : (

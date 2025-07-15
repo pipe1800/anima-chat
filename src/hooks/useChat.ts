@@ -189,10 +189,10 @@ export const useSendMessage = () => {
           };
         });
         
-        // Invoke AI for response (don't await - let it happen in background)
-        invokeAIResponse(chatId, content, characterId, user.id);
+        // Invoke AI for response - now we need to return the updated context
+        const updatedContext = await invokeAIResponse(chatId, content, characterId, user.id);
         
-        return { chatId, content, optimisticId };
+        return { chatId, content, optimisticId, updatedContext };
         
       } catch (error) {
         // Update optimistic message to 'failed'
@@ -221,12 +221,22 @@ export const useSendMessage = () => {
   });
 };
 
+// Define TrackedContext interface
+export interface TrackedContext {
+  moodTracking: string;
+  clothingInventory: string;
+  locationTracking: string;
+  timeAndWeather: string;
+  relationshipStatus: string;
+}
+
 // Separate function for AI invocation (runs in background)
 const invokeAIResponse = async (
   chatId: string, 
   userMessage: string, 
   characterId: string, 
-  userId: string
+  userId: string,
+  trackedContext?: TrackedContext
 ) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -242,7 +252,8 @@ const invokeAIResponse = async (
         character_id: characterId,
         chat_id: chatId,
         model: 'openai/gpt-4o-mini',
-        user_message: userMessage
+        user_message: userMessage,
+        tracked_context: trackedContext
       }),
     });
     
@@ -267,6 +278,9 @@ const invokeAIResponse = async (
     if (aiMessageError) {
       console.error('Failed to save AI message:', aiMessageError);
     }
+
+    // Return the updated context for the calling component
+    return responseData.updatedContext;
     
   } catch (error) {
     console.error('Error invoking AI:', error);

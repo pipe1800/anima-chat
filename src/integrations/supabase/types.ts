@@ -676,6 +676,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_chat_context: {
+        Row: {
+          character_id: string
+          chat_id: string
+          context_type: string
+          created_at: string
+          current_context: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          chat_id: string
+          context_type: string
+          created_at?: string
+          current_context?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          chat_id?: string
+          context_type?: string
+          created_at?: string
+          current_context?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding_progress: {
         Row: {
           completed_at: string | null

@@ -10,7 +10,8 @@ import {
   useCharacterDetails,
   useSendMessage,
   useChatMessages,
-  type Message
+  type Message,
+  type TrackedContext
 } from '@/hooks/useChat';
 import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 
@@ -26,12 +27,16 @@ interface ChatInterfaceProps {
   character: Character;
   onFirstMessage: () => void;
   existingChatId?: string;
+  trackedContext?: TrackedContext;
+  onContextUpdate?: (context: TrackedContext) => void;
 }
 
 const ChatInterface = ({
   character,
   onFirstMessage,
-  existingChatId
+  existingChatId,
+  trackedContext: parentTrackedContext,
+  onContextUpdate
 }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
@@ -47,6 +52,13 @@ const ChatInterface = ({
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
+  });
+  const [trackedContext, setTrackedContext] = useState<TrackedContext>({
+    moodTracking: 'No context',
+    clothingInventory: 'No context',
+    locationTracking: 'No context',
+    timeAndWeather: 'No context',
+    relationshipStatus: 'No context'
   });
   
   // Listen to message updates to stop typing when AI responds
@@ -120,11 +132,17 @@ const ChatInterface = ({
 
     try {
       // Send message to existing chat
-      await sendMessageMutation.mutateAsync({
+      const result = await sendMessageMutation.mutateAsync({
         chatId: currentChatId,
         content: messageContent,
         characterId: character.id
       });
+
+      // Update tracked context if returned
+      if (result?.updatedContext) {
+        setTrackedContext(result.updatedContext);
+        onContextUpdate?.(result.updatedContext);
+      }
 
       // Handle first message achievement if needed
       if (isFirstMessage) {
@@ -176,6 +194,7 @@ const ChatInterface = ({
       <ChatMessages 
         chatId={currentChatId} 
         character={character}
+        trackedContext={trackedContext}
       />
 
       {/* Typing Indicator */}

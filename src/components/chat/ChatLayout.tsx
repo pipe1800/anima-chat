@@ -18,6 +18,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { ChatConfigurationTab } from './ChatConfigurationTab';
+import type { TrackedContext } from '@/hooks/useChat';
 
 interface Character {
   id: string;
@@ -31,9 +32,11 @@ interface ChatLayoutProps {
   character: Character;
   children: React.ReactNode;
   currentChatId?: string;
+  trackedContext?: TrackedContext;
+  onContextUpdate?: (context: TrackedContext) => void;
 }
 
-export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutProps) => {
+export const ChatLayout = ({ character, children, currentChatId, trackedContext, onContextUpdate }: ChatLayoutProps) => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'details' | 'config'>('details');
   const [chatHistory, setChatHistory] = useState<any[]>([]);
