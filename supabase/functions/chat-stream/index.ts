@@ -167,9 +167,17 @@ Deno.serve(async (req) => {
       const userName = selectedPersona?.name || userProfile?.username || 'User';
       const charName = character.personality_summary?.split(' ')[0] || 'Character';
       
-      return content
+      console.log('🔧 Template replacement - userName:', userName, 'charName:', charName);
+      
+      const replaced = content
         .replace(/\{\{user\}\}/g, userName)
         .replace(/\{\{char\}\}/g, charName);
+        
+      if (content !== replaced) {
+        console.log('🔄 Template replaced:', content, '->', replaced);
+      }
+      
+      return replaced;
     };
 
     // Build conversation context
