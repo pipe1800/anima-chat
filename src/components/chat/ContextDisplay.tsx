@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { capitalizeText, filterCharacterRelevantContext } from '@/lib/utils/textFormatting';
 
 export interface TrackedContext {
   moodTracking: string;
@@ -31,37 +29,62 @@ interface ContextDisplayProps {
   className?: string;
 }
 
+interface ContextItem {
+  label: string;
+  value: string;
+  key: string;
+  isEnabled: boolean;
+  isHistorical: boolean;
+}
+
+const getContextLabel = (key: string): string => {
+  switch (key) {
+    case 'moodTracking': return 'Mood Tracking';
+    case 'clothingInventory': return 'Clothing Inventory';
+    case 'locationTracking': return 'Location Tracking';
+    case 'timeAndWeather': return 'Time & Weather';
+    case 'relationshipStatus': return 'Relationship Status';
+    default: return key;
+  }
+};
+
+const getAddonKey = (itemKey: string): keyof TrackedContext => {
+  switch (itemKey) {
+    case 'mood': return 'moodTracking';
+    case 'clothing': return 'clothingInventory';
+    case 'location': return 'locationTracking';
+    case 'weather': return 'timeAndWeather';
+    case 'relationship': return 'relationshipStatus';
+    default: return itemKey as keyof TrackedContext;
+  }
+};
+
 export const ContextDisplay = ({ context, contextUpdates, currentContext, addonSettings, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Handle context display with inheritance - ALWAYS show historical context
-  let contextItems: { label: string; value: string; key: string; previous?: string; isUpdate?: boolean; isEnabled?: boolean; isHistorical?: boolean }[] = [];
+  // Process context data into unified format
+  let contextItems: ContextItem[] = [];
   
-  // If we have contextUpdates, show them (these are actual changes from historical messages)
+  // Handle contextUpdates (from historical messages)
   if (contextUpdates && Object.keys(contextUpdates).length > 0) {
     contextItems = Object.entries(contextUpdates)
       .filter(([key, update]) => {
-        // Show ALL updates, regardless of current addon state - this is historical data
-        return update && update.current !== 'No context';
+        return update && 
+               update.current !== 'No context' && 
+               filterCharacterRelevantContext(key, update.current);
       })
       .map(([key, update]) => {
         const isEnabled = addonSettings ? addonSettings[key as keyof typeof addonSettings] : true;
         return {
-          label: key === 'moodTracking' ? 'Mood Tracking' :
-                 key === 'clothingInventory' ? 'Clothing Inventory' :
-                 key === 'locationTracking' ? 'Location Tracking' :
-                 key === 'timeAndWeather' ? 'Time & Weather' :
-                 key === 'relationshipStatus' ? 'Relationship Status' : key,
-          value: update.current,
-          previous: update.previous,
+          label: getContextLabel(key),
+          value: capitalizeText(update.current),
           key: key,
-          isUpdate: true,
           isEnabled: isEnabled,
-          isHistorical: !isEnabled // Mark as historical if addon is now disabled
+          isHistorical: !isEnabled
         };
       });
   } 
-  // If we have currentContext, show it (these are inherited context states)
+  // Handle currentContext (inherited states)
   else if (currentContext) {
     contextItems = [
       { label: 'Mood Tracking', value: currentContext.moodTracking, key: 'mood' },
@@ -69,19 +92,22 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       { label: 'Location Tracking', value: currentContext.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: currentContext.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: currentContext.relationshipStatus, key: 'relationship' },
-    ].filter(item => item.value && item.value !== 'No context')
-     .map(item => {
-       // Determine if addon is enabled
-       const addonKey = item.key === 'mood' ? 'moodTracking' :
-                        item.key === 'clothing' ? 'clothingInventory' :
-                        item.key === 'location' ? 'locationTracking' :
-                        item.key === 'weather' ? 'timeAndWeather' :
-                        'relationshipStatus';
-       const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
-       return { ...item, isEnabled, isHistorical: false };
-     });
+    ]
+      .filter(item => item.value && 
+                     item.value !== 'No context' && 
+                     filterCharacterRelevantContext(getAddonKey(item.key), item.value))
+      .map(item => {
+        const addonKey = getAddonKey(item.key);
+        const isEnabled = addonSettings ? addonSettings[addonKey] : true;
+        return {
+          ...item,
+          value: capitalizeText(item.value),
+          isEnabled,
+          isHistorical: false
+        };
+      });
   }
-  // Legacy format: show all non-empty context - preserve historical data
+  // Handle legacy context format
   else if (context) {
     contextItems = [
       { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
@@ -89,91 +115,50 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
-    ].filter(item => item.value && item.value !== 'No context')
-     .map(item => {
-       // Determine if addon is enabled
-       const addonKey = item.key === 'mood' ? 'moodTracking' :
-                        item.key === 'clothing' ? 'clothingInventory' :
-                        item.key === 'location' ? 'locationTracking' :
-                        item.key === 'weather' ? 'timeAndWeather' :
-                        'relationshipStatus';
-       const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
-       return { ...item, isEnabled, isHistorical: !isEnabled };
-     });
+    ]
+      .filter(item => item.value && 
+                     item.value !== 'No context' && 
+                     filterCharacterRelevantContext(getAddonKey(item.key), item.value))
+      .map(item => {
+        const addonKey = getAddonKey(item.key);
+        const isEnabled = addonSettings ? addonSettings[addonKey] : true;
+        return {
+          ...item,
+          value: capitalizeText(item.value),
+          isEnabled,
+          isHistorical: !isEnabled
+        };
+      });
   }
 
-  // Show debug info if no context
+  // Don't render if no relevant context
   if (contextItems.length === 0) {
-    return (
-      <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
-        <div className="p-3">
-          <div className="text-xs text-muted-foreground">
-            No context tracked yet. Enable addons to start tracking context.
-          </div>
-        </div>
-      </Card>
-    );
+    return null;
   }
 
   return (
-    <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
-      <div className="p-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full justify-between text-muted-foreground hover:text-foreground"
-        >
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">
-              {contextItems.some(item => item.isUpdate) ? 'Context Updates' : 'Current Context'}
-            </span>
-            <Badge variant="secondary" className="text-xs">
-              {contextItems.length}
-            </Badge>
-          </div>
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </Button>
-
-        {isExpanded && (
-          <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
-            {contextItems.map((item) => (
-              <div key={item.key} className="space-y-1">
-                <div className={`text-xs font-medium uppercase tracking-wide ${item.isEnabled ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                  {item.label}
-                  {item.isUpdate && <span className="ml-2 text-primary">● Updated</span>}
-                  {item.isHistorical && <span className="ml-2 text-xs opacity-60 text-amber-500">(historical - addon now disabled)</span>}
-                  {item.isEnabled === false && !item.isHistorical && <span className="ml-2 text-xs opacity-60">(addon disabled)</span>}
-                </div>
-                {item.previous && item.previous !== 'No context' && (
-                  <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2">
-                    Previous: {item.previous}
-                  </div>
-                )}
-                <div className={`text-sm rounded-md p-2 border ${
-                  item.isHistorical 
-                    ? 'text-foreground/70 bg-amber-50/50 border-amber-200/50 dark:bg-amber-900/20 dark:border-amber-800/30' 
-                    : item.isUpdate 
-                      ? (item.isEnabled ? 'text-foreground bg-primary/10 border-primary/20' : 'text-foreground/50 bg-primary/5 border-primary/10') 
-                      : (item.isEnabled ? 'text-foreground bg-muted/50 border-muted' : 'text-foreground/50 bg-muted/30 border-muted/50')
-                }`}>
-                  {item.value}
-                  {item.isHistorical && (
-                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                      ℹ️ This context was active when the message was sent
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className={`${className}`}>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span>Context</span>
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
         )}
-      </div>
-    </Card>
+      </button>
+
+      {isExpanded && (
+        <div className="mt-2 space-y-1">
+          {contextItems.map((item) => (
+            <div key={item.key} className={`text-sm ${item.isHistorical ? 'text-muted-foreground' : 'text-foreground'}`}>
+              <span className="font-medium">{item.label}:</span> {item.value}.
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
