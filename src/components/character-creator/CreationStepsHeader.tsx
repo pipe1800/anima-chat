@@ -16,8 +16,8 @@ const CreationStepsHeader = ({
   onStepChange
 }: CreationStepsHeaderProps) => {
   return <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50 py-[4px]">
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6">
+      <div className="">
+        <div className="mb-6 hidden sm:block px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Character Creator
           </h1>
@@ -27,7 +27,7 @@ const CreationStepsHeader = ({
         </div>
 
         {/* Steps Progress Bar */}
-        <div className="flex items-center justify-between relative">
+        <div className="flex items-center justify-between relative px-4 sm:px-6 lg:px-8">
           {/* Progress Line - hidden on mobile */}
           <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-600 -z-10 hidden sm:block">
             <div className="h-full bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 transition-all duration-500" style={{
