@@ -541,23 +541,44 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
   
   const messages = data.reverse();
   
-  // Now fetch context for these messages in a separate query
+  // Fetch context updates for these messages
   const messageIds = messages.map(msg => msg.id);
   const { data: contextData } = await supabase
     .from('message_context')
     .select('message_id, context_updates')
     .in('message_id', messageIds);
   
-  // Create a map of message ID to context
-  const contextMap = new Map();
+  // Fetch current context state for the chat
+  const { data: currentContextData } = await supabase
+    .from('user_chat_context')
+    .select('context_type, current_context')
+    .eq('chat_id', chatId)
+    .neq('current_context', 'No context');
+  
+  // Build current context state
+  const currentContext = {};
+  currentContextData?.forEach(ctx => {
+    const contextField = ctx.context_type === 'mood' ? 'moodTracking' :
+                        ctx.context_type === 'clothing' ? 'clothingInventory' :
+                        ctx.context_type === 'location' ? 'locationTracking' :
+                        ctx.context_type === 'time_weather' ? 'timeAndWeather' :
+                        ctx.context_type === 'relationship' ? 'relationshipStatus' : null;
+    if (contextField) {
+      currentContext[contextField] = ctx.current_context;
+    }
+  });
+  
+  // Create a map of message ID to context updates
+  const contextUpdatesMap = new Map();
   contextData?.forEach(ctx => {
-    contextMap.set(ctx.message_id, ctx.context_updates);
+    contextUpdatesMap.set(ctx.message_id, ctx.context_updates);
   });
   
   // Attach context to messages
   const messagesWithContext = messages.map(msg => ({
     ...msg,
-    message_context: contextMap.has(msg.id) ? [{ context_updates: contextMap.get(msg.id) }] : []
+    message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
+    current_context: currentContext // Always include current context state
   }));
   
   return { data: messagesWithContext, error: null };
@@ -585,23 +606,44 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
   
   const messages = data.reverse();
   
-  // Now fetch context for these messages in a separate query
+  // Fetch context updates for these messages
   const messageIds = messages.map(msg => msg.id);
   const { data: contextData } = await supabase
     .from('message_context')
     .select('message_id, context_updates')
     .in('message_id', messageIds);
   
-  // Create a map of message ID to context
-  const contextMap = new Map();
+  // Fetch current context state for the chat
+  const { data: currentContextData } = await supabase
+    .from('user_chat_context')
+    .select('context_type, current_context')
+    .eq('chat_id', chatId)
+    .neq('current_context', 'No context');
+  
+  // Build current context state
+  const currentContext = {};
+  currentContextData?.forEach(ctx => {
+    const contextField = ctx.context_type === 'mood' ? 'moodTracking' :
+                        ctx.context_type === 'clothing' ? 'clothingInventory' :
+                        ctx.context_type === 'location' ? 'locationTracking' :
+                        ctx.context_type === 'time_weather' ? 'timeAndWeather' :
+                        ctx.context_type === 'relationship' ? 'relationshipStatus' : null;
+    if (contextField) {
+      currentContext[contextField] = ctx.current_context;
+    }
+  });
+  
+  // Create a map of message ID to context updates
+  const contextUpdatesMap = new Map();
   contextData?.forEach(ctx => {
-    contextMap.set(ctx.message_id, ctx.context_updates);
+    contextUpdatesMap.set(ctx.message_id, ctx.context_updates);
   });
   
   // Attach context to messages
   const messagesWithContext = messages.map(msg => ({
     ...msg,
-    message_context: contextMap.has(msg.id) ? [{ context_updates: contextMap.get(msg.id) }] : []
+    message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
+    current_context: currentContext // Always include current context state
   }));
   
   return { data: messagesWithContext, error: null };

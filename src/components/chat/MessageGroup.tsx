@@ -78,16 +78,26 @@ export function MessageGroup({ group, character, trackedContext }: MessageGroupP
         )}
       </div>
       
-      {/* Show context display only for AI messages with context updates */}
+      {/* Show context display for AI messages with context updates or current context */}
       {!isUser && (
         <div className="mt-3 ml-11">
-          {messages.map(msg => 
-            msg.contextUpdates ? (
-              <div key={`${msg.id}-context`} className="mb-2">
-                <ContextDisplay contextUpdates={msg.contextUpdates} />
-              </div>
-            ) : null
-          )}
+          {messages.map(msg => {
+            // Show context if there are updates or if there's current context state
+            const hasContextUpdates = msg.contextUpdates && Object.keys(msg.contextUpdates).length > 0;
+            const hasCurrentContext = msg.current_context && Object.keys(msg.current_context).length > 0;
+            
+            if (hasContextUpdates || hasCurrentContext) {
+              return (
+                <div key={`${msg.id}-context`} className="mb-2">
+                  <ContextDisplay 
+                    contextUpdates={msg.contextUpdates} 
+                    currentContext={msg.current_context}
+                  />
+                </div>
+              );
+            }
+            return null;
+          })}
         </div>
       )}
     </div>

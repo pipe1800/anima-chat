@@ -25,6 +25,7 @@ export interface Message {
       current: string;
     };
   };
+  current_context?: TrackedContext;
 }
 
 // Hook for managing chat messages with pagination
@@ -59,7 +60,8 @@ export const useChatMessages = (chatId: string | null) => {
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
         status: 'sent' as const,
-        contextUpdates: (msg as any).message_context?.[0]?.context_updates
+        contextUpdates: (msg as any).message_context?.[0]?.context_updates,
+        current_context: (msg as any).current_context
       }));
       
       return {
@@ -329,7 +331,8 @@ export const useChatCache = () => {
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
           status: 'sent' as const,
-          contextUpdates: (msg as any).message_context?.[0]?.context_updates
+          contextUpdates: (msg as any).message_context?.[0]?.context_updates,
+          current_context: (msg as any).current_context
         }));
         
         return {

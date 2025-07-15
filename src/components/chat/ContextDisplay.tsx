@@ -20,17 +20,18 @@ interface ContextDisplayProps {
       current: string;
     };
   };
+  currentContext?: TrackedContext;
   className?: string;
 }
 
-export const ContextDisplay = ({ context, contextUpdates, className = '' }: ContextDisplayProps) => {
+export const ContextDisplay = ({ context, contextUpdates, currentContext, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Handle both legacy context and new contextUpdates
-  let contextItems: { label: string; value: string; key: string; previous?: string }[] = [];
+  // Handle context display with inheritance
+  let contextItems: { label: string; value: string; key: string; previous?: string; isUpdate?: boolean }[] = [];
   
-  if (contextUpdates) {
-    // New format: show context updates with previous/current values
+  // If we have contextUpdates, show them (these are actual changes)
+  if (contextUpdates && Object.keys(contextUpdates).length > 0) {
     contextItems = Object.entries(contextUpdates)
       .filter(([_, update]) => update && update.current !== 'No context')
       .map(([key, update]) => ({
@@ -41,10 +42,22 @@ export const ContextDisplay = ({ context, contextUpdates, className = '' }: Cont
                key === 'relationshipStatus' ? 'Relationship Status' : key,
         value: update.current,
         previous: update.previous,
-        key: key
+        key: key,
+        isUpdate: true
       }));
-  } else if (context) {
-    // Legacy format: show all non-empty context
+  } 
+  // If we have currentContext, show it (these are inherited context states)
+  else if (currentContext) {
+    contextItems = [
+      { label: 'Mood Tracking', value: currentContext.moodTracking, key: 'mood' },
+      { label: 'Clothing Inventory', value: currentContext.clothingInventory, key: 'clothing' },
+      { label: 'Location Tracking', value: currentContext.locationTracking, key: 'location' },
+      { label: 'Time & Weather', value: currentContext.timeAndWeather, key: 'weather' },
+      { label: 'Relationship Status', value: currentContext.relationshipStatus, key: 'relationship' },
+    ].filter(item => item.value && item.value !== 'No context');
+  }
+  // Legacy format: show all non-empty context
+  else if (context) {
     contextItems = [
       { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
       { label: 'Clothing Inventory', value: context.clothingInventory, key: 'clothing' },
@@ -56,7 +69,7 @@ export const ContextDisplay = ({ context, contextUpdates, className = '' }: Cont
 
   // Show debug info if no context
   if (contextItems.length === 0) {
-    console.log('ContextDisplay: No context items to show', { context, contextUpdates });
+    console.log('ContextDisplay: No context items to show', { context, contextUpdates, currentContext });
     return (
       <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
         <div className="p-3">
@@ -79,7 +92,9 @@ export const ContextDisplay = ({ context, contextUpdates, className = '' }: Cont
         >
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Context Updates</span>
+            <span className="text-sm font-medium">
+              {contextItems.some(item => item.isUpdate) ? 'Context Updates' : 'Current Context'}
+            </span>
             <Badge variant="secondary" className="text-xs">
               {contextItems.length}
             </Badge>
@@ -97,13 +112,18 @@ export const ContextDisplay = ({ context, contextUpdates, className = '' }: Cont
               <div key={item.key} className="space-y-1">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {item.label}
+                  {item.isUpdate && <span className="ml-2 text-primary">● Updated</span>}
                 </div>
                 {item.previous && item.previous !== 'No context' && (
                   <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2">
                     Previous: {item.previous}
                   </div>
                 )}
-                <div className="text-sm text-foreground bg-muted/50 rounded-md p-2">
+                <div className={`text-sm rounded-md p-2 ${
+                  item.isUpdate 
+                    ? 'text-foreground bg-primary/10 border border-primary/20' 
+                    : 'text-foreground bg-muted/50'
+                }`}>
                   {item.value}
                 </div>
               </div>
