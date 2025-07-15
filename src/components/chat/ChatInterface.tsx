@@ -1,19 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Wand2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, Wand2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { InsufficientCreditsModal } from './InsufficientCreditsModal';
 import ChatMessages from './ChatMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  useUserCredits,
-  useCharacterDetails,
-  useSendMessage,
-  useChatMessages,
-  type Message,
+  useOptimizedChat,
+  useChatPerformance,
   type TrackedContext
-} from '@/hooks/useChat';
-import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
+} from '@/hooks/useOptimizedChat';
 import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -42,11 +38,31 @@ const ChatInterface = ({
 }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
   
-  // Use the addon settings hook for real-time updates
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Use optimized chat hook
+  const {
+    messages,
+    isTyping,
+    trackedContext,
+    creditsBalance,
+    characterDetails,
+    isLoading,
+    error,
+    sendMessage,
+    dispatch
+  } = useOptimizedChat(currentChatId, character.id);
+
+  // Use performance monitoring
+  const { metrics, updateMetrics } = useChatPerformance(currentChatId);
+
+  // Use addon settings hook for real-time updates
   const { data: addonSettings } = useAddonSettings(character.id);
   
   // Fallback to default settings if loading
@@ -62,26 +78,6 @@ const ChatInterface = ({
     chainOfThought: false,
     fewShotExamples: false,
   };
-  const [trackedContext, setTrackedContext] = useState<TrackedContext>({
-    moodTracking: 'No context',
-    clothingInventory: 'No context',
-    locationTracking: 'No context',
-    timeAndWeather: 'No context',
-    relationshipStatus: 'No context',
-    characterPosition: 'No context'
-  });
-  
-  // Listen to message updates to stop typing when AI responds
-  const { data: messagesData } = useChatMessages(currentChatId);
-  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  // React Query hooks
-  const { data: creditsBalance = 0 } = useUserCredits();
-  const { data: characterDetails } = useCharacterDetails(character.id);
-  const sendMessageMutation = useSendMessage();
 
   // Initialize chat for existing chat
   useEffect(() => {
@@ -119,19 +115,6 @@ const ChatInterface = ({
 
   // Addon settings are now loaded via useAddonSettings hook
 
-  // Stop typing indicator when AI message appears
-  useEffect(() => {
-    if (!isTyping || !messagesData?.pages) return;
-    
-    const allMessages = messagesData.pages.flatMap(page => page.messages);
-    const latestMessage = allMessages[allMessages.length - 1];
-    
-    // If latest message is from AI and we're showing typing indicator, stop it
-    if (latestMessage && !latestMessage.isUser) {
-      setIsTyping(false);
-    }
-  }, [messagesData, isTyping]);
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || !user || !currentChatId) return;
@@ -144,22 +127,18 @@ const ChatInterface = ({
 
     const messageContent = inputValue;
     setInputValue('');
-    setIsTyping(true);
+    const startTime = Date.now();
 
     try {
-      // Send message to existing chat
-      const result = await sendMessageMutation.mutateAsync({
-        chatId: currentChatId,
-        content: messageContent,
-        characterId: character.id,
-        trackedContext: trackedContext,
-        addonSettings: currentAddonSettings,
-        selectedPersonaId: selectedPersonaId
-      });
+      // Send message using optimized hook
+      const result = await sendMessage(messageContent, currentAddonSettings, selectedPersonaId);
+      
+      // Update metrics
+      const endTime = Date.now();
+      updateMetrics(endTime - startTime);
 
-      // Update tracked context if returned
+      // Update parent context if callback provided
       if (result?.updatedContext) {
-        setTrackedContext(result.updatedContext);
         onContextUpdate?.(result.updatedContext);
       }
 
@@ -174,11 +153,9 @@ const ChatInterface = ({
         });
       }
 
-      // Note: Don't set isTyping(false) here - let the useEffect handle it when AI message arrives
-
     } catch (error) {
       console.error('Error sending message:', error);
-      setIsTyping(false);
+      updateMetrics(Date.now() - startTime, true);
       
       toast({
         title: "Error",

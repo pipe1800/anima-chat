@@ -6,13 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Performance optimization: Cache common data
+const templateCache = new Map<string, string>();
+const contextCache = new Map<string, any>();
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('Chat function called');
+  const startTime = Date.now();
+  console.log('🚀 Chat function called - Performance Mode');
 
   try {
     // Create Supabase client using user's Authorization header
@@ -577,23 +582,70 @@ Respond naturally to the conversation, keeping the character's personality consi
       content: replaceTemplates(user_message)
     });
 
-    console.log('Calling OpenRouter API...');
+    // Build unified prompt that combines response generation + context extraction
+    let unifiedPrompt = systemPrompt;
+    
+    if (hasEnabledAddons) {
+      // Add context extraction instructions to the system prompt
+      const enabledFields = Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]);
+      const contextInstructions = enabledFields.map(key => {
+        switch(key) {
+          case 'moodTracking': return '- moodTracking: Character\'s emotional state/mood';
+          case 'clothingInventory': return '- clothingInventory: Clothing/outfit descriptions';
+          case 'locationTracking': return '- locationTracking: Location (room/place)';
+          case 'timeAndWeather': return '- timeAndWeather: Time/weather conditions';
+          case 'relationshipStatus': return '- relationshipStatus: Relationship dynamics';
+          case 'characterPosition': return '- characterPosition: Physical position/posture';
+          default: return `- ${key}: ${key}`;
+        }
+      }).join('\n');
 
-    // Call OpenRouter API
+      unifiedPrompt += `
+
+**CONTEXT EXTRACTION REQUIRED:**
+After your roleplay response, extract context for these fields:
+${contextInstructions}
+
+Format your response as:
+[ROLEPLAY_RESPONSE]
+Your normal roleplay response here...
+[/ROLEPLAY_RESPONSE]
+
+[CONTEXT_EXTRACTION]
+{
+  "moodTracking": "current emotional state (or '${currentContext.moodTracking}' if unchanged)",
+  "clothingInventory": "current clothing (or '${currentContext.clothingInventory}' if unchanged)",
+  "locationTracking": "current location (or '${currentContext.locationTracking}' if unchanged)",
+  "timeAndWeather": "current time/weather (or '${currentContext.timeAndWeather}' if unchanged)",
+  "relationshipStatus": "relationship status (or '${currentContext.relationshipStatus}' if unchanged)",
+  "characterPosition": "character position (or '${currentContext.characterPosition}' if unchanged)"
+}
+[/CONTEXT_EXTRACTION]
+
+Extract only for enabled fields: ${enabledFields.join(', ')}`;
+    }
+
+    // Update conversation messages with unified prompt
+    conversationMessages[0].content = unifiedPrompt;
+
+    console.log('🚀 Calling unified LLM (response + context extraction)...');
+    const llmStartTime = Date.now();
+
+    // Call OpenRouter API with unified prompt
     const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openRouterKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
-        'X-Title': 'AnimaChat'
+        'X-Title': 'AnimaChat-Unified'
       },
       body: JSON.stringify({
-        model: selectedModel, // Use tier-based model for chat responses
+        model: selectedModel,
         messages: conversationMessages,
         stream: false,
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1200 // Increased for unified response
       })
     });
 
@@ -606,13 +658,37 @@ Respond naturally to the conversation, keeping the character's personality consi
       });
     }
 
-    console.log('OpenRouter API responded successfully');
+    const llmEndTime = Date.now();
+    console.log(`✅ LLM responded in ${llmEndTime - llmStartTime}ms`);
 
-    // Get the full response (non-streaming)
+    // Parse unified response
     const responseData = await openRouterResponse.json();
-    const aiResponseContent = responseData.choices?.[0]?.message?.content || '';
+    const fullResponse = responseData.choices?.[0]?.message?.content || '';
 
-    console.log('AI response generated successfully, length:', aiResponseContent.length);
+    let aiResponseContent = fullResponse;
+    let extractedContext = null;
+
+    // Parse response and context if addons are enabled
+    if (hasEnabledAddons) {
+      const roleplayMatch = fullResponse.match(/\[ROLEPLAY_RESPONSE\](.*?)\[\/ROLEPLAY_RESPONSE\]/s);
+      const contextMatch = fullResponse.match(/\[CONTEXT_EXTRACTION\](.*?)\[\/CONTEXT_EXTRACTION\]/s);
+      
+      if (roleplayMatch) {
+        aiResponseContent = roleplayMatch[1].trim();
+      }
+      
+      if (contextMatch) {
+        try {
+          extractedContext = JSON.parse(contextMatch[1].trim());
+          console.log('✅ Context extracted from unified response:', extractedContext);
+        } catch (parseError) {
+          console.log('⚠️ Failed to parse context from unified response, using fallback');
+          extractedContext = null;
+        }
+      }
+    }
+
+    console.log(`🎯 AI response generated: ${aiResponseContent.length} chars`);
 
     // Save the AI response to the database first
     console.log('Saving AI response to database...');
@@ -653,115 +729,15 @@ Respond naturally to the conversation, keeping the character's personality consi
     console.log('Raw addon_settings received:', JSON.stringify(addon_settings, null, 2));
     console.log('Processed addonSettingsObj:', JSON.stringify(addonSettingsObj, null, 2));
 
-    if (!hasEnabledAddons) {
-      console.log('No addons enabled, skipping context extraction');
-      return new Response(JSON.stringify({ 
-        success: true, 
-        content: aiResponseContent,
-        updatedContext: currentContext 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Now extract context using a cheaper model
-    console.log('Extracting context from conversation... Enabled addons:', addonSettingsObj);
-    
-    // Build extraction fields based on enabled addons with detailed instructions
-    const extractionFields = {};
-    let fieldInstructions = '';
-    
-    if (addonSettingsObj.moodTracking) {
-      extractionFields['moodTracking'] = currentContext.moodTracking;
-      fieldInstructions += '\n- moodTracking: Extract the character\'s current emotional state, feelings, or mood. Look for emotions, feelings, or mood indicators in actions between *asterisks* or dialogue.';
-    }
-    if (addonSettingsObj.clothingInventory) {
-      extractionFields['clothingInventory'] = currentContext.clothingInventory;
-      fieldInstructions += '\n- clothingInventory: Extract clothing/outfit descriptions. Look for clothing in actions *...* or dialogue.';
-    }
-    if (addonSettingsObj.locationTracking) {
-      extractionFields['locationTracking'] = currentContext.locationTracking;
-      fieldInstructions += '\n- locationTracking: Extract location (room, house, bedroom, kitchen, etc.). Look for location in actions *...* or dialogue.';
-    }
-    if (addonSettingsObj.timeAndWeather) {
-      extractionFields['timeAndWeather'] = currentContext.timeAndWeather;
-      fieldInstructions += '\n- timeAndWeather: Extract current time of day, weather conditions, or temporal references. Look for time/weather descriptions in actions between *asterisks* or dialogue.';
-    }
-    if (addonSettingsObj.relationshipStatus) {
-      extractionFields['relationshipStatus'] = currentContext.relationshipStatus;
-      fieldInstructions += '\n- relationshipStatus: Extract the relationship dynamics, intimacy level, or relationship changes between characters. Look for relationship indicators in actions between *asterisks* or dialogue.';
-    }
-    if (addonSettingsObj.characterPosition) {
-      extractionFields['characterPosition'] = currentContext.characterPosition;
-      fieldInstructions += '\n- characterPosition: Extract the character\'s physical position, stance, body language, or posture. Look for physical positioning details in actions between *asterisks* or dialogue.';
-    }
-    
-    console.log('Extraction fields to process:', Object.keys(extractionFields));
-    console.log('Field instructions:', fieldInstructions);
-
-    const extractionPrompt = `Extract context from this conversation turn for enabled fields only.
-
-Rules:
-1. Only update if new info is EXPLICITLY mentioned
-2. Keep previous value if no new info  
-3. Pay attention to *actions* and dialogue
-4. Return valid JSON only
-5. Be concise - max 10 words per field
-
-Fields:${fieldInstructions}
-
-Previous:
-${JSON.stringify(currentContext, null, 2)}
-
-Turn:
-User: "${replaceTemplates(user_message)}"
-Character: "${replaceTemplates(aiResponseContent)}"
-
-Extract for enabled fields:
-${JSON.stringify(extractionFields, null, 2)}`;
-
-    // Call extraction LLM
-    const extractionResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openRouterKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
-        'X-Title': 'AnimaChat-Context'
-      },
-        body: JSON.stringify({
-          model: 'mistralai/mistral-7b-instruct', // Always use Mistral for context extraction
-          messages: [
-            { role: 'system', content: 'You are a precise data extraction bot. Extract concise context (max 10 words per field) for ALL enabled fields. Return valid JSON only.' },
-            { role: 'user', content: extractionPrompt }
-          ],
-          temperature: 0.1
-        })
-    });
-
+    // Process context from unified response or fallback to current context
     let updatedContext = currentContext;
     
-    if (extractionResponse.ok) {
-      try {
-        const extractionData = await extractionResponse.json();
-        const extractedContextStr = extractionData.choices?.[0]?.message?.content || '{}';
-        
-        console.log('Raw LLM extraction response:', extractedContextStr);
-        
-        // Try to parse the JSON response
-        const extractedContext = JSON.parse(extractedContextStr);
-        console.log('Extracted context from LLM:', JSON.stringify(extractedContext, null, 2));
-        
-        // Validate that all expected fields are present
-        const missingFields = Object.keys(extractionFields).filter(field => !(field in extractedContext));
-        if (missingFields.length > 0) {
-          console.warn('Missing fields in extraction:', missingFields);
-          // Fill in missing fields with current context values
-          for (const field of missingFields) {
-            extractedContext[field] = currentContext[field];
-          }
-        }
-        
+    if (hasEnabledAddons) {
+      console.log('🔄 Processing context from unified response...');
+      
+      // Use extracted context from unified response if available
+      if (extractedContext) {
+        console.log('📊 Using context from unified response');
         updatedContext = {
           moodTracking: addonSettingsObj.moodTracking ? (extractedContext.moodTracking || currentContext.moodTracking) : currentContext.moodTracking,
           clothingInventory: addonSettingsObj.clothingInventory ? (extractedContext.clothingInventory || currentContext.clothingInventory) : currentContext.clothingInventory,
@@ -770,86 +746,86 @@ ${JSON.stringify(extractionFields, null, 2)}`;
           relationshipStatus: addonSettingsObj.relationshipStatus ? (extractedContext.relationshipStatus || currentContext.relationshipStatus) : currentContext.relationshipStatus,
           characterPosition: addonSettingsObj.characterPosition ? (extractedContext.characterPosition || currentContext.characterPosition) : currentContext.characterPosition
         };
+      }
+      
+      console.log('✅ Final context state:', updatedContext);
+      
+      // Get the AI message ID for context linking
+      const { data: aiMessage, error: aiMessageError } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('chat_id', chat_id)
+        .eq('content', aiResponseContent)
+        .eq('is_ai_message', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (aiMessageError) {
+        console.error('Failed to get AI message ID:', aiMessageError);
+      }
+
+      // Batch database operations for performance
+      const dbStartTime = Date.now();
+      const batchOperations = [];
+      
+      // Prepare context mappings for batch operations
+      const contextMappings = [
+        { type: 'mood', value: updatedContext.moodTracking, key: 'moodTracking' },
+        { type: 'clothing', value: updatedContext.clothingInventory, key: 'clothingInventory' },
+        { type: 'location', value: updatedContext.locationTracking, key: 'locationTracking' },
+        { type: 'time_weather', value: updatedContext.timeAndWeather, key: 'timeAndWeather' },
+        { type: 'relationship', value: updatedContext.relationshipStatus, key: 'relationshipStatus' },
+        { type: 'character_position', value: updatedContext.characterPosition, key: 'characterPosition' }
+      ];
+
+      // Batch context updates
+      const contextUpdates = {};
+      let hasContextUpdates = false;
+      
+      for (const mapping of contextMappings) {
+        const isAddonEnabled = addonSettingsObj[mapping.key];
         
-        console.log('Context extracted successfully:', updatedContext);
-        
-        // Get the AI message ID for context linking
-        const { data: aiMessage, error: aiMessageError } = await supabase
-          .from('messages')
-          .select('id')
-          .eq('chat_id', chat_id)
-          .eq('content', aiResponseContent)
-          .eq('is_ai_message', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (aiMessageError) {
-          console.error('Failed to get AI message ID:', aiMessageError);
-        }
-
-        // Save updated context to database
-        const contextMappings = [
-          { type: 'mood', value: updatedContext.moodTracking },
-          { type: 'clothing', value: updatedContext.clothingInventory },
-          { type: 'location', value: updatedContext.locationTracking },
-          { type: 'time_weather', value: updatedContext.timeAndWeather },
-          { type: 'relationship', value: updatedContext.relationshipStatus },
-          { type: 'character_position', value: updatedContext.characterPosition }
-        ];
-
-        for (const mapping of contextMappings) {
-          const contextField = mapping.type === 'mood' ? 'moodTracking' : 
-                              mapping.type === 'clothing' ? 'clothingInventory' : 
-                              mapping.type === 'location' ? 'locationTracking' : 
-                              mapping.type === 'time_weather' ? 'timeAndWeather' : 
-                              mapping.type === 'character_position' ? 'characterPosition' :
-                              'relationshipStatus';
-          
-          // Only save if addon is enabled, context changed, and is not "No context"
-          const isAddonEnabled = addonSettingsObj[contextField];
-          if (isAddonEnabled && mapping.value !== 'No context' && mapping.value !== currentContext[contextField]) {
-            console.log(`Saving context for ${mapping.type}:`, mapping.value);
-            await supabase
-              .from('user_chat_context')
-              .upsert({
-                user_id: user.id,
-                character_id: character_id,
-                chat_id: chat_id,
-                context_type: mapping.type,
-                current_context: mapping.value
-              });
+        // Only process if addon is enabled and context changed
+        if (isAddonEnabled && mapping.value !== currentContext[mapping.key]) {
+          // Add to batch context save
+          if (mapping.value !== 'No context') {
+            batchOperations.push(
+              supabase
+                .from('user_chat_context')
+                .upsert({
+                  user_id: user.id,
+                  character_id: character_id,
+                  chat_id: chat_id,
+                  context_type: mapping.type,
+                  current_context: mapping.value
+                })
+            );
           }
-        }
-
-        // Store message-specific context updates if there are any changes
-        const contextUpdates = {};
-        let hasContextUpdates = false;
-        
-        for (const mapping of contextMappings) {
-          const contextField = mapping.type === 'mood' ? 'moodTracking' : 
-                              mapping.type === 'clothing' ? 'clothingInventory' : 
-                              mapping.type === 'location' ? 'locationTracking' : 
-                              mapping.type === 'time_weather' ? 'timeAndWeather' : 
-                              mapping.type === 'character_position' ? 'characterPosition' :
-                              'relationshipStatus';
           
-          // Include update if addon is enabled and context changed
-          const isAddonEnabled = addonSettingsObj[contextField];
-          if (isAddonEnabled && mapping.value !== currentContext[contextField]) {
-            contextUpdates[contextField] = {
-              previous: currentContext[contextField],
-              current: mapping.value
-            };
-            hasContextUpdates = true;
-          }
+          // Track context updates
+          contextUpdates[mapping.key] = {
+            previous: currentContext[mapping.key],
+            current: mapping.value
+          };
+          hasContextUpdates = true;
         }
+      }
 
-        // Always save the current context state to AI messages for inheritance
-        if (aiMessage?.id) {
-          if (hasContextUpdates) {
-            console.log('Saving message-specific context:', contextUpdates);
-            await supabase
+      // Execute batch operations
+      if (batchOperations.length > 0) {
+        console.log(`🚀 Executing ${batchOperations.length} batched context operations...`);
+        await Promise.all(batchOperations);
+      }
+
+      // Save message-specific context updates and current context state
+      if (aiMessage?.id) {
+        const messageOps = [];
+        
+        if (hasContextUpdates) {
+          console.log('📝 Saving message-specific context updates');
+          messageOps.push(
+            supabase
               .from('message_context')
               .insert({
                 message_id: aiMessage.id,
@@ -857,32 +833,41 @@ ${JSON.stringify(extractionFields, null, 2)}`;
                 character_id: character_id,
                 chat_id: chat_id,
                 context_updates: contextUpdates
-              });
-          }
-          
-          // Also save the current context state for inheritance
-          console.log('Saving current context state to AI message:', updatedContext);
-          await supabase
-            .from('messages')
-            .update({
-              // Store context as JSON in a dedicated column or as metadata
-              current_context: updatedContext
-            })
-            .eq('id', aiMessage.id);
+              })
+          );
         }
         
-      } catch (parseError) {
-        console.error('Failed to parse extracted context:', parseError);
+        // Save current context state for inheritance
+        messageOps.push(
+          supabase
+            .from('messages')
+            .update({
+              current_context: updatedContext
+            })
+            .eq('id', aiMessage.id)
+        );
+        
+        if (messageOps.length > 0) {
+          await Promise.all(messageOps);
+        }
       }
-    } else {
-      console.error('Context extraction failed:', extractionResponse.status);
+      
+      const dbEndTime = Date.now();
+      console.log(`⚡ Database operations completed in ${dbEndTime - dbStartTime}ms`);
     }
+
+    const totalTime = Date.now() - startTime;
+    console.log(`🎯 Chat function completed in ${totalTime}ms`);
 
     // Return both response and context
     return new Response(JSON.stringify({ 
       success: true, 
       content: aiResponseContent,
-      updatedContext 
+      updatedContext,
+      metrics: {
+        totalTime,
+        hasUnifiedContext: !!extractedContext
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
