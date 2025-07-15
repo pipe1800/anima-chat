@@ -72,7 +72,7 @@ const HeroSection = () => {
               </Link>
               
               <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
-                <div className="flex items-center py-4 px-4 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 transition-colors">
+                <div className="flex items-center px-4 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 transition-colors py-[9px]">
                   <span className="text-white font-semibold text-lg">Sign Up</span>
                 </div>
               </Link>
