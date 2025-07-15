@@ -531,10 +531,7 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
       content,
       is_ai_message,
       created_at,
-      author_id,
-      message_context(
-        context_updates
-      )
+      author_id
     `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: false })
@@ -555,10 +552,7 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
       content,
       is_ai_message,
       created_at,
-      author_id,
-      message_context(
-        context_updates
-      )
+      author_id
     `)
     .eq('chat_id', chatId)
     .lt('created_at', beforeTimestamp)

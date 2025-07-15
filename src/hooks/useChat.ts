@@ -58,8 +58,7 @@ export const useChatMessages = (chatId: string | null) => {
         content: msg.content,
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
-        status: 'sent',
-        contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
+        status: 'sent'
       }));
       
       return {
@@ -337,8 +336,7 @@ export const useChatCache = () => {
           content: msg.content,
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
-          status: 'sent',
-          contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
+          status: 'sent'
         }));
         
         return {
