@@ -56,6 +56,7 @@ const ChatInterface = ({
     locationTracking: false,
     timeAndWeather: false,
     relationshipStatus: false,
+    characterPosition: false,
     chainOfThought: false,
     fewShotExamples: false,
   };

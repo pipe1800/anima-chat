@@ -50,17 +50,33 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse the incoming request body
-    const { model, user_message, chat_id, character_id, tracked_context, addon_settings } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { model, user_message, chat_id, character_id, tracked_context, addon_settings } = requestBody;
+
+    console.log('Full request body:', JSON.stringify(requestBody, null, 2));
 
     if (!model || !user_message || !chat_id || !character_id) {
-      console.error('Missing required fields');
-      return new Response(JSON.stringify({ error: 'Missing required fields: model, user_message, chat_id, character_id' }), {
+      console.error('Missing required fields. Received:', { model, user_message: !!user_message, chat_id, character_id });
+      return new Response(JSON.stringify({ 
+        error: 'Missing required fields: model, user_message, chat_id, character_id',
+        received: { model, user_message: !!user_message, chat_id, character_id }
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     
-    console.log('Received addon_settings:', addon_settings);
+    console.log('Received addon_settings:', JSON.stringify(addon_settings, null, 2));
 
     console.log(`Processing chat request for chat: ${chat_id}, character: ${character_id}`);
 
