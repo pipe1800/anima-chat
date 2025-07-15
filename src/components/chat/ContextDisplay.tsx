@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { capitalizeText, filterCharacterRelevantContext } from '@/lib/utils/textFormatting';
+import { capitalizeText, isCharacterRelevantContext, getContextLabel, getAddonKey } from '@/lib/utils/textFormatting';
 
 export interface TrackedContext {
   moodTracking: string;
@@ -8,6 +8,7 @@ export interface TrackedContext {
   locationTracking: string;
   timeAndWeather: string;
   relationshipStatus: string;
+  characterPosition: string;
 }
 
 interface ContextDisplayProps {
@@ -25,6 +26,7 @@ interface ContextDisplayProps {
     locationTracking?: boolean;
     timeAndWeather?: boolean;
     relationshipStatus?: boolean;
+    characterPosition?: boolean;
   };
   className?: string;
 }
@@ -36,28 +38,6 @@ interface ContextItem {
   isEnabled: boolean;
   isHistorical: boolean;
 }
-
-const getContextLabel = (key: string): string => {
-  switch (key) {
-    case 'moodTracking': return 'Mood Tracking';
-    case 'clothingInventory': return 'Clothing Inventory';
-    case 'locationTracking': return 'Location Tracking';
-    case 'timeAndWeather': return 'Time & Weather';
-    case 'relationshipStatus': return 'Relationship Status';
-    default: return key;
-  }
-};
-
-const getAddonKey = (itemKey: string): keyof TrackedContext => {
-  switch (itemKey) {
-    case 'mood': return 'moodTracking';
-    case 'clothing': return 'clothingInventory';
-    case 'location': return 'locationTracking';
-    case 'weather': return 'timeAndWeather';
-    case 'relationship': return 'relationshipStatus';
-    default: return itemKey as keyof TrackedContext;
-  }
-};
 
 export const ContextDisplay = ({ context, contextUpdates, currentContext, addonSettings, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -71,7 +51,7 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       .filter(([key, update]) => {
         return update && 
                update.current !== 'No context' && 
-               filterCharacterRelevantContext(key, update.current);
+               isCharacterRelevantContext(key, update.current);
       })
       .map(([key, update]) => {
         const isEnabled = addonSettings ? addonSettings[key as keyof typeof addonSettings] : true;
@@ -92,10 +72,11 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       { label: 'Location Tracking', value: currentContext.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: currentContext.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: currentContext.relationshipStatus, key: 'relationship' },
+      { label: 'Character Position', value: currentContext.characterPosition, key: 'character_position' },
     ]
       .filter(item => item.value && 
                      item.value !== 'No context' && 
-                     filterCharacterRelevantContext(getAddonKey(item.key), item.value))
+                     isCharacterRelevantContext(getAddonKey(item.key), item.value))
       .map(item => {
         const addonKey = getAddonKey(item.key);
         const isEnabled = addonSettings ? addonSettings[addonKey] : true;
@@ -115,10 +96,11 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
       { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
       { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
+      { label: 'Character Position', value: context.characterPosition, key: 'character_position' },
     ]
       .filter(item => item.value && 
                      item.value !== 'No context' && 
-                     filterCharacterRelevantContext(getAddonKey(item.key), item.value))
+                     isCharacterRelevantContext(getAddonKey(item.key), item.value))
       .map(item => {
         const addonKey = getAddonKey(item.key);
         const isEnabled = addonSettings ? addonSettings[addonKey] : true;

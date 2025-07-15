@@ -27,6 +27,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     locationTracking: false,
     timeAndWeather: false,
     relationshipStatus: false,
+    characterPosition: false,
     chainOfThought: false,
     fewShotExamples: false,
   });
@@ -38,6 +39,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     locationTracking: false,
     timeAndWeather: false,
     relationshipStatus: false,
+    characterPosition: false,
     chainOfThought: false,
     fewShotExamples: false,
   });
@@ -57,6 +59,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     tempAddonSettings.locationTracking,
     tempAddonSettings.timeAndWeather,
     tempAddonSettings.relationshipStatus,
+    tempAddonSettings.characterPosition,
   ].filter(Boolean).length;
 
   const addonCategories = {
@@ -112,6 +115,13 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         cost: 5, 
         description: 'Track relationships',
         available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
+        dynamicCost: null
+      },
+      characterPosition: { 
+        name: 'Character Position', 
+        cost: 5, 
+        description: 'Track character\'s physical position and body language',
+        available: isTrueFanOrWhale || tempAddonSettings.characterPosition || (!tempAddonSettings.characterPosition && activeStatefulAddons < 2),
         dynamicCost: null
       },
     },

@@ -50,6 +50,7 @@ export const ChatConfigurationTab = ({
     locationTracking: false,
     timeAndWeather: false,
     relationshipStatus: false,
+    characterPosition: false,
     chainOfThought: false,
     fewShotExamples: false,
   });
@@ -61,6 +62,7 @@ export const ChatConfigurationTab = ({
     locationTracking: false,
     timeAndWeather: false,
     relationshipStatus: false,
+    characterPosition: false,
     chainOfThought: false,
     fewShotExamples: false,
   });

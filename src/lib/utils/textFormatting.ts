@@ -18,13 +18,62 @@ export function capitalizeText(text: string): string {
 }
 
 /**
+ * Get user-friendly label for context keys
+ */
+export const getContextLabel = (key: string): string => {
+  const labels: Record<string, string> = {
+    moodTracking: 'Mood Tracking',
+    clothingInventory: 'Clothing Inventory',
+    locationTracking: 'Location Tracking',
+    timeAndWeather: 'Time & Weather',
+    relationshipStatus: 'Relationship Status',
+    characterPosition: 'Character Position',
+  };
+  
+  return labels[key] || key;
+};
+
+/**
+ * Map database context types to addon keys
+ */
+export const getAddonKey = (itemKey: string): string => {
+  const mapping: Record<string, string> = {
+    'mood': 'moodTracking',
+    'clothing': 'clothingInventory',
+    'location': 'locationTracking',
+    'time_weather': 'timeAndWeather',
+    'relationship': 'relationshipStatus',
+    'character_position': 'characterPosition',
+  };
+  
+  return mapping[itemKey] || itemKey;
+};
+
+/**
+ * Filter context items to only include character-relevant data
+ */
+export const filterCharacterRelevantContext = (context: any): any => {
+  const filtered: any = {};
+  
+  // Include context that's relevant to character state
+  if (context.moodTracking) filtered.moodTracking = context.moodTracking;
+  if (context.clothingInventory) filtered.clothingInventory = context.clothingInventory;
+  if (context.locationTracking) filtered.locationTracking = context.locationTracking;
+  if (context.timeAndWeather) filtered.timeAndWeather = context.timeAndWeather;
+  if (context.relationshipStatus) filtered.relationshipStatus = context.relationshipStatus;
+  if (context.characterPosition) filtered.characterPosition = context.characterPosition;
+  
+  return filtered;
+};
+
+/**
  * Filters context to focus on character-relevant information
  */
-export function filterCharacterRelevantContext(contextKey: string, value: string): boolean {
+export function isCharacterRelevantContext(contextKey: string, value: string): boolean {
   if (!value || value === 'No context') return false;
   
   // Always include shared environmental context
-  if (contextKey === 'timeAndWeather' || contextKey === 'locationTracking') {
+  if (contextKey === 'timeAndWeather' || contextKey === 'locationTracking' || contextKey === 'characterPosition') {
     return true;
   }
   

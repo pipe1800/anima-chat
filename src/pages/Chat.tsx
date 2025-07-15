@@ -23,7 +23,8 @@ const Chat = () => {
     clothingInventory: 'No context',
     locationTracking: 'No context',
     timeAndWeather: 'No context',
-    relationshipStatus: 'No context'
+    relationshipStatus: 'No context',
+    characterPosition: 'No context'
   });
   const location = useLocation();
   const navigate = useNavigate();

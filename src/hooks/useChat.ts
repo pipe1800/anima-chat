@@ -241,6 +241,7 @@ export interface TrackedContext {
   locationTracking: string;
   timeAndWeather: string;
   relationshipStatus: string;
+  characterPosition: string;
 }
 
 // Separate function for AI invocation (runs in background)
@@ -265,7 +266,7 @@ const invokeAIResponse = async (
       body: JSON.stringify({
         character_id: characterId,
         chat_id: chatId,
-        model: 'openai/gpt-4o-mini',
+        model: 'mistral/mistral-7b-instruct',
         user_message: userMessage,
         tracked_context: trackedContext,
         addon_settings: addonSettings

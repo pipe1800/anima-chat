@@ -64,7 +64,8 @@ const ChatInterface = ({
     clothingInventory: 'No context',
     locationTracking: 'No context',
     timeAndWeather: 'No context',
-    relationshipStatus: 'No context'
+    relationshipStatus: 'No context',
+    characterPosition: 'No context'
   });
   
   // Listen to message updates to stop typing when AI responds

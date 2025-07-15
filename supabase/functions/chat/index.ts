@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
     if (addonSettingsObj.locationTracking) currentContext.locationTracking = 'No context';
     if (addonSettingsObj.timeAndWeather) currentContext.timeAndWeather = 'No context';
     if (addonSettingsObj.relationshipStatus) currentContext.relationshipStatus = 'No context';
+    if (addonSettingsObj.characterPosition) currentContext.characterPosition = 'No context';
 
     // Load existing context from database, but only for enabled addons
     if (contextData) {
@@ -208,6 +209,11 @@ Deno.serve(async (req) => {
               currentContext.relationshipStatus = row.current_context || 'No context';
             }
             break;
+          case 'character_position':
+            if (addonSettingsObj.characterPosition) {
+              currentContext.characterPosition = row.current_context || 'No context';
+            }
+            break;
         }
       }
     }
@@ -221,7 +227,8 @@ Deno.serve(async (req) => {
           (key === 'clothingInventory' && addonSettingsObj.clothingInventory) ||
           (key === 'locationTracking' && addonSettingsObj.locationTracking) ||
           (key === 'timeAndWeather' && addonSettingsObj.timeAndWeather) ||
-          (key === 'relationshipStatus' && addonSettingsObj.relationshipStatus);
+          (key === 'relationshipStatus' && addonSettingsObj.relationshipStatus) ||
+          (key === 'characterPosition' && addonSettingsObj.characterPosition);
         
         if (isEnabled) {
           currentContext[key] = tracked_context[key];
@@ -247,6 +254,9 @@ Deno.serve(async (req) => {
     }
     if (addonSettingsObj.relationshipStatus && currentContext.relationshipStatus && currentContext.relationshipStatus !== 'No context') {
       contextParts.push(`Relationship: ${currentContext.relationshipStatus}`);
+    }
+    if (addonSettingsObj.characterPosition && currentContext.characterPosition && currentContext.characterPosition !== 'No context') {
+      contextParts.push(`Character Position: ${currentContext.characterPosition}`);
     }
     
     const contextPrompt = contextParts.length > 0 ? `[Current Context:\n${contextParts.join('\n')}]` : '';
@@ -347,7 +357,7 @@ Respond naturally to the conversation, keeping the character's personality consi
         'X-Title': 'AnimaChat'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'mistral/mistral-7b-instruct',
         messages: conversationMessages,
         stream: false // Changed to false for context extraction
       })
@@ -375,7 +385,8 @@ Respond naturally to the conversation, keeping the character's personality consi
                            addonSettingsObj.clothingInventory || 
                            addonSettingsObj.locationTracking || 
                            addonSettingsObj.timeAndWeather || 
-                           addonSettingsObj.relationshipStatus;
+                           addonSettingsObj.relationshipStatus ||
+                           addonSettingsObj.characterPosition;
 
     console.log('Checking enabled addons:', {
       moodTracking: addonSettingsObj.moodTracking,
@@ -383,6 +394,7 @@ Respond naturally to the conversation, keeping the character's personality consi
       locationTracking: addonSettingsObj.locationTracking,
       timeAndWeather: addonSettingsObj.timeAndWeather,
       relationshipStatus: addonSettingsObj.relationshipStatus,
+      characterPosition: addonSettingsObj.characterPosition,
       hasEnabledAddons
     });
     
@@ -428,6 +440,10 @@ Respond naturally to the conversation, keeping the character's personality consi
       extractionFields['relationshipStatus'] = currentContext.relationshipStatus;
       fieldInstructions += '\n- relationshipStatus: Extract the relationship dynamics, intimacy level, or relationship changes between characters. Look for relationship indicators in actions between *asterisks* or dialogue.';
     }
+    if (addonSettingsObj.characterPosition) {
+      extractionFields['characterPosition'] = currentContext.characterPosition;
+      fieldInstructions += '\n- characterPosition: Extract the character\'s physical position, stance, body language, or posture. Look for physical positioning details in actions between *asterisks* or dialogue.';
+    }
     
     console.log('Extraction fields to process:', Object.keys(extractionFields));
     console.log('Field instructions:', fieldInstructions);
@@ -466,7 +482,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         'X-Title': 'AnimaChat-Context'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'mistral/mistral-7b-instruct',
         messages: [
           { role: 'system', content: 'You are a precise data extraction bot. You must extract information for ALL enabled fields, not just some of them. Return valid JSON only.' },
           { role: 'user', content: extractionPrompt }
@@ -503,7 +519,8 @@ ${JSON.stringify(extractionFields, null, 2)}`;
           clothingInventory: addonSettingsObj.clothingInventory ? (extractedContext.clothingInventory || currentContext.clothingInventory) : currentContext.clothingInventory,
           locationTracking: addonSettingsObj.locationTracking ? (extractedContext.locationTracking || currentContext.locationTracking) : currentContext.locationTracking,
           timeAndWeather: addonSettingsObj.timeAndWeather ? (extractedContext.timeAndWeather || currentContext.timeAndWeather) : currentContext.timeAndWeather,
-          relationshipStatus: addonSettingsObj.relationshipStatus ? (extractedContext.relationshipStatus || currentContext.relationshipStatus) : currentContext.relationshipStatus
+          relationshipStatus: addonSettingsObj.relationshipStatus ? (extractedContext.relationshipStatus || currentContext.relationshipStatus) : currentContext.relationshipStatus,
+          characterPosition: addonSettingsObj.characterPosition ? (extractedContext.characterPosition || currentContext.characterPosition) : currentContext.characterPosition
         };
         
         console.log('Context extracted successfully:', updatedContext);
@@ -516,7 +533,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
             author_id: user.id,
             content: aiResponseContent,
             is_ai_message: true,
-            model_id: 'openai/gpt-4o-mini'
+            model_id: 'mistral/mistral-7b-instruct'
           })
           .select('id')
           .single();
@@ -531,7 +548,8 @@ ${JSON.stringify(extractionFields, null, 2)}`;
           { type: 'clothing', value: updatedContext.clothingInventory },
           { type: 'location', value: updatedContext.locationTracking },
           { type: 'time_weather', value: updatedContext.timeAndWeather },
-          { type: 'relationship', value: updatedContext.relationshipStatus }
+          { type: 'relationship', value: updatedContext.relationshipStatus },
+          { type: 'character_position', value: updatedContext.characterPosition }
         ];
 
         for (const mapping of contextMappings) {
@@ -539,6 +557,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
                               mapping.type === 'clothing' ? 'clothingInventory' : 
                               mapping.type === 'location' ? 'locationTracking' : 
                               mapping.type === 'time_weather' ? 'timeAndWeather' : 
+                              mapping.type === 'character_position' ? 'characterPosition' :
                               'relationshipStatus';
           
           // Only save if addon is enabled, context changed, and is not "No context"
@@ -566,6 +585,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
                               mapping.type === 'clothing' ? 'clothingInventory' : 
                               mapping.type === 'location' ? 'locationTracking' : 
                               mapping.type === 'time_weather' ? 'timeAndWeather' : 
+                              mapping.type === 'character_position' ? 'characterPosition' :
                               'relationshipStatus';
           
           // Include update if addon is enabled and context changed

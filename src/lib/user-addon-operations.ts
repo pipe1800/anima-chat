@@ -8,6 +8,7 @@ export interface AddonSettings {
   locationTracking: boolean;
   timeAndWeather: boolean;
   relationshipStatus: boolean;
+  characterPosition: boolean;
   chainOfThought: boolean;
   fewShotExamples: boolean;
 }
@@ -20,6 +21,7 @@ export const defaultAddonSettings: AddonSettings = {
   locationTracking: false,
   timeAndWeather: false,
   relationshipStatus: false,
+  characterPosition: false,
   chainOfThought: false,
   fewShotExamples: false,
 };
@@ -101,6 +103,7 @@ export const calculateAddonCreditCost = (settings: AddonSettings): number => {
   if (settings.locationTracking) total += 5;
   if (settings.timeAndWeather) total += 5;
   if (settings.relationshipStatus) total += 5;
+  if (settings.characterPosition) total += 5;
   if (settings.chainOfThought) total += 30;
   if (settings.fewShotExamples) total += 7;
   return total;
@@ -142,6 +145,7 @@ export const validateAddonSettings = (
       settings.locationTracking,
       settings.timeAndWeather,
       settings.relationshipStatus,
+      settings.characterPosition,
     ].filter(Boolean).length;
 
     console.log('Guest Pass validation - Active stateful addons:', activeStatefulAddons);
@@ -171,6 +175,7 @@ export const getAddonStats = (settings: AddonSettings) => {
     settings.locationTracking,
     settings.timeAndWeather,
     settings.relationshipStatus,
+    settings.characterPosition,
   ].filter(Boolean).length;
 
   return {
