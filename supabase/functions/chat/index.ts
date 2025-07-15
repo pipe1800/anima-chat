@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
       if (planData) {
         switch (planData.name) {
           case 'True Fan':
-            selectedModel = 'mythomax/mythomax-l2-13b'; // Smart & Creative
+            selectedModel = 'gryphe/mythomax-l2-13b'; // Smart & Creative
             break;
           case 'The Whale':
             selectedModel = 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo'; // Genius
