@@ -6,7 +6,15 @@ import { CharacterGrid } from './CharacterGrid';
 import { WorldInfoGrid } from './WorldInfoGrid';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { MobileNavMenu } from '@/components/layout/MobileNavMenu';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardData } from '@/hooks/useDashboard';
 export function DiscoverContent() {
+  const { user, profile } = useAuth();
+  const { data: dashboardData } = useDashboardData();
+  const userCredits = dashboardData?.credits || 0;
+  const username = profile?.username || user?.email?.split('@')[0] || 'User';
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [filterBy, setFilterBy] = useState('all');
@@ -35,12 +43,20 @@ export function DiscoverContent() {
   return (
     <div className="min-h-screen bg-[#121212] w-full">
       {/* Header */}
-      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-4">
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-4">
         <div className="flex items-center justify-between">
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <MobileNavMenu userCredits={userCredits} username={username} />
+          </div>
+          
           <div className="flex items-center space-x-4">
             <div>
-              <h1 className="text-white text-2xl font-bold">Discovery Hub</h1>
-              <p className="text-gray-400 text-sm">Explore characters and world infos</p>
+              <h1 className="text-white text-xl sm:text-2xl font-bold">
+                <span className="hidden sm:inline">Discovery Hub</span>
+                <span className="sm:hidden">Discover</span>
+              </h1>
+              <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Explore characters and world infos</p>
             </div>
           </div>
         </div>
@@ -49,19 +65,20 @@ export function DiscoverContent() {
       {/* Tabs */}
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="border-b border-gray-700/50 bg-[#1a1a2e]">
-          <div className="px-6 py-2">
-            <TabsList className="bg-[#121212] border border-gray-700/50">
+          <div className="px-3 sm:px-6 py-2">
+            <TabsList className="bg-[#121212] border border-gray-700/50 w-full sm:w-auto">
               <TabsTrigger 
                 value="characters" 
-                className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400 flex-1 sm:flex-none text-sm"
               >
                 Characters
               </TabsTrigger>
               <TabsTrigger 
                 value="world-infos" 
-                className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400 flex-1 sm:flex-none text-sm"
               >
-                World Infos
+                <span className="hidden sm:inline">World Infos</span>
+                <span className="sm:hidden">Worlds</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -79,7 +96,7 @@ export function DiscoverContent() {
 
         {/* Active Filter Pills */}
         {activeFilters.length > 0 && (
-          <div className="px-6 pb-4">
+          <div className="px-3 sm:px-6 pb-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white text-sm font-medium">Active Filters:</h3>
               <button 

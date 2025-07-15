@@ -124,15 +124,15 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
   }
 
   return (
-    <div className="p-8">
+    <div className="px-3 sm:px-6 py-4 sm:py-8">
       {/* Results Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-white text-xl font-semibold">
-            {sortedCharacters.length} Characters Found
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-8 space-y-2 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0">
+          <h2 className="text-white text-lg sm:text-xl font-semibold">
+            {sortedCharacters.length} <span className="hidden sm:inline">Characters</span> Found
           </h2>
-          <div className="flex items-center space-x-2 text-gray-400 text-sm">
-            <TrendingUp className="w-4 h-4" />
+          <div className="flex items-center space-x-2 text-gray-400 text-xs sm:text-sm">
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>Updated 2 minutes ago</span>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
       {/* Character Grid */}
       <div 
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 transition-all duration-500 ease-in-out"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 lg:gap-8 transition-all duration-500 ease-in-out"
         style={{
           animation: 'fade-in 0.6s ease-out'
         }}
@@ -148,7 +148,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         {sortedCharacters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
+            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group"
             style={{
               animation: `fade-in 0.6s ease-out ${index * 0.1}s both`
             }}
@@ -162,38 +162,40 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Name at top */}
-              <div className="absolute top-4 left-4 right-4">
-                <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate">
-                  {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4">
+                <h3 className="text-white font-bold text-base sm:text-lg group-hover:text-[#FF7A00] transition-colors truncate">
+                  {character.name.length > 12 ? `${character.name.substring(0, 12)}...` : character.name}
                 </h3>
               </div>
 
               {/* Action Buttons - Center */}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-col gap-2 w-full px-3 sm:px-0 sm:w-auto">
                   <Button
                     onClick={() => handleViewCharacter(character)}
                     variant="outline"
-                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 bg-black/40"
+                    className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 bg-black/40 text-sm"
                     size="sm"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Character
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">View Character</span>
+                    <span className="sm:hidden">View</span>
                   </Button>
                   <Button
                     onClick={() => handleStartChat(character)}
-                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium text-sm"
                     size="sm"
                   >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Start Chat
+                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Start Chat</span>
+                    <span className="sm:hidden">Chat</span>
                   </Button>
                 </div>
               </div>
 
               {/* Description preview at bottom */}
-              <div className="absolute bottom-4 left-4 right-4">
-                <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
+              <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
+                <p className="text-gray-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed">
                   {character.short_description || "No description available"}
                 </p>
               </div>
@@ -204,20 +206,21 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
       {/* Empty State */}
       {sortedCharacters.length === 0 && (
-        <div className="text-center py-16">
-          <div className="text-gray-400 text-lg mb-2">No characters found</div>
+        <div className="text-center py-12 sm:py-16">
+          <div className="text-gray-400 text-base sm:text-lg mb-2">No characters found</div>
           <div className="text-gray-500 text-sm">Try adjusting your search or filters</div>
         </div>
       )}
 
       {/* Load More */}
       {sortedCharacters.length > 0 && (
-        <div className="flex justify-center mt-16">
+        <div className="flex justify-center mt-8 sm:mt-16">
           <Button
             variant="outline"
-            className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent px-10 py-4 text-lg font-medium"
+            className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 hover:border-[#FF7A00] bg-transparent px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-medium"
           >
-            Load More Characters
+            <span className="hidden sm:inline">Load More Characters</span>
+            <span className="sm:hidden">Load More</span>
           </Button>
         </div>
       )}

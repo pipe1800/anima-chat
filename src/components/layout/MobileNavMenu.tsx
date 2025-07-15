@@ -6,6 +6,12 @@ import { Menu, Home, Compass, MessageSquare, User, Settings, Crown, Zap, Users, 
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
+const LOGO_URL = "https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=200&h=60&fit=crop&crop=center";
+
+// Preload the logo image
+const logoImg = new Image();
+logoImg.src = LOGO_URL;
+
 interface MobileNavMenuProps {
   userCredits?: number;
   username?: string;
@@ -46,8 +52,15 @@ export const MobileNavMenu = ({ userCredits = 0, username = 'User' }: MobileNavM
       </SheetTrigger>
       <SheetContent side="left" className="w-80 bg-[#121212] border-gray-700 p-0">
         <div className="flex flex-col h-full">
-          {/* Header */}
+          {/* Logo */}
           <div className="p-6 border-b border-gray-700">
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src={LOGO_URL} 
+                alt="ANIMA Logo" 
+                className="h-12 w-auto object-contain"
+              />
+            </div>
             <div className="flex items-center space-x-3">
               <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
                 <AvatarImage 
