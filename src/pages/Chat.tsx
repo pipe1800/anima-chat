@@ -125,7 +125,9 @@ const Chat = () => {
     // Initialize character data from selectedCharacter if available
     if (selectedCharacter) {
       setCharacterData(selectedCharacter);
+      return; // Early return to prevent further execution
     }
+    
     if (characterId && !selectedCharacter) {
       // Fetch character data from the URL parameter
       const fetchCharacter = async () => {
@@ -147,8 +149,10 @@ const Chat = () => {
         }
       };
       
-      fetchCharacter();
+      fetchCharacter(); // Call the async function but don't return its promise
     }
+    
+    // useEffect must not return anything (or return a cleanup function)
   }, [characterId, selectedCharacter, navigate]);
 
   if (!characterData) {
