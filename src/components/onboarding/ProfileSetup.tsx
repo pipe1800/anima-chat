@@ -63,12 +63,12 @@ const ProfileSetup = ({ onComplete, onSkip }: ProfileSetupProps) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-8">
-        <h2 className="text-3xl font-bold text-white mb-2 text-center">
+    <div className="w-full max-w-md mx-auto px-4">
+      <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-4 sm:p-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center">
           Step 2: Your Account Profile
         </h2>
-        <p className="text-gray-400 text-center mb-4">
+        <p className="text-gray-400 text-center mb-4 text-sm sm:text-base">
           Personalize your profile (optional)
         </p>
         <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-6">

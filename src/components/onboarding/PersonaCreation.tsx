@@ -133,25 +133,25 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-8">
-        <h2 className="text-3xl font-bold text-white mb-2 text-center">
+    <div className="w-full max-w-4xl mx-auto px-4">
+      <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-4 sm:p-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center">
           Step 3: Create Your Personas
         </h2>
-        <p className="text-gray-400 text-center mb-4">
+        <p className="text-gray-400 text-center mb-4 text-sm sm:text-base">
           Create different personalities that AI characters will interact with
         </p>
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
-          <p className="text-blue-200 text-sm text-center">
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 sm:p-4 mb-6">
+          <p className="text-blue-200 text-xs sm:text-sm text-center">
             <strong>Personas</strong> are the identities you roleplay as when chatting with AI characters. 
             You can create multiple personas and switch between them during conversations.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Persona Creation Form */}
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">
               Create New Persona
             </h3>
 
@@ -248,7 +248,7 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
 
           {/* Created Personas List */}
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-white mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">
               Your Personas ({personas.length})
             </h3>
             

@@ -122,28 +122,29 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
   return (
     <div className="w-full max-w-6xl mx-auto text-center px-4">
       {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-5xl font-bold text-white mb-6">
+      <div className="mb-8 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
           Your First{' '}
           <span className="text-transparent bg-gradient-to-r from-[#FF7A00] to-[#FF7A00]/70 bg-clip-text">
             Encounter
           </span>
         </h1>
-        <p className="text-gray-300 text-xl max-w-2xl mx-auto leading-relaxed">
+        <p className="text-gray-300 text-base sm:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed">
           Based on your vibe, we think you'll get along with one of these. 
           Choose your first companion to start chatting.
         </p>
       </div>
 
       {/* Character Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {characters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
+            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group cursor-pointer"
             style={{
               animationDelay: `${index * 0.1}s`
             }}
+            onClick={() => handleCharacterSelect(character)}
           >
             <div className="p-0 relative h-full">
               <img 
@@ -154,21 +155,24 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
               {/* Name at top */}
-              <div className="absolute top-4 left-4 right-4">
-                <h3 className="text-white font-bold text-lg group-hover:text-[#FF7A00] transition-colors truncate">
-                  {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-12 sm:right-16">
+                <h3 className="text-white font-bold text-sm sm:text-lg group-hover:text-[#FF7A00] transition-colors truncate">
+                  {character.name.length > 12 ? `${character.name.substring(0, 12)}...` : character.name}
                 </h3>
               </div>
 
-              {/* Action Button - Center */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+              {/* Action Button - Center - Show on mobile, hover on desktop */}
+              <div className="absolute inset-0 flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                 <Button
-                  onClick={() => handleCharacterSelect(character)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCharacterSelect(character);
+                  }}
                   className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
                   size="sm"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Start Chat
+                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Start Chat</span>
                 </Button>
               </div>
 
@@ -177,17 +181,17 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
                 onClick={(e) => handleToggleFavorite(e, character.id)}
                 variant="ghost"
                 size="icon"
-                className={`absolute top-4 right-4 z-10 h-8 w-8 rounded-full ${
+                className={`absolute top-3 sm:top-4 right-3 sm:right-4 z-10 h-6 w-6 sm:h-8 sm:w-8 rounded-full ${
                   character.favorited 
                     ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
                     : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/70'
                 }`}
               >
-                <Heart className={`h-4 w-4 ${character.favorited ? 'fill-current' : ''}`} />
+                <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${character.favorited ? 'fill-current' : ''}`} />
               </Button>
 
-              {/* Description preview at bottom */}
-              <div className="absolute bottom-4 left-4 right-4">
+              {/* Description preview at bottom - Hide on mobile to save space */}
+              <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 hidden sm:block">
                 <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
                   {character.short_description || character.character_definitions?.[0]?.greeting || 'A mysterious character waiting to chat with you.'}
                 </p>

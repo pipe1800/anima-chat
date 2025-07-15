@@ -51,15 +51,15 @@ const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) 
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto text-center">
-      <h1 className="text-4xl font-bold text-white mb-4">
+    <div className="w-full max-w-7xl mx-auto text-center px-4">
+      <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
         Choose Your Vibe
       </h1>
-      <p className="text-gray-400 text-lg mb-8">
+      <p className="text-gray-400 text-base sm:text-lg mb-8 max-w-2xl mx-auto">
         What are you in the mood for? Pick a few tags so we can recommend the perfect companions.
       </p>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-8 max-h-[60vh] overflow-y-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 mb-8 max-h-[60vh] overflow-y-auto">
         {vibes.map((vibe) => {
           const IconComponent = vibe.icon;
           const isSelected = selectedVibes.includes(vibe.id);
@@ -74,15 +74,15 @@ const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) 
               }`}
               onClick={() => toggleVibe(vibe.id)}
             >
-              <div className="p-3 text-center">
-                <div className={`w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br ${vibe.color} flex items-center justify-center`}>
-                  <IconComponent className="w-5 h-5 text-white" />
+              <div className="p-2 sm:p-3 text-center">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 rounded-full bg-gradient-to-br ${vibe.color} flex items-center justify-center`}>
+                  <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-xs font-semibold text-white">
+                <h3 className="text-xs font-semibold text-white leading-tight">
                   {vibe.name}
                 </h3>
                 {isSelected && (
-                  <div className="absolute top-1 right-1 w-5 h-5 bg-[#FF7A00] rounded-full flex items-center justify-center">
+                  <div className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#FF7A00] rounded-full flex items-center justify-center">
                     <span className="text-white text-xs">✓</span>
                   </div>
                 )}
