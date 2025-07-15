@@ -15,8 +15,8 @@ const CreationStepsHeader = ({
   currentStep,
   onStepChange
 }: CreationStepsHeaderProps) => {
-  return <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50">
-      <div className="sm:px-6 lg:px-8 px-0 py-0">
+  return <div className="bg-[#1a1a2e]/90 backdrop-blur-sm border-b border-gray-700/50 py-[4px]">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Character Creator
