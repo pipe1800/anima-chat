@@ -476,7 +476,7 @@ const CharacterCreator = () => {
 
       {/* Mobile Layout */}
       <div className="md:hidden flex flex-col flex-1 overflow-hidden">
-        <div className="px-4 py-2 bg-[#1b1b1b] border-b border-gray-700/50">
+        <div className="bg-[#1b1b1b] border-b border-gray-700/50">
           <CreationStepsHeader
             steps={steps}
             currentStep={currentStep}
