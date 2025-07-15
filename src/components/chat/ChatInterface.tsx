@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useChat';
 import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAddonSettings } from './useAddonSettings';
+import { AddonDebugPanel } from './AddonDebugPanel';
 
 interface Character {
   id: string;
@@ -182,6 +183,14 @@ const ChatInterface = ({
         onClose={handleCloseInsufficientCreditsModal}
         currentBalance={creditsBalance}
         onUpgrade={handleUpgrade}
+      />
+
+      {/* Debug Panel */}
+      <AddonDebugPanel
+        addonSettings={currentAddonSettings}
+        characterId={character.id}
+        userId={user?.id || ''}
+        userPlan={'Guest Pass'} // This could be passed from props if needed
       />
 
       {/* Messages Area */}

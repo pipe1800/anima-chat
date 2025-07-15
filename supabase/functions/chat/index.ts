@@ -156,59 +156,77 @@ Deno.serve(async (req) => {
 
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
 
-    // Load existing context from database - only initialize for enabled addons
+    // Load existing context from database
     const addonSettingsObj = addon_settings || {};
+    console.log('Processing context for addons:', addonSettingsObj);
+    
     let currentContext: any = {};
     
-    // Only initialize context for enabled addons
+    // Always load all available context from database (historical preservation)
+    const { data: contextData } = await supabase
+      .from('user_chat_context')
+      .select('context_type, current_context')
+      .eq('user_id', user.id)
+      .eq('character_id', character_id)
+      .eq('chat_id', chat_id);
+
+    console.log('Loaded context from database:', contextData);
+
+    // Initialize context for enabled addons only
     if (addonSettingsObj.moodTracking) currentContext.moodTracking = 'No context';
     if (addonSettingsObj.clothingInventory) currentContext.clothingInventory = 'No context';
     if (addonSettingsObj.locationTracking) currentContext.locationTracking = 'No context';
     if (addonSettingsObj.timeAndWeather) currentContext.timeAndWeather = 'No context';
     if (addonSettingsObj.relationshipStatus) currentContext.relationshipStatus = 'No context';
 
-    if (tracked_context) {
-      currentContext = { ...currentContext, ...tracked_context };
-    } else {
-      // Load from database if not provided
-      const { data: contextData } = await supabase
-        .from('user_chat_context')
-        .select('context_type, current_context')
-        .eq('user_id', user.id)
-        .eq('character_id', character_id)
-        .eq('chat_id', chat_id);
-
-      if (contextData) {
-        for (const row of contextData) {
-          switch (row.context_type) {
-            case 'mood':
-              if (addonSettingsObj.moodTracking) {
-                currentContext.moodTracking = row.current_context || 'No context';
-              }
-              break;
-            case 'clothing':
-              if (addonSettingsObj.clothingInventory) {
-                currentContext.clothingInventory = row.current_context || 'No context';
-              }
-              break;
-            case 'location':
-              if (addonSettingsObj.locationTracking) {
-                currentContext.locationTracking = row.current_context || 'No context';
-              }
-              break;
-            case 'time_weather':
-              if (addonSettingsObj.timeAndWeather) {
-                currentContext.timeAndWeather = row.current_context || 'No context';
-              }
-              break;
-            case 'relationship':
-              if (addonSettingsObj.relationshipStatus) {
-                currentContext.relationshipStatus = row.current_context || 'No context';
-              }
-              break;
-          }
+    // Load existing context from database, but only for enabled addons
+    if (contextData) {
+      for (const row of contextData) {
+        switch (row.context_type) {
+          case 'mood':
+            if (addonSettingsObj.moodTracking) {
+              currentContext.moodTracking = row.current_context || 'No context';
+            }
+            break;
+          case 'clothing':
+            if (addonSettingsObj.clothingInventory) {
+              currentContext.clothingInventory = row.current_context || 'No context';
+            }
+            break;
+          case 'location':
+            if (addonSettingsObj.locationTracking) {
+              currentContext.locationTracking = row.current_context || 'No context';
+            }
+            break;
+          case 'time_weather':
+            if (addonSettingsObj.timeAndWeather) {
+              currentContext.timeAndWeather = row.current_context || 'No context';
+            }
+            break;
+          case 'relationship':
+            if (addonSettingsObj.relationshipStatus) {
+              currentContext.relationshipStatus = row.current_context || 'No context';
+            }
+            break;
         }
       }
+    }
+
+    // Override with tracked context if provided (for enabled addons only)
+    if (tracked_context) {
+      Object.keys(tracked_context).forEach(key => {
+        // Only include context for enabled addons
+        const isEnabled = 
+          (key === 'moodTracking' && addonSettingsObj.moodTracking) ||
+          (key === 'clothingInventory' && addonSettingsObj.clothingInventory) ||
+          (key === 'locationTracking' && addonSettingsObj.locationTracking) ||
+          (key === 'timeAndWeather' && addonSettingsObj.timeAndWeather) ||
+          (key === 'relationshipStatus' && addonSettingsObj.relationshipStatus);
+        
+        if (isEnabled) {
+          currentContext[key] = tracked_context[key];
+        }
+      });
     }
 
     console.log('Current context loaded:', currentContext);

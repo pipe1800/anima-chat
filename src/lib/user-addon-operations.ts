@@ -134,7 +134,7 @@ export const validateAddonSettings = (
     errors.push('Chain of Thought requires True Fan or Whale subscription');
   }
 
-  // Guest Pass stateful tracking limit
+  // Guest Pass stateful tracking limit - count only enabled addons
   if (isGuestPass) {
     const activeStatefulAddons = [
       settings.moodTracking,
@@ -143,6 +143,9 @@ export const validateAddonSettings = (
       settings.timeAndWeather,
       settings.relationshipStatus,
     ].filter(Boolean).length;
+
+    console.log('Guest Pass validation - Active stateful addons:', activeStatefulAddons);
+    console.log('Guest Pass validation - Settings:', settings);
 
     if (activeStatefulAddons > 2) {
       errors.push('Guest Pass users are limited to 2 stateful tracking addons');
