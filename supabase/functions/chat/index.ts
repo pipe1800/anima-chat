@@ -223,6 +223,12 @@ ${character.scenario || 'Casual conversation'}
 
 ${contextPrompt}
 
+**Roleplay Instructions:**
+- Text between *asterisks* represents actions, thoughts, or descriptions (e.g., *waves hand*, *thinks quietly*, *the room is dimly lit*)
+- Respond to these actions naturally and incorporate them into your roleplay
+- You can also use *asterisks* for your own actions and descriptions
+- Pay attention to actions when updating context information
+
 Respond naturally to the conversation, keeping the character's personality consistent. Use the current context to inform your responses when relevant.`;
 
     // Build conversation history with system prompt
@@ -353,22 +359,42 @@ Respond naturally to the conversation, keeping the character's personality consi
     // Now extract context using a cheaper model
     console.log('Extracting context from conversation... Enabled addons:', addonSettingsObj);
     
-    // Build extraction fields based on enabled addons
+    // Build extraction fields based on enabled addons with detailed instructions
     const extractionFields = {};
-    if (addonSettingsObj.moodTracking) extractionFields['moodTracking'] = '...';
-    if (addonSettingsObj.clothingInventory) extractionFields['clothingInventory'] = '...';
-    if (addonSettingsObj.locationTracking) extractionFields['locationTracking'] = '...';
-    if (addonSettingsObj.timeAndWeather) extractionFields['timeAndWeather'] = '...';
-    if (addonSettingsObj.relationshipStatus) extractionFields['relationshipStatus'] = '...';
+    let fieldInstructions = '';
+    
+    if (addonSettingsObj.moodTracking) {
+      extractionFields['moodTracking'] = currentContext.moodTracking;
+      fieldInstructions += '\n- moodTracking: Extract the character\'s current emotional state, feelings, or mood. Look for emotions, feelings, or mood indicators in actions between *asterisks* or dialogue.';
+    }
+    if (addonSettingsObj.clothingInventory) {
+      extractionFields['clothingInventory'] = currentContext.clothingInventory;
+      fieldInstructions += '\n- clothingInventory: Extract what the character is currently wearing or any clothing changes. Look for clothing descriptions in actions between *asterisks* or dialogue.';
+    }
+    if (addonSettingsObj.locationTracking) {
+      extractionFields['locationTracking'] = currentContext.locationTracking;
+      fieldInstructions += '\n- locationTracking: Extract the current location or any location changes. Look for location descriptions in actions between *asterisks* or dialogue.';
+    }
+    if (addonSettingsObj.timeAndWeather) {
+      extractionFields['timeAndWeather'] = currentContext.timeAndWeather;
+      fieldInstructions += '\n- timeAndWeather: Extract current time of day, weather conditions, or temporal references. Look for time/weather descriptions in actions between *asterisks* or dialogue.';
+    }
+    if (addonSettingsObj.relationshipStatus) {
+      extractionFields['relationshipStatus'] = currentContext.relationshipStatus;
+      fieldInstructions += '\n- relationshipStatus: Extract the relationship dynamics, intimacy level, or relationship changes between characters. Look for relationship indicators in actions between *asterisks* or dialogue.';
+    }
 
     const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided for the ENABLED fields.
 
 Rules:
 1. Only update a field if new information is EXPLICITLY mentioned in the "User Message" or "Character Response"
-2. If a field is not mentioned or updated, you MUST return its "Previous Value"
+2. If a field is not mentioned or updated, you MUST return its previous value unchanged
 3. If the previous value was "No context" and there is still no new information, keep it as "No context"
-4. Your response MUST be a valid JSON object and nothing else
-5. Only extract information for these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
+4. Pay special attention to text between *asterisks* as it contains actions and descriptions
+5. Your response MUST be a valid JSON object and nothing else
+6. Only extract information for these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
+
+Field Instructions:${fieldInstructions}
 
 Previous Context:
 ${JSON.stringify(currentContext, null, 2)}
@@ -417,6 +443,23 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         
         console.log('Context extracted successfully:', updatedContext);
         
+        // Save the AI response message first
+        const { data: aiMessage, error: aiMessageError } = await supabase
+          .from('messages')
+          .insert({
+            chat_id: chat_id,
+            author_id: user.id,
+            content: aiResponseContent,
+            is_ai_message: true,
+            model_id: 'openai/gpt-4o-mini'
+          })
+          .select('id')
+          .single();
+
+        if (aiMessageError) {
+          console.error('Failed to save AI message:', aiMessageError);
+        }
+
         // Save updated context to database
         const contextMappings = [
           { type: 'mood', value: updatedContext.moodTracking },
@@ -447,6 +490,42 @@ ${JSON.stringify(extractionFields, null, 2)}`;
                 current_context: mapping.value
               });
           }
+        }
+
+        // Store message-specific context updates if there are any changes
+        const contextUpdates = {};
+        let hasContextUpdates = false;
+        
+        for (const mapping of contextMappings) {
+          const contextField = mapping.type === 'mood' ? 'moodTracking' : 
+                              mapping.type === 'clothing' ? 'clothingInventory' : 
+                              mapping.type === 'location' ? 'locationTracking' : 
+                              mapping.type === 'time_weather' ? 'timeAndWeather' : 
+                              'relationshipStatus';
+          
+          // Include update if addon is enabled and context changed
+          const isAddonEnabled = addonSettingsObj[contextField];
+          if (isAddonEnabled && mapping.value !== currentContext[contextField]) {
+            contextUpdates[contextField] = {
+              previous: currentContext[contextField],
+              current: mapping.value
+            };
+            hasContextUpdates = true;
+          }
+        }
+
+        // Save message-specific context if there are updates and we have the message ID
+        if (hasContextUpdates && aiMessage?.id) {
+          console.log('Saving message-specific context:', contextUpdates);
+          await supabase
+            .from('message_context')
+            .insert({
+              message_id: aiMessage.id,
+              user_id: user.id,
+              character_id: character_id,
+              chat_id: chat_id,
+              context_updates: contextUpdates
+            });
         }
         
       } catch (parseError) {

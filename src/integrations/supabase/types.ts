@@ -344,6 +344,36 @@ export type Database = {
         }
         Relationships: []
       }
+      message_context: {
+        Row: {
+          character_id: string
+          chat_id: string
+          context_updates: Json
+          created_at: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          chat_id: string
+          context_updates?: Json
+          created_at?: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          chat_id?: string
+          context_updates?: Json
+          created_at?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           author_id: string

@@ -13,25 +13,50 @@ export interface TrackedContext {
 }
 
 interface ContextDisplayProps {
-  context: TrackedContext;
+  context?: TrackedContext;
+  contextUpdates?: {
+    [key: string]: {
+      previous: string;
+      current: string;
+    };
+  };
   className?: string;
 }
 
-export const ContextDisplay = ({ context, className = '' }: ContextDisplayProps) => {
+export const ContextDisplay = ({ context, contextUpdates, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Filter out context items that have no content
-  const contextItems = [
-    { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
-    { label: 'Clothing Inventory', value: context.clothingInventory, key: 'clothing' },
-    { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
-    { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
-    { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
-  ].filter(item => item.value && item.value !== 'No context');
+  // Handle both legacy context and new contextUpdates
+  let contextItems: { label: string; value: string; key: string; previous?: string }[] = [];
+  
+  if (contextUpdates) {
+    // New format: show context updates with previous/current values
+    contextItems = Object.entries(contextUpdates)
+      .filter(([_, update]) => update && update.current !== 'No context')
+      .map(([key, update]) => ({
+        label: key === 'moodTracking' ? 'Mood Tracking' :
+               key === 'clothingInventory' ? 'Clothing Inventory' :
+               key === 'locationTracking' ? 'Location Tracking' :
+               key === 'timeAndWeather' ? 'Time & Weather' :
+               key === 'relationshipStatus' ? 'Relationship Status' : key,
+        value: update.current,
+        previous: update.previous,
+        key: key
+      }));
+  } else if (context) {
+    // Legacy format: show all non-empty context
+    contextItems = [
+      { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
+      { label: 'Clothing Inventory', value: context.clothingInventory, key: 'clothing' },
+      { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
+      { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
+      { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
+    ].filter(item => item.value && item.value !== 'No context');
+  }
 
   // Show debug info if no context
   if (contextItems.length === 0) {
-    console.log('ContextDisplay: No context items to show', context);
+    console.log('ContextDisplay: No context items to show', { context, contextUpdates });
     return (
       <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
         <div className="p-3">
@@ -73,6 +98,11 @@ export const ContextDisplay = ({ context, className = '' }: ContextDisplayProps)
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {item.label}
                 </div>
+                {item.previous && item.previous !== 'No context' && (
+                  <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2">
+                    Previous: {item.previous}
+                  </div>
+                )}
                 <div className="text-sm text-foreground bg-muted/50 rounded-md p-2">
                   {item.value}
                 </div>

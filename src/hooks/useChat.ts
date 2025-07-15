@@ -19,6 +19,12 @@ export interface Message {
   isUser: boolean;
   timestamp: Date;
   status?: 'sending' | 'sent' | 'failed';
+  contextUpdates?: {
+    [key: string]: {
+      previous: string;
+      current: string;
+    };
+  };
 }
 
 // Hook for managing chat messages with pagination
@@ -52,7 +58,8 @@ export const useChatMessages = (chatId: string | null) => {
         content: msg.content,
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
-        status: 'sent'
+        status: 'sent',
+        contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
       }));
       
       return {
@@ -330,7 +337,8 @@ export const useChatCache = () => {
           content: msg.content,
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
-          status: 'sent'
+          status: 'sent',
+          contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
         }));
         
         return {

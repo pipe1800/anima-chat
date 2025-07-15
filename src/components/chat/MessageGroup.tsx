@@ -1,15 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatMessageTime } from "@/utils/messageGrouping";
 import { ContextDisplay } from "./ContextDisplay";
-import type { TrackedContext } from "@/hooks/useChat";
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-  status?: 'sending' | 'sent' | 'failed';
-}
+import type { TrackedContext, Message } from "@/hooks/useChat";
 
 interface MessageGroupData {
   id: string;
@@ -86,10 +78,16 @@ export function MessageGroup({ group, character, trackedContext }: MessageGroupP
         )}
       </div>
       
-      {/* Show context display for AI messages */}
-      {!isUser && trackedContext && (
+      {/* Show context display only for AI messages with context updates */}
+      {!isUser && messages.some(msg => msg.contextUpdates) && (
         <div className="mt-3 ml-11">
-          <ContextDisplay context={trackedContext} />
+          {messages.map(msg => 
+            msg.contextUpdates ? (
+              <div key={`${msg.id}-context`} className="mb-2">
+                <ContextDisplay contextUpdates={msg.contextUpdates} />
+              </div>
+            ) : null
+          )}
         </div>
       )}
     </div>
