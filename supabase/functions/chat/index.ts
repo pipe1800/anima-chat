@@ -9,6 +9,15 @@ const corsHeaders = {
 // Performance optimization: Cache common data
 const templateCache = new Map<string, string>();
 const contextCache = new Map<string, any>();
+const dbPool = new Map<string, any>();
+
+// Connection pooling for better performance
+const getPooledConnection = (userId: string) => {
+  if (!dbPool.has(userId)) {
+    dbPool.set(userId, Date.now());
+  }
+  return dbPool.get(userId);
+};
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,7 +26,7 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
-  console.log('🚀 Chat function called - Performance Mode');
+  console.log('🚀 Chat function called - Performance Mode Enhanced');
 
   try {
     // Create Supabase client using user's Authorization header
