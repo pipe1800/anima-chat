@@ -223,7 +223,15 @@ export const ChatConfigurationTab = ({
 
   const clearBackgroundImage = () => {
     setBackgroundImage(null);
+    // TODO: Remove background image from chat-specific storage
   };
+
+  useEffect(() => {
+    // If world info addon is disabled, clear any selected world info
+    if (!addonSettings.dynamicWorldInfo) {
+      onWorldInfoSelect(null);
+    }
+  }, [addonSettings.dynamicWorldInfo, onWorldInfoSelect]);
 
   const totalCost = calculateAddonCreditCost(tempAddonSettings);
   const hasUnsavedChanges = JSON.stringify(addonSettings) !== JSON.stringify(tempAddonSettings);
@@ -313,6 +321,7 @@ export const ChatConfigurationTab = ({
         <WorldInfoDropdown 
           isVisible={true}
           onWorldInfoSelect={onWorldInfoSelect}
+          disabled={!addonSettings.dynamicWorldInfo}
         />
       </Card>
 
@@ -320,22 +329,25 @@ export const ChatConfigurationTab = ({
       <Card className="bg-[#1a1a2e] border-gray-700/50 p-4">
         <h3 className="text-white font-medium text-sm mb-3">Chat Background</h3>
         
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="background-upload" className="text-gray-300 text-sm">
-              Custom Background Image
-            </Label>
-            {backgroundImage && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearBackgroundImage}
-                className="text-gray-400 hover:text-red-400 p-1"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="background-upload" className="text-gray-300 text-sm">
+                Custom Background Image
+              </Label>
+              {backgroundImage && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearBackgroundImage}
+                  className="text-gray-400 hover:text-red-400 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-gray-400 text-xs">
+              Recommended size: 1920x1080 pixels
+            </p>
 
           <div className="relative">
             <input

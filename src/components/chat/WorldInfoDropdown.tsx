@@ -19,11 +19,13 @@ interface WorldInfo {
 interface WorldInfoDropdownProps {
   isVisible: boolean;
   onWorldInfoSelect: (worldInfo: WorldInfo | null) => void;
+  disabled?: boolean;
 }
 
 export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({ 
   isVisible, 
-  onWorldInfoSelect 
+  onWorldInfoSelect,
+  disabled = false
 }) => {
   const { user } = useAuth();
   const { handleStepAction } = useTutorial();
@@ -120,16 +122,26 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
+          className={`px-3 border border-gray-600/50 w-full justify-between ${
+            disabled 
+              ? 'text-gray-500 cursor-not-allowed opacity-60' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          }`}
           data-tutorial="world-info-dropdown"
+          disabled={disabled}
         >
           <div className="flex items-center space-x-2">
             <BookOpen className="w-4 h-4" />
             <span className="text-sm">
-              {selectedWorldInfo ? selectedWorldInfo.name : 'Select World Info'}
+              {disabled 
+                ? 'Dynamic World Info disabled'
+                : selectedWorldInfo 
+                  ? selectedWorldInfo.name 
+                  : 'Select World Info'
+              }
             </span>
-            <ChevronDown className="w-4 h-4" />
           </div>
+          <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-80 bg-[#1a1a2e] border-gray-700/50 z-50">
