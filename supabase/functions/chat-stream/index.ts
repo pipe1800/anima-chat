@@ -184,7 +184,16 @@ Deno.serve(async (req) => {
 ${character.description ? `Description: ${replaceTemplates(character.description)}` : ''}
 ${character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : ''}
 
-Stay in character and respond naturally to the user's message.`;
+IMPORTANT DIALOGUE GUIDELINES:
+- Focus primarily on dialogue and conversation
+- Use direct speech frequently with quotation marks
+- Keep narrative descriptions brief and essential
+- Respond with natural, engaging conversation
+- Express emotions and thoughts through words and dialogue
+- Avoid lengthy descriptive paragraphs
+- Make your character feel alive through speech
+
+Stay in character and engage in natural dialogue with the user.`;
 
     // Add addon context if enabled
     if (addonSettings) {
@@ -279,7 +288,10 @@ Return only the JSON object with no additional text.`;
         if (contextResponse.ok) {
           const contextData = await contextResponse.json();
           const contextStr = contextData.choices?.[0]?.message?.content || '{}';
-          return JSON.parse(contextStr);
+          console.log('📝 Raw context extraction response:', contextStr);
+          const parsedContext = JSON.parse(contextStr);
+          console.log('🔍 Parsed context:', parsedContext);
+          return parsedContext;
         }
       } catch (error) {
         console.error('Context extraction error:', error);
@@ -326,6 +338,7 @@ Return only the JSON object with no additional text.`;
                       const extractedContext = await contextExtractionPromise;
                       if (extractedContext && addonSettings) {
                         console.log('✅ Context extracted:', extractedContext);
+                        console.log('🔧 Addon settings:', addonSettings);
                         
                         // Update user chat context for enabled addons
                         if (addonSettings.moodTracking && extractedContext.mood) {
@@ -384,7 +397,8 @@ Return only the JSON object with no additional text.`;
                         }
 
                         if (addonSettings.characterPosition && extractedContext.character_position) {
-                          await supabase.from('user_chat_context').upsert({
+                          console.log('💾 Saving character position context:', extractedContext.character_position);
+                          const { error: contextError } = await supabase.from('user_chat_context').upsert({
                             user_id: user.id,
                             chat_id: chatId,
                             character_id: characterId,
@@ -392,6 +406,11 @@ Return only the JSON object with no additional text.`;
                             current_context: extractedContext.character_position,
                             updated_at: new Date().toISOString()
                           });
+                          if (contextError) {
+                            console.error('❌ Character position save error:', contextError);
+                          } else {
+                            console.log('✅ Character position context saved successfully');
+                          }
                         }
 
                         console.log('✅ Context saved successfully');
