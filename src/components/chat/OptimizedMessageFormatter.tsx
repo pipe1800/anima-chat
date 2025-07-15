@@ -1,123 +1,104 @@
 import React, { useMemo } from 'react';
+import { FormattedMessage } from '@/components/ui/FormattedMessage';
 
 interface OptimizedMessageFormatterProps {
   content: string;
   isAiMessage: boolean;
   characterName?: string;
+  timestamp?: string;
 }
 
-interface ParsedContent {
-  speech: string[];
-  actions: string[];
-  text: string;
-}
-
-const OptimizedMessageFormatter = ({ content, isAiMessage, characterName }: OptimizedMessageFormatterProps) => {
-  const parsedContent = useMemo((): ParsedContent => {
-    if (!content) return { speech: [], actions: [], text: '' };
-
-    // Cache key for memoization
-    const cacheKey = `${content}-${isAiMessage}`;
+export const OptimizedMessageFormatter: React.FC<OptimizedMessageFormatterProps> = ({
+  content,
+  isAiMessage,
+  characterName,
+  timestamp
+}) => {
+  // Memoize the formatted content to avoid re-processing
+  const formattedContent = useMemo(() => {
+    if (!content) return '';
     
-    // Speech pattern: "quoted text" or 'quoted text'
-    const speechMatches = content.match(/["']([^"']+)["']/g) || [];
-    const speech = speechMatches.map(match => match.slice(1, -1));
-
-    // Action pattern: *action* or **action**
-    const actionMatches = content.match(/\*+([^*]+)\*+/g) || [];
-    const actions = actionMatches.map(match => match.replace(/\*/g, ''));
-
-    // Clean text without speech and actions
-    let cleanText = content
-      .replace(/["']([^"']+)["']/g, '') // Remove speech
-      .replace(/\*+([^*]+)\*+/g, '') // Remove actions
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .trim();
-
-    return { speech, actions, text: cleanText };
-  }, [content, isAiMessage]);
-
-  const renderFormattedContent = () => {
-    if (!isAiMessage) {
-      return <span className="text-foreground">{content}</span>;
-    }
-
-    const { speech, actions, text } = parsedContent;
-    const elements: React.ReactNode[] = [];
-    let textIndex = 0;
-
-    // Interleave speech, actions, and text
-    const allElements = [];
+    // Apply character-specific formatting
+    let processedContent = content;
     
-    // Find positions of speech and actions in original content
-    const speechRegex = /["']([^"']+)["']/g;
-    const actionRegex = /\*+([^*]+)\*+/g;
-    
-    let match;
-    const positions: Array<{ type: 'speech' | 'action', content: string, index: number }> = [];
-    
-    while ((match = speechRegex.exec(content)) !== null) {
-      positions.push({ type: 'speech', content: match[1], index: match.index });
-    }
-    
-    while ((match = actionRegex.exec(content)) !== null) {
-      positions.push({ type: 'action', content: match[1], index: match.index });
-    }
-    
-    // Sort by position in original text
-    positions.sort((a, b) => a.index - b.index);
-    
-    let lastIndex = 0;
-    
-    positions.forEach((pos, idx) => {
-      // Add text before this element
-      if (pos.index > lastIndex) {
-        const beforeText = content.slice(lastIndex, pos.index).trim();
-        if (beforeText) {
-          elements.push(
-            <span key={`text-${idx}`} className="text-foreground">
-              {beforeText}
-            </span>
-          );
-        }
-      }
-      
-      // Add the speech or action element
-      if (pos.type === 'speech') {
-        elements.push(
-          <span key={`speech-${idx}`} className="text-primary font-medium">
-            "{pos.content}"
-          </span>
-        );
-      } else {
-        elements.push(
-          <span key={`action-${idx}`} className="text-muted-foreground italic">
-            *{pos.content}*
-          </span>
-        );
-      }
-      
-      lastIndex = pos.index;
-    });
-    
-    // Add remaining text
-    const remainingText = content.slice(lastIndex).replace(/["']([^"']+)["']/g, '').replace(/\*+([^*]+)\*+/g, '').trim();
-    if (remainingText) {
-      elements.push(
-        <span key="remaining" className="text-foreground">
-          {remainingText}
-        </span>
+    // Handle character actions (text between asterisks)
+    if (isAiMessage) {
+      processedContent = processedContent.replace(
+        /\*([^*]+)\*/g,
+        '<span class="text-purple-300 italic">*$1*</span>'
       );
     }
+    
+    // Handle emphasis (text between underscores)
+    processedContent = processedContent.replace(
+      /_([^_]+)_/g,
+      '<span class="font-semibold text-yellow-300">$1</span>'
+    );
+    
+    // Handle dialogue (text between quotes)
+    processedContent = processedContent.replace(
+      /"([^"]+)"/g,
+      '<span class="text-blue-300">"$1"</span>'
+    );
+    
+    // Handle thoughts (text between parentheses)
+    processedContent = processedContent.replace(
+      /\(([^)]+)\)/g,
+      '<span class="text-gray-400 italic">($1)</span>'
+    );
+    
+    return processedContent;
+  }, [content, isAiMessage]);
 
-    return elements.length > 0 ? elements : <span className="text-foreground">{content}</span>;
-  };
+  // Memoize the timestamp formatting
+  const formattedTimestamp = useMemo(() => {
+    if (!timestamp) return '';
+    
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch {
+      return '';
+    }
+  }, [timestamp]);
 
   return (
-    <div className="message-content">
-      {renderFormattedContent()}
+    <div className="group">
+      <div className="flex items-start space-x-3">
+        {isAiMessage && (
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+            <span className="text-primary font-semibold text-sm">
+              {characterName?.[0] || 'AI'}
+            </span>
+          </div>
+        )}
+        
+        <div className="flex-1 min-w-0">
+          <div className={`rounded-lg p-3 prose prose-sm max-w-none ${
+            isAiMessage 
+              ? 'bg-secondary/30 text-foreground' 
+              : 'bg-primary/20 text-primary-foreground ml-auto max-w-[70%]'
+          }`}>
+            <FormattedMessage
+              content={formattedContent}
+              className="whitespace-pre-wrap"
+            />
+          </div>
+          
+          {formattedTimestamp && (
+            <div className={`text-xs text-muted-foreground mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${
+              isAiMessage ? 'text-left' : 'text-right'
+            }`}>
+              {formattedTimestamp}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default React.memo(OptimizedMessageFormatter);
+export default OptimizedMessageFormatter;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Wand2, Zap } from 'lucide-react';
+import { Send, Wand2, Zap, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { InsufficientCreditsModal } from './InsufficientCreditsModal';
@@ -13,6 +13,7 @@ import {
 import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
 import PerformanceMonitor from './PerformanceMonitor';
+import { DatabaseBatchOperations } from './DatabaseBatchOperations';
 
 interface Character {
   id: string;
@@ -45,6 +46,7 @@ const ChatInterface = ({
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+  const [showDatabaseOps, setShowDatabaseOps] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -156,7 +158,7 @@ const ChatInterface = ({
 
       if (userMessageError) throw userMessageError;
 
-      // Start streaming AI response
+      // Start streaming AI response using supabase.functions.invoke for better reliability
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
@@ -351,6 +353,17 @@ const ChatInterface = ({
             >
               <Zap className="w-4 h-4" />
             </Button>
+            
+            {/* Database Operations Toggle */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDatabaseOps(!showDatabaseOps)}
+              className="hidden md:flex"
+            >
+              <Database className="w-4 h-4" />
+            </Button>
           </div>
         </form>
         
@@ -367,6 +380,17 @@ const ChatInterface = ({
       {showPerformanceMonitor && (
         <div className="fixed bottom-4 right-4 z-50">
           <PerformanceMonitor chatId={currentChatId} isVisible={showPerformanceMonitor} />
+        </div>
+      )}
+      
+      {/* Database Batch Operations */}
+      {showDatabaseOps && (
+        <div className="fixed bottom-4 right-96 z-50">
+          <DatabaseBatchOperations 
+            chatId={currentChatId} 
+            characterId={character.id}
+            isVisible={showDatabaseOps} 
+          />
         </div>
       )}
     </div>

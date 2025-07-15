@@ -50,30 +50,23 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         throw new Error('Not authenticated');
       }
 
-      // Create chat immediately with greeting
-      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/create-chat-with-greeting`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
+      // Use supabase.functions.invoke instead of direct fetch
+      const { data, error } = await supabase.functions.invoke('create-chat-with-greeting', {
+        body: {
           character_id: character.id,
           character_name: character.name
-        })
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create chat');
+      if (error) {
+        throw error;
       }
-
-      const { chat_id } = await response.json();
 
       // Navigate to chat with the created chat ID
       navigate('/chat', { 
         state: { 
           selectedCharacter: character,
-          existingChatId: chat_id
+          existingChatId: data.chat_id
         } 
       });
     } catch (error) {
