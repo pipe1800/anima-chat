@@ -27,7 +27,7 @@ export interface CharacterCreationData {
     moodTracking: boolean;
     clothingInventory: boolean;
     locationTracking: boolean;
-    timeWeather: boolean;
+    timeAndWeather: boolean;
     relationshipStatus: boolean;
     chainOfThought: boolean;
     fewShotExamples: boolean;

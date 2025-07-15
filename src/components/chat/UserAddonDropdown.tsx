@@ -83,35 +83,35 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Mood Tracking', 
         cost: 5, 
         description: 'Track character emotions',
-        available: isTrueFanOrWhale || tempAddonSettings.moodTracking || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.moodTracking || (!tempAddonSettings.moodTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       clothingInventory: { 
         name: 'Clothing Inventory', 
         cost: 5, 
         description: 'Track character outfits',
-        available: isTrueFanOrWhale || tempAddonSettings.clothingInventory || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.clothingInventory || (!tempAddonSettings.clothingInventory && activeStatefulAddons < 2),
         dynamicCost: null
       },
       locationTracking: { 
         name: 'Location Tracking', 
         cost: 5, 
         description: 'Track current location',
-        available: isTrueFanOrWhale || tempAddonSettings.locationTracking || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.locationTracking || (!tempAddonSettings.locationTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       timeAndWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isTrueFanOrWhale || tempAddonSettings.timeAndWeather || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.timeAndWeather || (!tempAddonSettings.timeAndWeather && activeStatefulAddons < 2),
         dynamicCost: null
       },
       relationshipStatus: { 
         name: 'Relationship Status', 
         cost: 5, 
         description: 'Track relationships',
-        available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
         dynamicCost: null
       },
     },
@@ -308,7 +308,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
                             <Switch
                               checked={tempAddonSettings[key as keyof AddonSettings]}
                               onCheckedChange={() => handleToggleAddon(key as keyof AddonSettings)}
-                              disabled={saving || !details.available || (tempAddonSettings[key as keyof AddonSettings] ? false : !details.available)}
+                              disabled={saving || !details.available}
                               className="data-[state=checked]:bg-[#FF7A00]"
                             />
                           </div>

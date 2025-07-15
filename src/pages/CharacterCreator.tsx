@@ -41,7 +41,7 @@ const CharacterCreator = () => {
       moodTracking: false,
       clothingInventory: false,
       locationTracking: false,
-      timeWeather: false,
+      timeAndWeather: false,
       relationshipStatus: false,
       chainOfThought: false,
       fewShotExamples: false
@@ -101,7 +101,7 @@ const CharacterCreator = () => {
           moodTracking?: boolean;
           clothingInventory?: boolean;
           locationTracking?: boolean;
-          timeWeather?: boolean;
+          timeAndWeather?: boolean;
           relationshipStatus?: boolean;
           chainOfThought?: boolean;
           fewShotExamples?: boolean;
@@ -140,7 +140,7 @@ const CharacterCreator = () => {
           moodTracking: definitionData.addons?.moodTracking || false,
           clothingInventory: definitionData.addons?.clothingInventory || false,
           locationTracking: definitionData.addons?.locationTracking || false,
-          timeWeather: definitionData.addons?.timeWeather || false,
+          timeAndWeather: definitionData.addons?.timeAndWeather || false,
           relationshipStatus: definitionData.addons?.relationshipStatus || false,
           chainOfThought: definitionData.addons?.chainOfThought || false,
           fewShotExamples: definitionData.addons?.fewShotExamples || false
@@ -151,7 +151,7 @@ const CharacterCreator = () => {
           moodTracking: false,
           clothingInventory: false,
           locationTracking: false,
-          timeWeather: false,
+          timeAndWeather: false,
           relationshipStatus: false,
           chainOfThought: false,
           fewShotExamples: false
@@ -262,7 +262,7 @@ const CharacterCreator = () => {
           moodTracking: false,
           clothingInventory: false,
           locationTracking: false,
-          timeWeather: false,
+          timeAndWeather: false,
           relationshipStatus: false,
           chainOfThought: false,
           fewShotExamples: false

@@ -26,7 +26,7 @@ interface AddonData {
   moodTracking: boolean;
   clothingInventory: boolean;
   locationTracking: boolean;
-  timeWeather: boolean;
+  timeAndWeather: boolean;
   relationshipStatus: boolean;
   chainOfThought: boolean;
   fewShotExamples: boolean;
@@ -104,7 +104,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
     moodTracking: false,
     clothingInventory: false,
     locationTracking: false,
-    timeWeather: false,
+    timeAndWeather: false,
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
@@ -114,12 +114,12 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
 
   // Count selected Stateful Character Tracking addons for Guest Pass restriction
   const getSelectedTrackingCount = () => {
-    const trackingAddons = ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'];
+    const trackingAddons = ['moodTracking', 'clothingInventory', 'locationTracking', 'timeAndWeather', 'relationshipStatus'];
     return trackingAddons.filter(addon => addons[addon as keyof AddonData]).length;
   };
 
   const isTrackingAddon = (key: keyof AddonData) => {
-    return ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'].includes(key);
+    return ['moodTracking', 'clothingInventory', 'locationTracking', 'timeAndWeather', 'relationshipStatus'].includes(key);
   };
 
   const isPremiumUser = () => {
@@ -220,7 +220,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
     if (addons.moodTracking) total += 5; // Changed from 3% to 5%
     if (addons.clothingInventory) total += 5; // Changed from 3% to 5%
     if (addons.locationTracking) total += 5; // Changed from 3% to 5%
-    if (addons.timeWeather) total += 5; // Changed from 3% to 5%
+    if (addons.timeAndWeather) total += 5; // Changed from 3% to 5%
     if (addons.relationshipStatus) total += 5; // Changed from 3% to 5%
     if (addons.chainOfThought) total += 30; // Changed from 10% to 30%
     if (addons.fewShotExamples) total += 7; // Changed from 20% to 7%
@@ -341,9 +341,9 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 title="Time & Weather"
                 description="The character will be aware of the in-story time and weather."
                 creditCost="+5% credit cost"
-                enabled={addons.timeWeather}
-                onToggle={(enabled) => handleToggle('timeWeather', enabled)}
-                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.timeWeather && getSelectedTrackingCount() >= 2)}
+                enabled={addons.timeAndWeather}
+                onToggle={(enabled) => handleToggle('timeAndWeather', enabled)}
+                disabled={!addonsEnabled || (userPlan === 'Guest Pass' && !addons.timeAndWeather && getSelectedTrackingCount() >= 2)}
               />
               <AddonCard
                 icon={Heart}
