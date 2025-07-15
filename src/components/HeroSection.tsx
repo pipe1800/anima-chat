@@ -1,8 +1,12 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 
 const HeroSection = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <section className="min-h-screen bg-gradient-to-b from-[#121212] to-[#1a1a2e] text-white relative overflow-hidden">
       {/* Background Elements */}
@@ -16,12 +20,12 @@ const HeroSection = () => {
             <img 
               src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/images/45d0ba23-cfa2-404a-8527-54e83cb321ef.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZXMvNDVkMGJhMjMtY2ZhMi00MDRhLTg1MjctNTRlODNjYjMyMWVmLnBuZyIsImlhdCI6MTc1MjI1MjA4MywiZXhwIjo0OTA1ODUyMDgzfQ.OKhncau8pVPBvcnDrafnifJdihe285oi5jcpp1z3-iM"
               alt="Anima AI Chat" 
-              className="h-16 w-auto"
+              className="h-12 sm:h-16 w-auto"
             />
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-4">
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center space-x-4">
             <Link to="/">
               <Button 
                 variant="ghost" 
@@ -54,7 +58,58 @@ const HeroSection = () => {
               </Button>
             </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-700/50 bg-[#1a1a2e]/98 backdrop-blur-sm">
+            <div className="px-4 py-4 space-y-3">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-[#FF7A00] hover:text-white hover:bg-[#FF7A00]/10 font-medium"
+                >
+                  Home
+                </Button>
+              </Link>
+              <Link to="/characters" onClick={() => setMobileMenuOpen(false)}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
+                >
+                  Characters
+                </Button>
+              </Link>
+              <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
+                >
+                  Login
+                </Button>
+              </Link>
+              <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
+                <Button 
+                  className="w-full justify-start bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-medium transition-colors"
+                >
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
       
       {/* Content */}
