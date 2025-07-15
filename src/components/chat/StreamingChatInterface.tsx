@@ -174,6 +174,15 @@ const StreamingChatInterface = ({
               
               try {
                 const parsed = JSON.parse(data);
+                
+                // Handle final clean message from backend
+                if (parsed.type === 'final_message') {
+                  fullResponse = parsed.content;
+                  setStreamingMessage(fullResponse);
+                  continue;
+                }
+                
+                // Handle streaming content chunks
                 if (parsed.choices?.[0]?.delta?.content) {
                   fullResponse += parsed.choices[0].delta.content;
                   setStreamingMessage(fullResponse);
@@ -186,8 +195,34 @@ const StreamingChatInterface = ({
         }
       }
 
-      // AI message is saved by the edge function with context data
-      console.log('✅ Streaming completed, AI message saved with context by edge function');
+      // Now save the clean AI message to database (frontend handles it)
+      if (fullResponse.trim()) {
+        const aiMessage = {
+          id: crypto.randomUUID(),
+          content: fullResponse,
+          author_id: user.id,
+          chat_id: currentChatId,
+          is_ai_message: true,
+          created_at: new Date().toISOString(),
+          current_context: null
+        };
+
+        const { error: insertError } = await supabase
+          .from('messages')
+          .insert([aiMessage]);
+
+        if (insertError) {
+          console.error('Error saving AI message:', insertError);
+        } else {
+          console.log('✅ Clean AI message saved to database');
+        }
+
+        // Update chat's last message timestamp
+        await supabase
+          .from('chats')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', currentChatId);
+      }
 
       // Update credits balance
       setCreditsBalance(prev => Math.max(0, prev - 1));

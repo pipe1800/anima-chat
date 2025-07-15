@@ -11,6 +11,16 @@ export interface TrackedContext {
   characterPosition: string;
 }
 
+// Database context format (from messages.current_context)
+export interface DatabaseContext {
+  mood?: string;
+  clothing?: string;
+  location?: string;
+  time_weather?: string;
+  relationship?: string;
+  character_position?: string;
+}
+
 interface ContextDisplayProps {
   context?: TrackedContext;
   contextUpdates?: {
@@ -19,7 +29,7 @@ interface ContextDisplayProps {
       current: string;
     };
   };
-  currentContext?: TrackedContext;
+  currentContext?: TrackedContext | DatabaseContext;
   addonSettings?: {
     moodTracking?: boolean;
     clothingInventory?: boolean;
@@ -52,11 +62,52 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
     { label: 'Character Position', key: 'character_position', addonKey: 'characterPosition' },
   ];
 
-  // Process context data into unified format
+  // Process context data into unified format with FIXED KEY MAPPING
   let contextItems: ContextItem[] = [];
   
-  // Handle contextUpdates (from historical messages)
-  if (contextUpdates && Object.keys(contextUpdates).length > 0) {
+  // Handle currentContext (from database) - PRIORITY 1
+  if (currentContext) {
+    contextItems = allAddonItems.map(item => {
+      const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
+      
+      // Map database keys to display keys - handle both formats
+      let contextValue = null;
+      if (item.key === 'mood') {
+        contextValue = (currentContext as DatabaseContext).mood || (currentContext as TrackedContext).moodTracking;
+      } else if (item.key === 'clothing') {
+        contextValue = (currentContext as DatabaseContext).clothing || (currentContext as TrackedContext).clothingInventory;
+      } else if (item.key === 'location') {
+        contextValue = (currentContext as DatabaseContext).location || (currentContext as TrackedContext).locationTracking;
+      } else if (item.key === 'weather') {
+        contextValue = (currentContext as DatabaseContext).time_weather || (currentContext as TrackedContext).timeAndWeather;
+      } else if (item.key === 'relationship') {
+        contextValue = (currentContext as DatabaseContext).relationship || (currentContext as TrackedContext).relationshipStatus;
+      } else if (item.key === 'character_position') {
+        contextValue = (currentContext as DatabaseContext).character_position || (currentContext as TrackedContext).characterPosition;
+      }
+      
+      if (contextValue && contextValue !== 'No context' && isCharacterRelevantContext(item.addonKey, contextValue)) {
+        return {
+          label: item.label,
+          value: capitalizeText(contextValue),
+          key: item.key,
+          isEnabled: isEnabled,
+          isHistorical: false
+        };
+      } else if (isEnabled) {
+        return {
+          label: item.label,
+          value: 'No context yet',
+          key: item.key,
+          isEnabled: true,
+          isHistorical: false
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+  // Handle contextUpdates (from historical messages) - PRIORITY 2
+  else if (contextUpdates && Object.keys(contextUpdates).length > 0) {
     contextItems = allAddonItems.map(item => {
       const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
       const updateData = contextUpdates[item.addonKey];
@@ -80,34 +131,8 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       }
       return null;
     }).filter(Boolean);
-  } 
-  // Handle currentContext (inherited states)
-  else if (currentContext) {
-    contextItems = allAddonItems.map(item => {
-      const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
-      const contextValue = currentContext[item.addonKey];
-      
-      if (contextValue && contextValue !== 'No context' && isCharacterRelevantContext(item.addonKey, contextValue)) {
-        return {
-          label: item.label,
-          value: capitalizeText(contextValue),
-          key: item.key,
-          isEnabled: isEnabled,
-          isHistorical: false
-        };
-      } else if (isEnabled) {
-        return {
-          label: item.label,
-          value: 'No context yet',
-          key: item.key,
-          isEnabled: true,
-          isHistorical: false
-        };
-      }
-      return null;
-    }).filter(Boolean);
   }
-  // Handle legacy context format
+  // Handle legacy context format - PRIORITY 3
   else if (context) {
     contextItems = allAddonItems.map(item => {
       const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;

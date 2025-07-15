@@ -241,40 +241,37 @@ Stay in character and respond naturally. After your response, provide context da
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    // Process context before closing
+                    // Process context before closing - ENHANCED STRIPPING
                     if (fullResponse.includes('[CONTEXT_DATA]')) {
                       const contextMatch = fullResponse.match(/\[CONTEXT_DATA\]\s*(\{[\s\S]*?\})\s*\[\/CONTEXT_DATA\]/);
                       if (contextMatch) {
                         try {
                           extractedContext = JSON.parse(contextMatch[1]);
-                          // Remove context data from response
-                          fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
+                          console.log('✅ Context extracted:', extractedContext);
                         } catch (e) {
                           console.error('❌ Context parsing error:', e);
                         }
                       }
                     }
 
-                    // Save context to database if extracted
+                    // CRITICAL FIX: Always strip context data from fullResponse
+                    fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
+                    
+                    // Also strip any partial context data
+                    fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '').trim();
+                    fullResponse = fullResponse.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
+                    
+                    console.log('✅ Clean message content:', fullResponse.substring(0, 100) + '...');
+
+                    // Send clean message content to frontend for final display
+                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${fullResponse.replace(/"/g, '\\"')}"}\n\n`));
+
+                    // Save context to database if extracted (DO NOT SAVE MESSAGE - let frontend handle it)
                     if (extractedContext && addonSettings) {
                       try {
-                        // Save message context (ensure no duplicates)
-                        const { error: messageError } = await supabase.from('messages').insert({
-                          chat_id: chatId,
-                          content: fullResponse,
-                          author_id: user.id,
-                          is_ai_message: true,
-                          current_context: extractedContext,
-                          created_at: new Date().toISOString()
-                        });
-                        
-                        if (messageError) {
-                          console.error('❌ Message save error:', messageError);
-                        }
-
-                        // Update user chat context for enabled addons
+                        // Update user chat context for enabled addons with corrected key mapping
                         if (addonSettings.moodTracking && extractedContext.mood) {
-                          const { error: moodError } = await supabase.from('user_chat_context').upsert({
+                          await supabase.from('user_chat_context').upsert({
                             user_id: user.id,
                             chat_id: chatId,
                             character_id: characterId,
@@ -282,7 +279,6 @@ Stay in character and respond naturally. After your response, provide context da
                             current_context: extractedContext.mood,
                             updated_at: new Date().toISOString()
                           });
-                          if (moodError) console.error('❌ Mood context error:', moodError);
                         }
 
                         if (addonSettings.locationTracking && extractedContext.location) {
@@ -356,14 +352,31 @@ Stay in character and respond naturally. After your response, provide context da
                     if (parsed.choices?.[0]?.delta?.content) {
                       fullResponse += parsed.choices[0].delta.content;
                       
-                      // CRITICAL FIX: Strip context data from streaming content in real-time
+                      // ENHANCED CONTEXT STRIPPING: Remove context data from streaming content in real-time
                       let streamContent = parsed.choices[0].delta.content;
                       
-                      // Remove context data markers from streaming content
-                      if (streamContent.includes('[CONTEXT_DATA]') || streamContent.includes('[/CONTEXT_DATA]')) {
+                      // More aggressive context data removal
+                      if (streamContent.includes('[CONTEXT_DATA]') || streamContent.includes('[/CONTEXT_DATA]') || 
+                          streamContent.includes('[CONTEXT') || streamContent.includes('CONTEXT_DATA]') ||
+                          streamContent.includes('"mood"') || streamContent.includes('"location"') ||
+                          streamContent.includes('"clothing"') || streamContent.includes('"time_weather"') ||
+                          streamContent.includes('"relationship"') || streamContent.includes('"character_position"')) {
+                        
+                        // Remove complete context blocks
                         streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
                         streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
                         streamContent = streamContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        
+                        // Remove partial context starts
+                        streamContent = streamContent.replace(/\[CONTEXT[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"mood"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"location"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"clothing"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"time_weather"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"relationship"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\{[^}]*"character_position"[^}]*$/g, '');
+                        
+                        console.log('🧹 Stripped context from stream chunk:', streamContent);
                       }
                       
                       // Only send clean content to client if there's actual content

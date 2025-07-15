@@ -97,13 +97,14 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
         )}
       </div>
       
-      {/* Show context display for AI messages when addons are enabled */}
+      {/* Show context display for AI messages when addons are enabled - ONCE PER GROUP */}
       {!isUser && (
         <div className="mt-3 ml-11">
-          {messages.map(msg => {
-            // Show context if there are updates, current context, or any stateful addons are enabled
-            const hasContextUpdates = msg.contextUpdates && Object.keys(msg.contextUpdates).length > 0;
-            const hasCurrentContext = msg.current_context && Object.keys(msg.current_context).length > 0;
+          {(() => {
+            // Get the most recent message in the group for context
+            const latestMessage = messages[messages.length - 1];
+            const hasContextUpdates = latestMessage.contextUpdates && Object.keys(latestMessage.contextUpdates).length > 0;
+            const hasCurrentContext = latestMessage.current_context && Object.keys(latestMessage.current_context).length > 0;
             const hasEnabledAddons = addonSettings && (
               addonSettings.moodTracking || 
               addonSettings.clothingInventory || 
@@ -115,18 +116,16 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
             
             if (hasContextUpdates || hasCurrentContext || hasEnabledAddons) {
               return (
-                <div key={`${msg.id}-context`} className="mb-2">
-                  <ContextDisplay 
-                    contextUpdates={msg.contextUpdates} 
-                    currentContext={msg.current_context || trackedContext}
-                    addonSettings={addonSettings}
-                    className="mt-2"
-                  />
-                </div>
+                <ContextDisplay 
+                  contextUpdates={latestMessage.contextUpdates} 
+                  currentContext={latestMessage.current_context || trackedContext}
+                  addonSettings={addonSettings}
+                  className="mt-2"
+                />
               );
             }
             return null;
-          })}
+          })()}
         </div>
       )}
     </div>
