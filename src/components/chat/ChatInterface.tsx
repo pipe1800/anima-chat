@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useOptimizedChat';
 import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
+import PerformanceMonitor from './PerformanceMonitor';
 
 interface Character {
   id: string;
@@ -41,8 +42,12 @@ const ChatInterface = ({
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -117,7 +122,7 @@ const ChatInterface = ({
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !user || !currentChatId) return;
+    if (!inputValue.trim() || !user || !currentChatId || isStreaming) return;
 
     // Check if user has enough credits (need at least 1 credit per message)
     if (creditsBalance < 1) {
@@ -128,19 +133,96 @@ const ChatInterface = ({
     const messageContent = inputValue;
     setInputValue('');
     const startTime = Date.now();
+    setIsStreaming(true);
+    setStreamingMessage('');
+
+    // Cancel any existing streaming request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     try {
-      // Send message using optimized hook
-      const result = await sendMessage(messageContent, currentAddonSettings, selectedPersonaId);
-      
+      // First save the user message
+      const { error: userMessageError } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: currentChatId,
+          content: messageContent,
+          author_id: user.id,
+          is_ai_message: false,
+          created_at: new Date().toISOString()
+        });
+
+      if (userMessageError) throw userMessageError;
+
+      // Start streaming AI response
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat-stream', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: currentChatId,
+          message: messageContent,
+          characterId: character.id,
+          addonSettings: currentAddonSettings,
+          selectedPersonaId: selectedPersonaId
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) throw new Error('Streaming failed');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedMessage = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') break;
+              
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.choices?.[0]?.delta?.content) {
+                  accumulatedMessage += parsed.choices[0].delta.content;
+                  setStreamingMessage(accumulatedMessage);
+                }
+              } catch (e) {
+                // Ignore parsing errors for incomplete chunks
+              }
+            }
+          }
+        }
+      }
+
+      // Save the complete AI response
+      await supabase
+        .from('messages')
+        .insert({
+          chat_id: currentChatId,
+          content: accumulatedMessage,
+          author_id: user.id,
+          is_ai_message: true,
+          created_at: new Date().toISOString()
+        });
+
       // Update metrics
       const endTime = Date.now();
       updateMetrics(endTime - startTime);
-
-      // Update parent context if callback provided
-      if (result?.updatedContext) {
-        onContextUpdate?.(result.updatedContext);
-      }
 
       // Handle first message achievement if needed
       if (isFirstMessage) {
@@ -162,6 +244,9 @@ const ChatInterface = ({
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsStreaming(false);
+      setStreamingMessage('');
     }
   };
 
@@ -194,8 +279,29 @@ const ChatInterface = ({
         trackedContext={trackedContext}
       />
 
+      {/* Streaming Message Display */}
+      {isStreaming && streamingMessage && (
+        <div className="px-6 pb-2">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">
+                {character.fallback}
+              </span>
+            </div>
+            <div className="flex-1 bg-gray-800 rounded-lg p-3">
+              <div className="text-white">{streamingMessage}</div>
+              <div className="flex items-center space-x-1 mt-2">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Typing Indicator */}
-      {isTyping && (
+      {isTyping && !isStreaming && (
         <div className="px-6 pb-2">
           <div className="flex items-center space-x-2 text-gray-400">
             <div className="flex space-x-1">
@@ -230,9 +336,20 @@ const ChatInterface = ({
             <Button
               type="submit"
               className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"
-              disabled={!inputValue.trim() || creditsBalance < 1}
+              disabled={!inputValue.trim() || creditsBalance < 1 || isStreaming}
             >
               <Send className="w-5 h-5" />
+            </Button>
+            
+            {/* Performance Monitor Toggle */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
+              className="hidden md:flex"
+            >
+              <Zap className="w-4 h-4" />
             </Button>
           </div>
         </form>
@@ -245,6 +362,13 @@ const ChatInterface = ({
         </div>
         
       </div>
+      
+      {/* Performance Monitor */}
+      {showPerformanceMonitor && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <PerformanceMonitor chatId={currentChatId} isVisible={showPerformanceMonitor} />
+        </div>
+      )}
     </div>
   );
 };

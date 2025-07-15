@@ -121,57 +121,51 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Fetch Character Definition and Basic Info
-    const { data: character, error: characterError } = await supabaseAdmin
-      .from('character_definitions')
-      .select('personality_summary, description, scenario, greeting')
-      .eq('character_id', character_id)
-      .single();
+    // Batch fetch all required data in parallel for better performance
+    const [characterResult, characterInfoResult, userProfileResult, selectedPersonaResult] = await Promise.all([
+      supabaseAdmin
+        .from('character_definitions')
+        .select('personality_summary, description, scenario, greeting')
+        .eq('character_id', character_id)
+        .single(),
+      supabaseAdmin
+        .from('characters')
+        .select('name')
+        .eq('id', character_id)
+        .single(),
+      supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single(),
+      selected_persona_id ? supabase
+        .from('personas')
+        .select('name, bio')
+        .eq('id', selected_persona_id)
+        .eq('user_id', user.id)
+        .single() : Promise.resolve({ data: null, error: null })
+    ]);
 
-    if (characterError) {
-      console.error('Character definition error:', characterError);
+    if (characterResult.error) {
+      console.error('Character definition error:', characterResult.error);
       return new Response(JSON.stringify({ error: 'Character definition not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Fetch Character Basic Info (name)
-    const { data: characterInfo, error: characterInfoError } = await supabaseAdmin
-      .from('characters')
-      .select('name')
-      .eq('id', character_id)
-      .single();
-
-    if (characterInfoError) {
-      console.error('Character info error:', characterInfoError);
+    if (characterInfoResult.error) {
+      console.error('Character info error:', characterInfoResult.error);
       return new Response(JSON.stringify({ error: 'Character info not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Fetch User Profile for username fallback
-    const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', user.id)
-      .single();
-
-    // Fetch Selected Persona if provided
-    let selectedPersona = null;
-    if (selected_persona_id) {
-      const { data: persona, error: personaError } = await supabase
-        .from('personas')
-        .select('name, bio')
-        .eq('id', selected_persona_id)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (!personaError) {
-        selectedPersona = persona;
-      }
-    }
+    const character = characterResult.data;
+    const characterInfo = characterInfoResult.data;
+    const userProfile = userProfileResult.data;
+    const selectedPersona = selectedPersonaResult.data;
 
     console.log('Character definition found, persona:', selectedPersona ? selectedPersona.name : 'None');
 
@@ -229,15 +223,7 @@ Deno.serve(async (req) => {
 
     console.log('Selected model for user tier:', selectedModel);
 
-    // Fetch user's addon settings for dynamic world info
-    const { data: addonSettings, error: addonError } = await supabase
-      .from('user_character_addons')
-      .select('addon_settings')
-      .eq('user_id', user.id)
-      .eq('character_id', character_id)
-      .maybeSingle();
-
-    const isWorldInfoEnabled = addonSettings?.addon_settings?.dynamicWorldInfo || false;
+    const isWorldInfoEnabled = addonSettings?.dynamicWorldInfo || false;
     console.log('Dynamic World Info enabled:', isWorldInfoEnabled);
 
     // Fetch user's world info setting for this character
@@ -274,16 +260,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch conversation history for context
-    const { data: messageHistory, error: historyError } = await supabase
-      .from('messages')
-      .select('content, is_ai_message, created_at')
-      .eq('chat_id', chat_id)
-      .order('created_at', { ascending: true })
-      .limit(20); // Last 20 messages for context
+    // Fetch conversation history and addon settings in parallel
+    const [messageHistoryResult, addonSettingsResult] = await Promise.all([
+      supabase
+        .from('messages')
+        .select('content, is_ai_message, created_at')
+        .eq('chat_id', chat_id)
+        .order('created_at', { ascending: true })
+        .limit(20),
+      supabase
+        .from('user_character_addons')
+        .select('addon_settings')
+        .eq('user_id', user.id)
+        .eq('character_id', character_id)
+        .maybeSingle()
+    ]);
 
-    if (historyError) {
-      console.error('Failed to fetch conversation history:', historyError);
+    const messageHistory = messageHistoryResult.data || [];
+    const addonSettings = addonSettingsResult.data?.addon_settings || {};
+
+    if (messageHistoryResult.error) {
+      console.error('Failed to fetch conversation history:', messageHistoryResult.error);
     }
 
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
@@ -293,8 +290,8 @@ Deno.serve(async (req) => {
     const isFirstMessage = messageHistory?.length === 1;
     console.log('Is first message:', isFirstMessage);
 
-    // Load existing context from database
-    const addonSettingsObj = addon_settings || {};
+    // Load existing context from database - merge with passed addon settings
+    const addonSettingsObj = { ...addonSettings, ...addon_settings };
     console.log('Processing context for addons:', addonSettingsObj);
     
     let currentContext: any = {};

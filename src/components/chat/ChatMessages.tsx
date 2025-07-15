@@ -7,6 +7,7 @@ import { MessageGroup } from './MessageGroup';
 import { groupMessages } from '@/utils/messageGrouping';
 import { ContextDisplay } from './ContextDisplay';
 import { useAddonSettings } from './useAddonSettings';
+import OptimizedMessageFormatter from './OptimizedMessageFormatter';
 
 interface Character {
   id: string;

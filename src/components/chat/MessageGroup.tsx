@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatMessageTime } from "@/utils/messageGrouping";
 import { ContextDisplay } from "./ContextDisplay";
 import { FormattedMessage } from "@/components/ui/FormattedMessage";
+import OptimizedMessageFormatter from "./OptimizedMessageFormatter";
 import type { TrackedContext, Message } from "@/hooks/useChat";
 
 interface MessageGroupData {
@@ -77,7 +78,11 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
                   : 'rounded-br-lg rounded-bl-sm'
               }`}
             >
-              <FormattedMessage content={message.content} />
+              <OptimizedMessageFormatter 
+                content={message.content} 
+                isAiMessage={!isUser}
+                characterName={character.name}
+              />
             </div>
           ))}
         </div>

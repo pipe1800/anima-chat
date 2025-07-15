@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
-  console.log('🚀 Chat streaming function called');
+  console.log('🚀 Chat streaming function called - Enhanced Version');
 
   try {
     // Create Supabase client using user's Authorization header
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse the incoming request body
-    const { chatId, message, characterId } = await req.json();
+    const { chatId, message, characterId, addonSettings, selectedPersonaId } = await req.json();
 
     if (!chatId || !message || !characterId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -68,128 +68,178 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch character data
+    // Fetch character data and conversation history in parallel
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { data: character, error: characterError } = await supabaseAdmin
-      .from('character_definitions')
-      .select('personality_summary, description, scenario, greeting')
-      .eq('character_id', characterId)
-      .single();
+    const [characterResult, messageHistoryResult, userProfileResult] = await Promise.all([
+      supabaseAdmin
+        .from('character_definitions')
+        .select('personality_summary, description, scenario, greeting')
+        .eq('character_id', characterId)
+        .single(),
+      supabase
+        .from('messages')
+        .select('content, is_ai_message, created_at')
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true })
+        .limit(10),
+      supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single()
+    ]);
 
-    if (characterError) {
-      console.error('Character definition error:', characterError);
+    if (characterResult.error) {
+      console.error('Character definition error:', characterResult.error);
       return new Response(JSON.stringify({ error: 'Character definition not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Fetch conversation history
-    const { data: messageHistory, error: historyError } = await supabase
-      .from('messages')
-      .select('content, is_ai_message, created_at')
-      .eq('chat_id', chatId)
-      .order('created_at', { ascending: true })
-      .limit(10);
+    const character = characterResult.data;
+    const messageHistory = messageHistoryResult.data || [];
+    const userProfile = userProfileResult.data;
 
-    if (historyError) {
-      console.error('Failed to fetch conversation history:', historyError);
+    if (messageHistoryResult.error) {
+      console.error('Failed to fetch conversation history:', messageHistoryResult.error);
     }
 
-    // Build context for streaming
-    const conversationContext = messageHistory?.map(msg => 
-      `${msg.is_ai_message ? 'Assistant' : 'User'}: ${msg.content}`
-    ).join('\n') || '';
+    // Fetch persona data if provided
+    let selectedPersona = null;
+    if (selectedPersonaId) {
+      const { data: persona } = await supabase
+        .from('personas')
+        .select('name, bio')
+        .eq('id', selectedPersonaId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (persona) {
+        selectedPersona = persona;
+      }
+    }
 
-    const streamingPrompt = `You are ${character.personality_summary || 'a helpful AI assistant'}.
+    // Template replacement function
+    const replaceTemplates = (content: string): string => {
+      if (!content) return content;
+      
+      const userName = selectedPersona?.name || userProfile?.username || 'User';
+      const charName = character.personality_summary?.split(' ')[0] || 'Character';
+      
+      return content
+        .replace(/\{\{user\}\}/g, userName)
+        .replace(/\{\{char\}\}/g, charName);
+    };
 
-Description: ${character.description || 'No description provided'}
+    // Build conversation context
+    const conversationContext = messageHistory?.map(msg => ({
+      role: msg.is_ai_message ? 'assistant' : 'user',
+      content: msg.content
+    })) || [];
 
-Conversation history:
-${conversationContext}
+    // Build enhanced prompt with addon settings
+    let systemPrompt = `You are ${replaceTemplates(character.personality_summary || 'a helpful assistant')}.
+    
+${character.description ? `Description: ${replaceTemplates(character.description)}` : ''}
+${character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : ''}
 
-Current message: ${message}
+Stay in character and respond naturally to the user's message.`;
 
-Respond in character. Keep responses concise and natural.`;
+    // Add addon context if enabled
+    if (addonSettings) {
+      if (addonSettings.enhancedMemory) {
+        systemPrompt += '\n\nRemember details from previous conversations and reference them naturally.';
+      }
+      if (addonSettings.moodTracking) {
+        systemPrompt += '\n\nPay attention to emotional context and respond appropriately to the user\'s mood.';
+      }
+      if (addonSettings.dynamicWorldInfo) {
+        systemPrompt += '\n\nUse relevant world information to enhance your responses.';
+      }
+    }
 
-    console.log('Starting streaming response...');
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...conversationContext,
+      { role: 'user', content: message }
+    ];
+
+    console.log('🎯 Streaming AI response for:', characterId);
 
     // Create streaming response
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openRouterKey}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
-              'X-Title': 'AnimaChat-Stream'
-            },
-            body: JSON.stringify({
-              model: 'openai/gpt-4o-mini',
-              messages: [
-                { role: 'system', content: streamingPrompt },
-                { role: 'user', content: message }
-              ],
-              stream: true,
-              temperature: 0.8,
-              max_tokens: 500
-            })
-          });
+    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
+        'X-Title': 'AnimaChat-Streaming'
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o-mini',
+        messages: messages,
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
 
-          if (!response.ok) {
-            throw new Error(`OpenRouter API error: ${response.status}`);
-          }
+    if (!openRouterResponse.ok) {
+      throw new Error('Failed to get AI response');
+    }
 
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
+    // Set up Server-Sent Events response
+    const readable = new ReadableStream({
+      start(controller) {
+        const processStream = async () => {
+          try {
+            const reader = openRouterResponse.body?.getReader();
+            if (!reader) throw new Error('No reader available');
 
-          if (reader) {
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
 
-              const chunk = decoder.decode(value);
+              const chunk = new TextDecoder().decode(value);
               const lines = chunk.split('\n');
 
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                    break;
+                    controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
+                    controller.close();
+                    return;
                   }
                   
                   try {
                     const parsed = JSON.parse(data);
-                    const content = parsed.choices?.[0]?.delta?.content || '';
-                    
-                    if (content) {
-                      const streamData = JSON.stringify({ content });
-                      controller.enqueue(new TextEncoder().encode(`data: ${streamData}\n\n`));
-                    }
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
                   } catch (e) {
-                    console.warn('Failed to parse streaming chunk:', e);
+                    // Skip invalid JSON
                   }
                 }
               }
             }
+          } catch (error) {
+            console.error('❌ Streaming error:', error);
+            controller.error(error);
           }
+        };
 
-          controller.close();
-        } catch (error) {
-          console.error('Streaming error:', error);
-          controller.error(error);
-        }
+        processStream();
       }
     });
 
-    return new Response(stream, {
+    const endTime = Date.now();
+    console.log(`⚡ Streaming initiated in ${endTime - startTime}ms`);
+
+    return new Response(readable, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'text/event-stream',
@@ -199,7 +249,7 @@ Respond in character. Keep responses concise and natural.`;
     });
 
   } catch (error) {
-    console.error('Error in chat streaming function:', error);
+    console.error('❌ Chat streaming error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
