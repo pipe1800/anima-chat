@@ -51,7 +51,7 @@ const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) 
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto text-center px-4">
+    <div className="w-full max-w-6xl mx-auto text-center px-2 sm:px-4">
       <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
         Choose Your Vibe
       </h1>
@@ -59,7 +59,7 @@ const VibeSelection = ({ selectedVibes, setSelectedVibes }: VibeSelectionProps) 
         What are you in the mood for? Pick a few tags so we can recommend the perfect companions.
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 mb-8 max-h-[60vh] overflow-y-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2 md:gap-3 mb-8 max-h-[60vh] overflow-y-auto px-1">
         {vibes.map((vibe) => {
           const IconComponent = vibe.icon;
           const isSelected = selectedVibes.includes(vibe.id);

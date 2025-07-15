@@ -18,8 +18,8 @@ const OnboardingProgressBar = ({
   canGoNext 
 }: OnboardingProgressBarProps) => {
   return (
-    <div className="w-full bg-[#121212] border-b border-gray-800 p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="w-full bg-[#121212] border-b border-gray-800 p-2 sm:p-4">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4">
         {/* Mobile Layout */}
         <div className="md:hidden">
           <div className="flex justify-between items-center mb-4">
@@ -100,7 +100,7 @@ const OnboardingProgressBar = ({
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden md:flex justify-between items-center gap-8">
+        <div className="hidden md:flex justify-between items-center gap-4 lg:gap-8">
           {/* Back Button */}
           <Button
             onClick={onBack}

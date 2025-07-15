@@ -178,7 +178,7 @@ const Onboarding = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-x-hidden">
         {!showWelcome && currentStep === 0 && (
           <VibeSelection 
             selectedVibes={selectedVibes}

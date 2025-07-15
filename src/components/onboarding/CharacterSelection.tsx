@@ -120,7 +120,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto text-center px-4">
+    <div className="w-full max-w-5xl mx-auto text-center px-2 sm:px-4">
       {/* Header */}
       <div className="mb-8 sm:mb-12">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
@@ -136,7 +136,7 @@ const CharacterSelection = ({ selectedVibes, onCharacterSelect, onSkip }: Charac
       </div>
 
       {/* Character Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8">
         {characters.map((character, index) => (
           <Card
             key={character.id}

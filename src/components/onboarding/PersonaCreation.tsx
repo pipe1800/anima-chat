@@ -133,7 +133,7 @@ const PersonaCreation = ({ onComplete, onSkip }: PersonaCreationProps) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4">
+    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
       <Card className="bg-[#1a1a2e]/90 backdrop-blur-sm border border-gray-700/50 p-4 sm:p-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center">
           Step 3: Create Your Personas
