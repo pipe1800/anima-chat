@@ -383,7 +383,7 @@ Respond naturally to the conversation, keeping the character's personality consi
         'X-Title': 'AnimaChat'
       },
       body: JSON.stringify({
-        model: 'mistral/mistral-7b-instruct',
+        model: model,
         messages: conversationMessages,
         stream: false,
         temperature: 0.7,
@@ -417,7 +417,7 @@ Respond naturally to the conversation, keeping the character's personality consi
         author_id: user.id,
         content: aiResponseContent,
         is_ai_message: true,
-        model_id: 'mistral/mistral-7b-instruct',
+        model_id: model,
         token_cost: 1
       });
 
@@ -533,7 +533,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         'X-Title': 'AnimaChat-Context'
       },
       body: JSON.stringify({
-        model: 'mistral/mistral-7b-instruct',
+        model: model,
         messages: [
           { role: 'system', content: 'You are a precise data extraction bot. You must extract information for ALL enabled fields, not just some of them. Return valid JSON only.' },
           { role: 'user', content: extractionPrompt }
