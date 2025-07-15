@@ -531,17 +531,36 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
       content,
       is_ai_message,
       created_at,
-      author_id,
-      message_context!inner(
-        context_updates
-      )
+      author_id
     `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  // Reverse to show oldest first in UI
-  return { data: data ? data.reverse() : [], error }
+  if (error) return { data: [], error };
+  
+  const messages = data.reverse();
+  
+  // Now fetch context for these messages in a separate query
+  const messageIds = messages.map(msg => msg.id);
+  const { data: contextData } = await supabase
+    .from('message_context')
+    .select('message_id, context_updates')
+    .in('message_id', messageIds);
+  
+  // Create a map of message ID to context
+  const contextMap = new Map();
+  contextData?.forEach(ctx => {
+    contextMap.set(ctx.message_id, ctx.context_updates);
+  });
+  
+  // Attach context to messages
+  const messagesWithContext = messages.map(msg => ({
+    ...msg,
+    message_context: contextMap.has(msg.id) ? [{ context_updates: contextMap.get(msg.id) }] : []
+  }));
+  
+  return { data: messagesWithContext, error: null };
 }
 
 /**
@@ -555,18 +574,37 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
       content,
       is_ai_message,
       created_at,
-      author_id,
-      message_context!inner(
-        context_updates
-      )
+      author_id
     `)
     .eq('chat_id', chatId)
     .lt('created_at', beforeTimestamp)
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  // Reverse to show oldest first in UI
-  return { data: data ? data.reverse() : [], error }
+  if (error) return { data: [], error };
+  
+  const messages = data.reverse();
+  
+  // Now fetch context for these messages in a separate query
+  const messageIds = messages.map(msg => msg.id);
+  const { data: contextData } = await supabase
+    .from('message_context')
+    .select('message_id, context_updates')
+    .in('message_id', messageIds);
+  
+  // Create a map of message ID to context
+  const contextMap = new Map();
+  contextData?.forEach(ctx => {
+    contextMap.set(ctx.message_id, ctx.context_updates);
+  });
+  
+  // Attach context to messages
+  const messagesWithContext = messages.map(msg => ({
+    ...msg,
+    message_context: contextMap.has(msg.id) ? [{ context_updates: contextMap.get(msg.id) }] : []
+  }));
+  
+  return { data: messagesWithContext, error: null };
 }
 
 /**

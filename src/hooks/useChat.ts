@@ -58,7 +58,7 @@ export const useChatMessages = (chatId: string | null) => {
         content: msg.content,
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
-        status: 'sent',
+        status: 'sent' as const,
         contextUpdates: (msg as any).message_context?.[0]?.context_updates
       }));
       
@@ -328,7 +328,7 @@ export const useChatCache = () => {
           content: msg.content,
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
-          status: 'sent',
+          status: 'sent' as const,
           contextUpdates: (msg as any).message_context?.[0]?.context_updates
         }));
         
@@ -399,7 +399,7 @@ export const useRealtimeMessages = (chatId: string | null) => {
             content: payload.new.content,
             isUser: !payload.new.is_ai_message,
             timestamp: new Date(payload.new.created_at),
-            status: 'sent'
+            status: 'sent' as const
           };
           
           // For AI messages, trigger a refetch to get context updates
