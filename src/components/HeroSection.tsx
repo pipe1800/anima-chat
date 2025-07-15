@@ -75,37 +75,31 @@ const HeroSection = () => {
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-700/50 bg-[#1a1a2e]/98 backdrop-blur-sm">
-            <div className="px-4 py-4 space-y-3">
+            <div className="px-6 py-6 space-y-4">
               <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-[#FF7A00] hover:text-white hover:bg-[#FF7A00]/10 font-medium"
-                >
-                  Home
-                </Button>
+                <div className="flex items-center py-3 px-4 rounded-lg hover:bg-[#FF7A00]/10 transition-colors">
+                  <span className="text-[#FF7A00] font-medium text-lg">Home</span>
+                </div>
               </Link>
+              
               <Link to="/characters" onClick={() => setMobileMenuOpen(false)}>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
-                >
-                  Characters
-                </Button>
+                <div className="flex items-center py-3 px-4 rounded-lg hover:bg-[#FF7A00]/10 transition-colors">
+                  <span className="text-white font-medium text-lg">Characters</span>
+                </div>
               </Link>
+              
+              <div className="border-t border-gray-700/30 my-4"></div>
+              
               <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
-                >
-                  Login
-                </Button>
+                <div className="flex items-center py-3 px-4 rounded-lg border border-[#FF7A00]/50 hover:bg-[#FF7A00]/10 transition-colors">
+                  <span className="text-[#FF7A00] font-medium text-lg">Login</span>
+                </div>
               </Link>
+              
               <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button 
-                  className="w-full justify-start bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-medium transition-colors"
-                >
-                  Sign Up
-                </Button>
+                <div className="flex items-center py-4 px-4 rounded-lg bg-[#FF7A00] hover:bg-[#FF7A00]/90 transition-colors">
+                  <span className="text-white font-semibold text-lg">Sign Up</span>
+                </div>
               </Link>
             </div>
           </div>
