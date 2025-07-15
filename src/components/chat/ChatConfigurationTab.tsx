@@ -13,6 +13,7 @@ import { getUserCharacterAddonSettings, saveUserCharacterAddonSettings, calculat
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Persona } from '@/lib/persona-operations';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ChatConfigurationTabProps {
   characterId: string;
@@ -40,6 +41,7 @@ export const ChatConfigurationTab = ({
   selectedWorldInfoId
 }: ChatConfigurationTabProps) => {
   const { subscription } = useAuth();
+  const queryClient = useQueryClient();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
     dynamicWorldInfo: false,
     enhancedMemory: false,
@@ -206,13 +208,25 @@ export const ChatConfigurationTab = ({
     setSaving(true);
     
     try {
-      // Save addon settings
+      // Optimistic update - apply settings immediately for better UX
+      setAddonSettings(tempAddonSettings);
+      
+      // Invalidate and update the cache immediately with optimistic data
+      queryClient.setQueryData(['addon-settings', userId, characterId], tempAddonSettings);
+      
+      // Save addon settings to database
       const addonResult = await saveUserCharacterAddonSettings(userId, characterId, tempAddonSettings);
       if (!addonResult.success) {
+        // Rollback on failure
+        setAddonSettings(addonSettings);
+        queryClient.setQueryData(['addon-settings', userId, characterId], addonSettings);
         throw new Error(addonResult.error || 'Failed to save addon settings');
       }
       
-      setAddonSettings(tempAddonSettings);
+      // Invalidate cache to ensure fresh data across all components
+      await queryClient.invalidateQueries({ 
+        queryKey: ['addon-settings', userId, characterId] 
+      });
 
       // Apply background image immediately if there's one set
       if (backgroundImage && currentChatId) {
