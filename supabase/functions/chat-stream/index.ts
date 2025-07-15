@@ -172,6 +172,31 @@ Stay in character and respond naturally to the user's message.`;
 
     console.log('🎯 Streaming AI response for:', characterId);
 
+    // Enhanced prompt for context extraction
+    const contextPrompt = `You are ${replaceTemplates(character.personality_summary || 'a helpful assistant')}.
+
+${character.description ? `Description: ${replaceTemplates(character.description)}` : ''}
+${character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : ''}
+
+Stay in character and respond naturally. After your response, provide context data in this exact format:
+
+[CONTEXT_DATA]
+{
+  "mood": "current emotional state",
+  "location": "current location or setting", 
+  "clothing": "current clothing description",
+  "time_weather": "current time and weather",
+  "relationship": "relationship status/dynamic",
+  "character_position": "physical position/posture"
+}
+[/CONTEXT_DATA]`;
+
+    const contextMessages = [
+      { role: 'system', content: contextPrompt },
+      ...conversationContext,
+      { role: 'user', content: message }
+    ];
+
     // Create streaming response
     const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -183,7 +208,7 @@ Stay in character and respond naturally to the user's message.`;
       },
       body: JSON.stringify({
         model: 'openai/gpt-4o-mini',
-        messages: messages,
+        messages: contextMessages,
         stream: true,
         temperature: 0.7,
         max_tokens: 1000
@@ -194,13 +219,16 @@ Stay in character and respond naturally to the user's message.`;
       throw new Error('Failed to get AI response');
     }
 
-    // Set up Server-Sent Events response
+    // Set up Server-Sent Events response with context processing
     const readable = new ReadableStream({
       start(controller) {
         const processStream = async () => {
           try {
             const reader = openRouterResponse.body?.getReader();
             if (!reader) throw new Error('No reader available');
+
+            let fullResponse = '';
+            let extractedContext = null;
 
             while (true) {
               const { done, value } = await reader.read();
@@ -213,6 +241,106 @@ Stay in character and respond naturally to the user's message.`;
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
+                    // Process context before closing
+                    if (fullResponse.includes('[CONTEXT_DATA]')) {
+                      const contextMatch = fullResponse.match(/\[CONTEXT_DATA\]\s*(\{[\s\S]*?\})\s*\[\/CONTEXT_DATA\]/);
+                      if (contextMatch) {
+                        try {
+                          extractedContext = JSON.parse(contextMatch[1]);
+                          // Remove context data from response
+                          fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
+                        } catch (e) {
+                          console.error('❌ Context parsing error:', e);
+                        }
+                      }
+                    }
+
+                    // Save context to database if extracted
+                    if (extractedContext && addonSettings) {
+                      try {
+                        // Save message context
+                        await supabase.from('messages').insert({
+                          chat_id: chatId,
+                          content: fullResponse,
+                          author_id: user.id,
+                          is_ai_message: true,
+                          current_context: extractedContext,
+                          created_at: new Date().toISOString()
+                        });
+
+                        // Update user chat context for enabled addons
+                        if (addonSettings.moodTracking && extractedContext.mood) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'mood',
+                            current_context: extractedContext.mood,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        if (addonSettings.locationTracking && extractedContext.location) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'location',
+                            current_context: extractedContext.location,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        if (addonSettings.clothingInventory && extractedContext.clothing) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'clothing',
+                            current_context: extractedContext.clothing,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        if (addonSettings.timeAndWeather && extractedContext.time_weather) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'time_weather',
+                            current_context: extractedContext.time_weather,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        if (addonSettings.relationshipStatus && extractedContext.relationship) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'relationship',
+                            current_context: extractedContext.relationship,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        if (addonSettings.characterPosition && extractedContext.character_position) {
+                          await supabase.from('user_chat_context').upsert({
+                            user_id: user.id,
+                            chat_id: chatId,
+                            character_id: characterId,
+                            context_type: 'character_position',
+                            current_context: extractedContext.character_position,
+                            updated_at: new Date().toISOString()
+                          });
+                        }
+
+                        console.log('✅ Context saved successfully');
+                      } catch (contextError) {
+                        console.error('❌ Context save error:', contextError);
+                      }
+                    }
+
                     controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
                     controller.close();
                     return;
@@ -220,6 +348,9 @@ Stay in character and respond naturally to the user's message.`;
                   
                   try {
                     const parsed = JSON.parse(data);
+                    if (parsed.choices?.[0]?.delta?.content) {
+                      fullResponse += parsed.choices[0].delta.content;
+                    }
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
                   } catch (e) {
                     // Skip invalid JSON

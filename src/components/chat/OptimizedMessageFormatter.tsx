@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { FormattedMessage } from '@/components/ui/FormattedMessage';
 
 interface OptimizedMessageFormatterProps {
   content: string;
@@ -82,9 +81,9 @@ export const OptimizedMessageFormatter: React.FC<OptimizedMessageFormatterProps>
               ? 'bg-secondary/30 text-foreground' 
               : 'bg-primary/20 text-primary-foreground ml-auto max-w-[70%]'
           }`}>
-            <FormattedMessage
-              content={formattedContent}
+            <div 
               className="whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
             />
           </div>
           

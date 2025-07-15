@@ -102,24 +102,40 @@ const StreamingChatInterface = ({
         throw new Error('Failed to save user message');
       }
 
-      // Start streaming response
-      const session = await supabase.auth.getSession();
-      const response = await supabase.functions.invoke('chat-stream', {
-        body: {
-          chatId: currentChatId,
-          message: messageContent,
-          characterId: character.id,
-        },
-        headers: {
-          'Authorization': `Bearer ${session.data.session?.access_token}`,
-        }
-      });
+      // Fetch addon settings for context generation
+      let { data: addonSettings } = await supabase
+        .from('user_character_addons')
+        .select('addon_settings')
+        .eq('user_id', user.id)
+        .eq('character_id', character.id)
+        .single();
 
-      if (response.error) {
-        throw new Error('Failed to start streaming response');
+      // If no addon settings exist, create default ones
+      if (!addonSettings) {
+        const defaultSettings = {
+          moodTracking: true,
+          clothingInventory: true,
+          locationTracking: true,
+          timeAndWeather: true,
+          relationshipStatus: true,
+          characterPosition: true
+        };
+
+        const { data: newSettings } = await supabase
+          .from('user_character_addons')
+          .insert({
+            user_id: user.id,
+            character_id: character.id,
+            addon_settings: defaultSettings
+          })
+          .select('addon_settings')
+          .single();
+
+        addonSettings = newSettings;
       }
 
       // Handle streaming response
+      const session = await supabase.auth.getSession();
       const streamResponse = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat-stream`, {
         method: 'POST',
         headers: {
@@ -130,6 +146,7 @@ const StreamingChatInterface = ({
           chatId: currentChatId,
           message: messageContent,
           characterId: character.id,
+          addonSettings: addonSettings?.addon_settings || {}
         }),
         signal: abortControllerRef.current.signal
       });
@@ -157,8 +174,8 @@ const StreamingChatInterface = ({
               
               try {
                 const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  fullResponse += parsed.content;
+                if (parsed.choices?.[0]?.delta?.content) {
+                  fullResponse += parsed.choices[0].delta.content;
                   setStreamingMessage(fullResponse);
                 }
               } catch (e) {
@@ -169,20 +186,8 @@ const StreamingChatInterface = ({
         }
       }
 
-      // Save the complete AI response
-      const { error: aiMessageError } = await supabase
-        .from('messages')
-        .insert({
-          chat_id: currentChatId,
-          content: fullResponse,
-          author_id: user.id,
-          is_ai_message: true,
-          created_at: new Date().toISOString()
-        });
-
-      if (aiMessageError) {
-        console.error('Error saving AI message:', aiMessageError);
-      }
+      // AI message is saved by the edge function with context data
+      console.log('✅ Streaming completed, AI message saved with context by edge function');
 
       // Update credits balance
       setCreditsBalance(prev => Math.max(0, prev - 1));
@@ -226,17 +231,9 @@ const StreamingChatInterface = ({
       <ChatMessages 
         chatId={currentChatId} 
         character={character}
-        trackedContext={{
-          moodTracking: 'No context',
-          clothingInventory: 'No context',
-          locationTracking: 'No context',
-          timeAndWeather: 'No context',
-          relationshipStatus: 'No context',
-          characterPosition: 'No context'
-        }}
       />
       
-      {/* Streaming message display */}
+          {/* Streaming message display with formatting */}
       {isStreamingResponse && streamingMessage && (
         <div className="px-6 pb-4">
           <div className="flex items-start space-x-3">
@@ -247,10 +244,17 @@ const StreamingChatInterface = ({
             </div>
             <div className="flex-1">
               <div className="bg-secondary/30 rounded-lg p-3 prose prose-sm max-w-none">
-                <p className="text-foreground whitespace-pre-wrap">
-                  {streamingMessage}
-                  <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1"></span>
-                </p>
+                <div 
+                  className="text-foreground whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: streamingMessage
+                      .replace(/\*([^*]+)\*/g, '<span class="text-purple-300 italic">*$1*</span>')
+                      .replace(/"([^"]+)"/g, '<span class="text-blue-300">"$1"</span>')
+                      .replace(/_([^_]+)_/g, '<span class="font-semibold text-yellow-300">$1</span>')
+                      .replace(/\(([^)]+)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+                  }}
+                />
+                <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1"></span>
               </div>
             </div>
           </div>
