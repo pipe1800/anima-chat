@@ -1,14 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-
 const HeroSection = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  return (
-    <section className="min-h-screen bg-gradient-to-b from-[#121212] to-[#1a1a2e] text-white relative overflow-hidden">
+  return <section className="min-h-screen bg-gradient-to-b from-[#121212] to-[#1a1a2e] text-white relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-radial from-[#FF7A00]/5 to-transparent opacity-50"></div>
       
@@ -17,43 +13,28 @@ const HeroSection = () => {
         <div className="flex items-center justify-between h-16 pl-4 pr-4 sm:pr-6 lg:pr-8">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <img 
-              src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/images/45d0ba23-cfa2-404a-8527-54e83cb321ef.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZXMvNDVkMGJhMjMtY2ZhMi00MDRhLTg1MjctNTRlODNjYjMyMWVmLnBuZyIsImlhdCI6MTc1MjI1MjA4MywiZXhwIjo0OTA1ODUyMDgzfQ.OKhncau8pVPBvcnDrafnifJdihe285oi5jcpp1z3-iM"
-              alt="Anima AI Chat" 
-              className="h-12 sm:h-16 w-auto"
-            />
+            <img src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/images/45d0ba23-cfa2-404a-8527-54e83cb321ef.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZXMvNDVkMGJhMjMtY2ZhMi00MDRhLTg1MjctNTRlODNjYjMyMWVmLnBuZyIsImlhdCI6MTc1MjI1MjA4MywiZXhwIjo0OTA1ODUyMDgzfQ.OKhncau8pVPBvcnDrafnifJdihe285oi5jcpp1z3-iM" alt="Anima AI Chat" className="h-12 sm:h-16 w-auto" />
           </div>
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/">
-              <Button 
-                variant="ghost" 
-                className="text-[#FF7A00] hover:text-white hover:bg-[#FF7A00]/10 font-medium"
-              >
+              <Button variant="ghost" className="text-[#FF7A00] hover:text-white hover:bg-[#FF7A00]/10 font-medium">
                 Home
               </Button>
             </Link>
             <Link to="/characters">
-              <Button 
-                variant="ghost" 
-                className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
-              >
+              <Button variant="ghost" className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10">
                 Characters
               </Button>
             </Link>
             <Link to="/auth">
-              <Button 
-                variant="outline" 
-                className="bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors"
-              >
+              <Button variant="outline" className="bg-transparent border-[#FF7A00] text-[#FF7A00] hover:bg-[#FF7A00] hover:text-white transition-colors">
                 Login
               </Button>
             </Link>
             <Link to="/auth?mode=signup">
-              <Button 
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-medium transition-colors"
-              >
+              <Button className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-medium transition-colors">
                 Sign Up
               </Button>
             </Link>
@@ -61,20 +42,14 @@ const HeroSection = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white hover:text-[#FF7A00] hover:bg-[#FF7A00]/10">
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </Button>
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-700/50 bg-[#1a1a2e]/98 backdrop-blur-sm">
+        {mobileMenuOpen && <div className="md:hidden border-t border-gray-700/50 bg-[#1a1a2e]/98 backdrop-blur-sm">
             <div className="px-6 py-6 space-y-4">
               <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                 <div className="flex items-center py-3 px-4 rounded-lg hover:bg-[#FF7A00]/10 transition-colors">
@@ -91,7 +66,7 @@ const HeroSection = () => {
               <div className="border-t border-gray-700/30 my-4"></div>
               
               <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                <div className="flex items-center py-3 px-4 rounded-lg border border-[#FF7A00]/50 hover:bg-[#FF7A00]/10 transition-colors">
+                <div className="flex items-center px-4 rounded-lg border border-[#FF7A00]/50 hover:bg-[#FF7A00]/10 transition-colors py-[16px] my-[13px]">
                   <span className="text-[#FF7A00] font-medium text-lg">Login</span>
                 </div>
               </Link>
@@ -102,8 +77,7 @@ const HeroSection = () => {
                 </div>
               </Link>
             </div>
-          </div>
-        )}
+          </div>}
       </nav>
       
       {/* Content */}
@@ -116,16 +90,10 @@ const HeroSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/20 via-purple-500/10 to-blue-500/20 rounded-2xl blur-3xl"></div>
               
               {/* Video container with 4:3 aspect ratio to match 1,660 x 1,244 */}
-              <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#121212] rounded-2xl border border-[#FF7A00]/20 overflow-hidden shadow-2xl" style={{ aspectRatio: '1660/1244' }}>
-                <video
-                  src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/videos/20250707_1505_video.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MvMjAyNTA3MDdfMTUwNV92aWRlby5tcDQiLCJpYXQiOjE3NTE5MjM1NjYsImV4cCI6MTc4MzQ1OTU2Nn0.VYCXNwQU7GSp3N790Nr0SX5zKv7fY9zzd5ErsYULwyc"
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                />
+              <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#121212] rounded-2xl border border-[#FF7A00]/20 overflow-hidden shadow-2xl" style={{
+              aspectRatio: '1660/1244'
+            }}>
+                <video src="https://rclpyipeytqbamiwcuih.supabase.co/storage/v1/object/sign/videos/20250707_1505_video.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mYmU5OTM4My0yODYxLTQ0N2UtYThmOC1hY2JjNzU3YjQ0YzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MvMjAyNTA3MDdfMTUwNV92aWRlby5tcDQiLCJpYXQiOjE3NTE5MjM1NjYsImV4cCI6MTc4MzQ1OTU2Nn0.VYCXNwQU7GSp3N790Nr0SX5zKv7fY9zzd5ErsYULwyc" className="w-full h-full object-cover" autoPlay muted loop playsInline preload="auto" />
                 
                 {/* Subtle overlay for theme integration */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#121212]/10 via-transparent to-[#FF7A00]/5 pointer-events-none"></div>
@@ -133,7 +101,9 @@ const HeroSection = () => {
 
               {/* Floating elements */}
               <div className="absolute -top-4 -left-4 w-8 h-8 bg-[#FF7A00]/20 rounded-full animate-pulse"></div>
-              <div className="absolute -bottom-6 -right-6 w-6 h-6 bg-purple-500/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute -bottom-6 -right-6 w-6 h-6 bg-purple-500/20 rounded-full animate-pulse" style={{
+              animationDelay: '1s'
+            }}></div>
             </div>
           </div>
 
@@ -151,13 +121,9 @@ const HeroSection = () => {
 
             {/* CTA Button */}
             <Link to="/auth?mode=signup">
-              <Button 
-                size="lg" 
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px]"
-                style={{
-                  boxShadow: '0 8px 25px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(255, 122, 0, 0.2)'
-                }}
-              >
+              <Button size="lg" className="bg-[#FF7A00] hover:bg-[#FF7A00]/90 text-white font-bold px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl rounded-lg shadow-2xl hover:shadow-[#FF7A00]/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 border-0 min-w-[200px] h-12 sm:h-auto min-h-[44px]" style={{
+              boxShadow: '0 8px 25px rgba(255, 122, 0, 0.3), 0 4px 15px rgba(255, 122, 0, 0.2)'
+            }}>
                 Unleash My AI
               </Button>
             </Link>
@@ -169,8 +135,6 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
