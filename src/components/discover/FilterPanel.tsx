@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sheet, 
   SheetContent, 
@@ -12,28 +12,63 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Search, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FilterPanelProps {
   isOpen: boolean;
   onClose: () => void;
   filterBy: string;
   setFilterBy: (filter: string) => void;
+  onFiltersApplied: (filters: {
+    tags: string[];
+    creator: string;
+    nsfw: boolean;
+    gender: string;
+  }) => void;
 }
 
-export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy }: FilterPanelProps) {
+export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy, onFiltersApplied }: FilterPanelProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearch, setTagSearch] = useState('');
   const [showNSFW, setShowNSFW] = useState(false);
   const [characterGender, setCharacterGender] = useState('any');
   const [creatorSearch, setCreatorSearch] = useState('');
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const availableTags = [
-    'Action', 'Adventure', 'Anime', 'Comedy', 'Drama', 'Fantasy',
-    'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller',
-    'Animals', 'Assistant', 'Historical', 'OC', 'Games', 'RPG',
-    'Storytelling', 'Female', 'Furry', 'Male', 'Non-binary', 'NSFW',
-    'Multiple Character'
-  ];
+  // Fetch actual tags from database
+  useEffect(() => {
+    const fetchTags = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tags')
+          .select('name')
+          .order('name');
+        
+        if (data && !error) {
+          setAvailableTags(data.map(tag => tag.name));
+        } else {
+          // Fallback to hardcoded tags if database query fails
+          setAvailableTags([
+            'Action', 'Adventure', 'Anime', 'Comedy', 'Drama', 'Fantasy',
+            'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Thriller',
+            'Animals', 'Assistant', 'Historical', 'OC', 'Games', 'RPG',
+            'Storytelling', 'Female', 'Furry', 'Male', 'Non-binary', 'NSFW',
+            'Multiple Character'
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchTags();
+    }
+  }, [isOpen]);
 
   const filteredTags = availableTags.filter(tag =>
     tag.toLowerCase().includes(tagSearch.toLowerCase())
@@ -48,12 +83,12 @@ export function FilterPanel({ isOpen, onClose, filterBy, setFilterBy }: FilterPa
   };
 
   const handleApplyFilters = () => {
-    // Apply all filters logic here
-    console.log('Applied filters:', {
-      selectedTags,
-      showNSFW,
-      characterGender,
-      creatorSearch
+    // Apply all filters via callback
+    onFiltersApplied({
+      tags: selectedTags,
+      creator: creatorSearch,
+      nsfw: showNSFW,
+      gender: characterGender
     });
     onClose();
   };

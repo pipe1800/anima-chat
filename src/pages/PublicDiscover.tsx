@@ -16,6 +16,16 @@ const PublicDiscover = () => {
     type: string;
   }>>([]);
 
+  const handleAdvancedFiltersApplied = (filters: {
+    tags: string[];
+    creator: string;
+    nsfw: boolean;
+    gender: string;
+  }) => {
+    // For now, just log - this can be enhanced later for public page
+    console.log('Advanced filters applied on public page:', filters);
+  };
+
   const removeFilter = (filterId: string) => {
     setActiveFilters(prev => prev.filter(filter => filter.id !== filterId));
     // Reset the corresponding filter state based on type
@@ -103,6 +113,7 @@ const PublicDiscover = () => {
           setSortBy={setSortBy} 
           filterBy={filterBy} 
           setFilterBy={setFilterBy} 
+          onAdvancedFiltersApplied={handleAdvancedFiltersApplied}
         />
 
         {/* Active Filter Pills */}

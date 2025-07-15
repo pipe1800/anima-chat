@@ -116,7 +116,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>) =
 // =============================================================================
 
 /**
- * Get public characters (for discovery page)
+ * Get public characters (for discovery page) with enhanced data
  */
 export const getPublicCharacters = async (limit = 20, offset = 0) => {
   const { data, error } = await supabase
@@ -138,7 +138,7 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
     return { data: [], error }
   }
 
-  // Fetch creator profiles and counts separately for each character
+  // Fetch creator profiles, counts, and tags separately for each character
   const charactersWithCreators = await Promise.all(
     data.map(async (character) => {
       // Get creator profile
@@ -160,11 +160,27 @@ export const getPublicCharacters = async (limit = 20, offset = 0) => {
         .select('id', { count: 'exact' })
         .eq('character_id', character.id)
 
+      // Get favorites count
+      const { count: favoritesCount } = await supabase
+        .from('character_favorites')
+        .select('id', { count: 'exact' })
+        .eq('character_id', character.id)
+
+      // Get character tags
+      const { data: tagsData } = await supabase
+        .from('character_tags')
+        .select(`
+          tag:tags(id, name)
+        `)
+        .eq('character_id', character.id)
+
       return {
         ...character,
         creator: creatorData,
         actual_chat_count: chatCount || 0,
-        likes_count: likesCount || 0
+        likes_count: likesCount || 0,
+        favorites_count: favoritesCount || 0,
+        tags: tagsData?.map(t => t.tag) || []
       }
     })
   )

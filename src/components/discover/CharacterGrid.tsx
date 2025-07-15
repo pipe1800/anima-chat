@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   MessageCircle, 
   Heart,
+  Star,
   TrendingUp,
   Loader2,
   Eye
@@ -16,6 +17,12 @@ interface CharacterGridProps {
   searchQuery: string;
   sortBy: string;
   filterBy: string;
+  advancedFilters?: {
+    tags: string[];
+    creator: string;
+    nsfw: boolean;
+    gender: string;
+  };
 }
 
 type PublicCharacter = {
@@ -25,12 +32,14 @@ type PublicCharacter = {
   avatar_url: string | null;
   interaction_count: number;
   created_at: string;
-  creator: any; // Temporary to handle the query response
+  creator: any;
   actual_chat_count: number;
   likes_count: number;
+  favorites_count: number;
+  tags: { id: number; name: string }[];
 };
 
-export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridProps) {
+export function CharacterGrid({ searchQuery, sortBy, filterBy, advancedFilters }: CharacterGridProps) {
   const navigate = useNavigate();
   
   // Use React Query hook for public characters
@@ -82,15 +91,48 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
 
   // Filter and sort characters based on props
   const filteredCharacters = characters.filter(character => {
-    const matchesSearch = character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         character.short_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         false; // No tags in current schema
+    // Search in name, description, and tags
+    const searchTerm = searchQuery.toLowerCase();
+    const matchesSearch = character.name.toLowerCase().includes(searchTerm) ||
+                         character.short_description?.toLowerCase().includes(searchTerm) ||
+                         character.tags?.some(tag => tag.name.toLowerCase().includes(searchTerm)) ||
+                         character.creator?.username?.toLowerCase().includes(searchTerm);
     
-    // For now, filterBy will just filter by name until we have proper categories
+    // Filter by category/tag
     const matchesFilter = filterBy === 'all' || 
+                         character.tags?.some(tag => tag.name.toLowerCase() === filterBy.toLowerCase()) ||
                          character.name.toLowerCase().includes(filterBy.toLowerCase());
     
-    return matchesSearch && matchesFilter;
+    // Advanced filters
+    let matchesAdvanced = true;
+    if (advancedFilters) {
+      // Filter by selected tags
+      if (advancedFilters.tags.length > 0) {
+        matchesAdvanced = matchesAdvanced && advancedFilters.tags.some(selectedTag =>
+          character.tags?.some(tag => tag.name.toLowerCase() === selectedTag.toLowerCase())
+        );
+      }
+      
+      // Filter by creator
+      if (advancedFilters.creator) {
+        matchesAdvanced = matchesAdvanced && 
+          character.creator?.username?.toLowerCase().includes(advancedFilters.creator.toLowerCase());
+      }
+      
+      // NSFW filter (assuming we have NSFW tag)
+      if (!advancedFilters.nsfw) {
+        matchesAdvanced = matchesAdvanced && 
+          !character.tags?.some(tag => tag.name.toLowerCase() === 'nsfw');
+      }
+      
+      // Gender filter (assuming we have gender tags)
+      if (advancedFilters.gender !== 'any') {
+        matchesAdvanced = matchesAdvanced && 
+          character.tags?.some(tag => tag.name.toLowerCase() === advancedFilters.gender.toLowerCase());
+      }
+    }
+    
+    return matchesSearch && matchesFilter && matchesAdvanced;
   });
 
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
@@ -98,9 +140,21 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
       case 'newest':
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'popularity':
-      case 'conversations':
+        // Weighted popularity score combining likes, favorites, and chat count
+        const scoreA = (a.likes_count * 2) + (a.favorites_count * 3) + (a.actual_chat_count * 1);
+        const scoreB = (b.likes_count * 2) + (b.favorites_count * 3) + (b.actual_chat_count * 1);
+        return scoreB - scoreA;
+      case 'relevance':
+        if (searchQuery) {
+          // Relevance based on exact matches and popularity
+          const aExactMatch = a.name.toLowerCase().includes(searchQuery.toLowerCase()) ? 100 : 0;
+          const bExactMatch = b.name.toLowerCase().includes(searchQuery.toLowerCase()) ? 100 : 0;
+          const aPopularity = (a.likes_count * 2) + (a.favorites_count * 3) + (a.actual_chat_count * 1);
+          const bPopularity = (b.likes_count * 2) + (b.favorites_count * 3) + (b.actual_chat_count * 1);
+          return (bExactMatch + bPopularity) - (aExactMatch + aPopularity);
+        }
         return b.actual_chat_count - a.actual_chat_count;
-      default: // relevance
+      default:
         return b.actual_chat_count - a.actual_chat_count;
     }
   });
@@ -138,9 +192,9 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
         </div>
       </div>
 
-      {/* Character Grid */}
+      {/* Character Grid - 2 columns on mobile, responsive thereafter */}
       <div 
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 lg:gap-8 transition-all duration-500 ease-in-out"
+        className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 lg:gap-8 transition-all duration-500 ease-in-out"
         style={{
           animation: 'fade-in 0.6s ease-out'
         }}
@@ -193,11 +247,30 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy }: CharacterGridPr
                 </div>
               </div>
 
-              {/* Description preview at bottom */}
+              {/* Description preview and stats at bottom */}
               <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
-                <p className="text-gray-300 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 leading-relaxed">
+                <p className="text-gray-300 text-xs sm:text-sm line-clamp-1 sm:line-clamp-2 leading-relaxed mb-2">
                   {character.short_description || "No description available"}
                 </p>
+                
+                {/* Likes and Favorites Stats */}
+                <div className="flex items-center justify-between text-gray-400">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-1">
+                      <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm">{character.likes_count}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm">{character.favorites_count}</span>
+                    </div>
+                  </div>
+                  {character.creator && (
+                    <span className="text-xs text-gray-500 truncate max-w-[80px] sm:max-w-[120px]">
+                      @{character.creator.username}
+                    </span>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

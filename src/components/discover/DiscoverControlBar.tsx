@@ -26,6 +26,12 @@ interface DiscoverControlBarProps {
   setSortBy: (sort: string) => void;
   filterBy: string;
   setFilterBy: (filter: string) => void;
+  onAdvancedFiltersApplied: (filters: {
+    tags: string[];
+    creator: string;
+    nsfw: boolean;
+    gender: string;
+  }) => void;
 }
 
 export function DiscoverControlBar({
@@ -34,7 +40,8 @@ export function DiscoverControlBar({
   sortBy,
   setSortBy,
   filterBy,
-  setFilterBy
+  setFilterBy,
+  onAdvancedFiltersApplied
 }: DiscoverControlBarProps) {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
@@ -156,6 +163,7 @@ export function DiscoverControlBar({
         onClose={() => setIsFilterPanelOpen(false)}
         filterBy={filterBy}
         setFilterBy={setFilterBy}
+        onFiltersApplied={onAdvancedFiltersApplied}
       />
     </>
   );
