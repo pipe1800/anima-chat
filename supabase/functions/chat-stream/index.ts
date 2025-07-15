@@ -248,7 +248,7 @@ Based on the conversation, extract context information for the following fields 
   "clothing": "current clothing description",
   "time_weather": "current time and weather",
   "relationship": "relationship status/dynamic",
-  "character_position": "physical position/posture"
+  "character_position": "physical position, posture, or stance of the character"
 }
 
 Return only the JSON object with no additional text.`;
@@ -313,10 +313,13 @@ Return only the JSON object with no additional text.`;
                     // Clean message is guaranteed to be clean since it came from separate API call
                     const finalCleanMessage = fullResponse.trim();
                     
-                    console.log('✅ GUARANTEED clean message content:', finalCleanMessage.substring(0, 100) + '...');
+                    // Apply template replacement to the final AI response
+                    const processedMessage = replaceTemplates(finalCleanMessage);
+                    
+                    console.log('✅ GUARANTEED clean message content:', processedMessage.substring(0, 100) + '...');
 
                     // Send clean message content to frontend for final display
-                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${finalCleanMessage.replace(/"/g, '\\"')}"}\n\n`));
+                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${processedMessage.replace(/"/g, '\\"')}"}\n\n`));
 
                     // Wait for context extraction to complete and save to database
                     try {

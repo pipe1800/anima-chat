@@ -32,6 +32,7 @@ const StreamingChatInterface = ({
   const [streamingMessage, setStreamingMessage] = useState('');
   const [creditsBalance, setCreditsBalance] = useState(0);
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -56,6 +57,37 @@ const StreamingChatInterface = ({
     
     fetchCredits();
   }, [user]);
+
+  // Fetch default persona
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchDefaultPersona = async () => {
+      // Check if character has a default persona
+      const { data: characterData } = await supabase
+        .from('characters')
+        .select('default_persona_id')
+        .eq('id', character.id)
+        .single();
+      
+      if (characterData?.default_persona_id) {
+        setSelectedPersonaId(characterData.default_persona_id);
+      } else {
+        // Get user's first persona as fallback
+        const { data: personas } = await supabase
+          .from('personas')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (personas && personas.length > 0) {
+          setSelectedPersonaId(personas[0].id);
+        }
+      }
+    };
+    
+    fetchDefaultPersona();
+  }, [user, character.id]);
 
   // Focus input when component mounts
   useEffect(() => {
@@ -146,7 +178,8 @@ const StreamingChatInterface = ({
           chatId: currentChatId,
           message: messageContent,
           characterId: character.id,
-          addonSettings: addonSettings?.addon_settings || {}
+          addonSettings: addonSettings?.addon_settings || {},
+          selectedPersonaId: selectedPersonaId
         }),
         signal: abortControllerRef.current.signal
       });
