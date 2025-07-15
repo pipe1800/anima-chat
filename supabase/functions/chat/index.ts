@@ -387,8 +387,13 @@ Respond naturally to the conversation, keeping the character's personality consi
       extractionFields['relationshipStatus'] = currentContext.relationshipStatus;
       fieldInstructions += '\n- relationshipStatus: Extract the relationship dynamics, intimacy level, or relationship changes between characters. Look for relationship indicators in actions between *asterisks* or dialogue.';
     }
+    
+    console.log('Extraction fields to process:', Object.keys(extractionFields));
+    console.log('Field instructions:', fieldInstructions);
 
     const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided for the ENABLED fields.
+
+CRITICAL: You must process ALL enabled fields simultaneously. Do not skip any enabled field.
 
 Rules:
 1. Only update a field if new information is EXPLICITLY mentioned in the "User Message" or "Character Response"
@@ -396,7 +401,7 @@ Rules:
 3. If the previous value was "No context" and there is still no new information, keep it as "No context"
 4. Pay special attention to text between *asterisks* as it contains actions and descriptions
 5. Your response MUST be a valid JSON object and nothing else
-6. Only extract information for these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
+6. Process ALL of these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
 
 Field Instructions:${fieldInstructions}
 
@@ -407,7 +412,7 @@ Conversation Turn:
 User Message: "${user_message}"
 Character Response: "${aiResponseContent}"
 
-Extract the current state for the following ENABLED fields and provide your response in JSON format:
+Extract the current state for ALL the following ENABLED fields and provide your response in JSON format:
 ${JSON.stringify(extractionFields, null, 2)}`;
 
     // Call extraction LLM
@@ -420,8 +425,9 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         'X-Title': 'AnimaChat-Context'
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct',
+        model: 'openai/gpt-4o-mini',
         messages: [
+          { role: 'system', content: 'You are a precise data extraction bot. You must extract information for ALL enabled fields, not just some of them. Return valid JSON only.' },
           { role: 'user', content: extractionPrompt }
         ],
         temperature: 0.1
@@ -435,9 +441,21 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         const extractionData = await extractionResponse.json();
         const extractedContextStr = extractionData.choices?.[0]?.message?.content || '{}';
         
+        console.log('Raw LLM extraction response:', extractedContextStr);
+        
         // Try to parse the JSON response
         const extractedContext = JSON.parse(extractedContextStr);
         console.log('Extracted context from LLM:', JSON.stringify(extractedContext, null, 2));
+        
+        // Validate that all expected fields are present
+        const missingFields = Object.keys(extractionFields).filter(field => !(field in extractedContext));
+        if (missingFields.length > 0) {
+          console.warn('Missing fields in extraction:', missingFields);
+          // Fill in missing fields with current context values
+          for (const field of missingFields) {
+            extractedContext[field] = currentContext[field];
+          }
+        }
         
         updatedContext = {
           moodTracking: addonSettingsObj.moodTracking ? (extractedContext.moodTracking || currentContext.moodTracking) : currentContext.moodTracking,

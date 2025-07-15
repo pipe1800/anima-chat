@@ -59,7 +59,7 @@ export const useChatMessages = (chatId: string | null) => {
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
         status: 'sent',
-        contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
+        contextUpdates: (msg as any).message_context?.[0]?.context_updates
       }));
       
       return {
@@ -280,17 +280,8 @@ const invokeAIResponse = async (
       throw new Error('No valid response received from AI');
     }
     
-    // Save AI response to database (real-time will handle UI update)
-    const { error: aiMessageError } = await createMessage(
-      chatId,
-      userId,
-      responseData.content,
-      true // is_ai_message = true
-    );
-    
-    if (aiMessageError) {
-      console.error('Failed to save AI message:', aiMessageError);
-    }
+    // AI message is now saved in the edge function to prevent duplicates
+    // Real-time will handle UI update
 
     // Return the updated context for the calling component
     return responseData.updatedContext;
@@ -338,7 +329,7 @@ export const useChatCache = () => {
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
           status: 'sent',
-          contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
+          contextUpdates: (msg as any).message_context?.[0]?.context_updates
         }));
         
         return {
@@ -419,7 +410,7 @@ export const useRealtimeMessages = (chatId: string | null) => {
                 queryKey: ['chat', 'messages', chatId],
                 refetchType: 'active'
               });
-            }, 500);
+            }, 1000); // Increased delay to ensure context is fully saved
           }
           
           // Add new messages to the cache with enhanced duplicate prevention

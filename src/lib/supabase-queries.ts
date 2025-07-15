@@ -532,7 +532,7 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
       is_ai_message,
       created_at,
       author_id,
-      message_context!left(
+      message_context!inner(
         context_updates
       )
     `)
@@ -556,7 +556,7 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
       is_ai_message,
       created_at,
       author_id,
-      message_context!left(
+      message_context!inner(
         context_updates
       )
     `)
