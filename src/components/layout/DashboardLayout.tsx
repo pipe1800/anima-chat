@@ -10,8 +10,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#121212]">
-        <AppSidebar />
-        <main className="flex-1 overflow-auto ml-64">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <AppSidebar />
+        </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto md:ml-64">
           {children}
         </main>
       </div>

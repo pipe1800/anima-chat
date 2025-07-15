@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 
 import DiscordCTA from '../DiscordCTA';
+import { MobileNavMenu } from '@/components/layout/MobileNavMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '@/hooks/useDashboard';
@@ -178,88 +179,100 @@ export function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#121212]">
-      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-6 sticky top-0 z-10">
+      <header className="bg-[#1a1a2e] border-b border-gray-700/50 p-3 sm:p-6 sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-white text-3xl font-bold">
-              Welcome back to ANIMA, @{username}
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">Ready to continue your digital adventures?</p>
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <MobileNavMenu userCredits={userCredits} username={username} />
           </div>
           
-          <div className="flex items-center space-x-4">
-            {/* User Avatar */}
-            <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
-              <AvatarImage 
-                src={profile?.avatar_url || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=150&h=150&fit=crop&crop=face"} 
-                alt={profile?.username || "User"} 
-              />
-              <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
-                {profile?.username?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+          {/* Title - responsive */}
+          <div className="flex-1 md:flex-none">
+            <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-bold">
+              <span className="hidden sm:inline">Welcome back to ANIMA, @{username}</span>
+              <span className="sm:hidden">ANIMA Dashboard</span>
+            </h1>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1 hidden sm:block">Ready to continue your digital adventures?</p>
+          </div>
+          
+          {/* User Info - responsive */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Credits - always visible */}
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-[#FF7A00]" />
+              <span className="text-[#FF7A00] text-xs sm:text-sm font-bold">{userCredits.toLocaleString()}</span>
+            </div>
             
-            {/* Username and Credits */}
-            <div className="text-right">
-              <p className="text-white text-lg font-bold">
-                @{username}
-              </p>
-              <div className="flex items-center justify-end space-x-2 mt-1">
-                <Zap className="w-4 h-4 text-[#FF7A00]" />
-                <span className="text-[#FF7A00] text-sm font-bold">{userCredits.toLocaleString()} credits</span>
+            {/* User Avatar - hidden on small screens */}
+            <div className="hidden sm:flex items-center space-x-4">
+              <Avatar className="w-8 h-8 sm:w-12 sm:h-12 ring-2 ring-[#FF7A00]/50">
+                <AvatarImage 
+                  src={profile?.avatar_url || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=150&h=150&fit=crop&crop=face"} 
+                  alt={profile?.username || "User"} 
+                />
+                <AvatarFallback className="bg-[#FF7A00] text-white font-bold text-xs sm:text-base">
+                  {profile?.username?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Username */}
+              <div className="text-right hidden md:block">
+                <p className="text-white text-sm sm:text-lg font-bold">
+                  @{username}
+                </p>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Stats cards above Daily Message Limit */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Active Chats</p>
-                  <p className="text-white text-2xl font-bold">{recentChats.length}</p>
+                  <p className="text-gray-400 text-xs sm:text-sm">Active Chats</p>
+                  <p className="text-white text-lg sm:text-2xl font-bold">{recentChats.length}</p>
                 </div>
-                <MessageCircle className="w-8 h-8 text-[#FF7A00]" />
+                <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-[#FF7A00]" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Characters Created</p>
-                  <p className="text-white text-2xl font-bold">{myCharacters.length}</p>
+                  <p className="text-gray-400 text-xs sm:text-sm">Characters</p>
+                  <p className="text-white text-lg sm:text-2xl font-bold">{myCharacters.length}</p>
                 </div>
-                <Users className="w-8 h-8 text-[#FF7A00]" />
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#FF7A00]" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Credits</p>
-                  <p className="text-white text-2xl font-bold">{userCredits.toLocaleString()}</p>
+                  <p className="text-gray-400 text-xs sm:text-sm">Credits</p>
+                  <p className="text-white text-lg sm:text-2xl font-bold">{userCredits.toLocaleString()}</p>
                 </div>
-                <Sparkles className="w-8 h-8 text-[#FF7A00]" />
+                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-[#FF7A00]" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Plan</p>
-                  <p className="text-white text-lg font-bold">{userTier}</p>
+                  <p className="text-gray-400 text-xs sm:text-sm">Plan</p>
+                  <p className="text-white text-sm sm:text-lg font-bold">{userTier}</p>
                 </div>
-                <Crown className="w-8 h-8 text-[#FF7A00]" />
+                <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-[#FF7A00]" />
               </div>
             </CardContent>
           </Card>
@@ -267,80 +280,83 @@ export function DashboardContent() {
 
 
         {/* Your Dashboard sections - moved above Daily Quest */}
-        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[800px]">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white text-2xl">Your Dashboard</CardTitle>
+        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[400px] sm:min-h-[800px]">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-white text-xl sm:text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
               <Tabs defaultValue="recent-chats" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-[#121212] border border-gray-700/50">
+                <TabsList className="grid w-full grid-cols-3 bg-[#121212] border border-gray-700/50 h-auto">
                   <TabsTrigger 
                     value="recent-chats" 
-                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400 text-xs sm:text-sm py-2"
                   >
-                    Recent Chats
+                    <span className="hidden sm:inline">Recent Chats</span>
+                    <span className="sm:hidden">Chats</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="my-characters" 
-                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400 text-xs sm:text-sm py-2"
                   >
-                    My Characters
+                    <span className="hidden sm:inline">My Characters</span>
+                    <span className="sm:hidden">Characters</span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="favorites" 
-                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400"
+                    className="data-[state=active]:bg-[#FF7A00] data-[state=active]:text-white text-gray-400 text-xs sm:text-sm py-2"
                   >
                     Favorites
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="recent-chats" className="mt-6">
-                  <div className="space-y-3">
+                <TabsContent value="recent-chats" className="mt-3 sm:mt-6">
+                  <div className="space-y-2 sm:space-y-3">
                     {formattedRecentChats.length > 0 ? (
                       formattedRecentChats.map((chat) => (
                         <Card
                           key={chat.id}
                           className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20"
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start space-x-4">
-                              <Avatar className="w-12 h-12 ring-2 ring-[#FF7A00]/50">
+                          <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-start space-x-3 sm:space-x-4">
+                              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 ring-2 ring-[#FF7A00]/50 flex-shrink-0">
                                 <AvatarImage 
                                   src={chat.character.image} 
                                   alt={chat.character.name}
                                   className="object-cover"
                                 />
-                                <AvatarFallback className="bg-[#FF7A00] text-white font-bold">
+                                <AvatarFallback className="bg-[#FF7A00] text-white font-bold text-sm">
                                   {chat.character.avatar}
                                 </AvatarFallback>
                               </Avatar>
                               
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h3 className="text-white font-bold text-lg">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h3 className="text-white font-bold text-base sm:text-lg truncate">
                                     {chat.character.name}
                                   </h3>
-                                  <p className="text-gray-500 text-sm flex-shrink-0 ml-2">
+                                  <p className="text-gray-500 text-xs sm:text-sm flex-shrink-0 ml-2">
                                     {chat.timestamp}
                                   </p>
                                 </div>
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                   {chat.lastMessage !== "No messages yet" ? (
-                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-2 flex-1 mr-3">
+                                    <p className="text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-2 flex-1">
                                       <span className={chat.lastMessageIsAI ? "text-[#FF7A00]" : "text-blue-400"}>
                                         {chat.lastMessageIsAI ? chat.character.name : 'You'}:
                                       </span>
                                       {' '}{chat.lastMessage}
                                     </p>
                                   ) : (
-                                    <p className="text-gray-400 text-sm flex-1 mr-3">No messages yet</p>
+                                    <p className="text-gray-400 text-xs sm:text-sm flex-1">No messages yet</p>
                                   )}
                                   <Button
                                     onClick={() => handleContinueChat(chat.originalChat)}
                                     size="sm"
-                                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white flex-shrink-0"
+                                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white flex-shrink-0 text-xs sm:text-sm"
                                   >
-                                    Continue Chat
+                                    <span className="hidden sm:inline">Continue Chat</span>
+                                    <span className="sm:hidden">Continue</span>
                                   </Button>
                                 </div>
                               </div>
@@ -357,13 +373,13 @@ export function DashboardContent() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="my-characters" className="mt-6">
-                  <div className="grid grid-cols-4 gap-4">
+                <TabsContent value="my-characters" className="mt-3 sm:mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {formattedMyCharacters.length > 0 ? (
                       formattedMyCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
@@ -396,24 +412,24 @@ export function DashboardContent() {
                               </div>
                             </div>
                             
-                            <div className="absolute bottom-0 left-0 right-0 p-4">
-                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
-                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                            <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                              <h3 className="text-white font-bold text-base sm:text-lg mb-2 truncate" title={character.name}>
+                                {character.name.length > 12 ? `${character.name.substring(0, 12)}...` : character.name}
                               </h3>
                               
-                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                              <div className="flex items-center justify-center space-x-3 sm:space-x-4 text-xs sm:text-sm mb-2 sm:mb-3">
                                 <div className="flex items-center space-x-1 text-gray-300">
-                                  <MessageCircle className="w-4 h-4" />
+                                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                                   <span>{character.totalChats}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 text-gray-300">
-                                  <Heart className="w-4 h-4" />
+                                  <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                                   <span>{character.likesCount}</span>
                                 </div>
                               </div>
                               
-                              {/* Description preview - 3 lines */}
-                              <p className="text-gray-300 text-xs leading-tight line-clamp-3 mb-0">
+                              {/* Description preview - 2-3 lines based on screen size */}
+                              <p className="text-gray-300 text-xs leading-tight line-clamp-2 sm:line-clamp-3 mb-0">
                                 {character.originalCharacter.short_description || "No description available for this character."}
                               </p>
                             </div>
@@ -433,13 +449,13 @@ export function DashboardContent() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="favorites" className="mt-6">
-                  <div className="grid grid-cols-4 gap-4">
+                <TabsContent value="favorites" className="mt-3 sm:mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {formattedFavoriteCharacters.length > 0 ? (
                       formattedFavoriteCharacters.map((character) => (
                         <Card
                           key={character.id}
-                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-80 group"
+                          className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group"
                         >
                           <CardContent className="p-0 relative h-full">
                             <img 
@@ -461,28 +477,28 @@ export function DashboardContent() {
                               </Button>
                             </div>
                             
-                            <div className="absolute bottom-0 left-0 right-0 p-4">
-                              <h3 className="text-white font-bold text-lg mb-2 truncate" title={character.name}>
-                                {character.name.length > 15 ? `${character.name.substring(0, 15)}...` : character.name}
+                            <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                              <h3 className="text-white font-bold text-base sm:text-lg mb-1 sm:mb-2 truncate" title={character.name}>
+                                {character.name.length > 12 ? `${character.name.substring(0, 12)}...` : character.name}
                               </h3>
                               
-                              <p className="text-gray-400 text-sm mb-3 min-h-[1.25rem]">
+                              <p className="text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3 min-h-[1rem] sm:min-h-[1.25rem]">
                                 by @{character.creatorUsername}
                               </p>
                               
-                              <div className="flex items-center justify-center space-x-4 text-sm mb-3">
+                              <div className="flex items-center justify-center space-x-3 sm:space-x-4 text-xs sm:text-sm mb-2 sm:mb-3">
                                 <div className="flex items-center space-x-1 text-gray-300">
-                                  <MessageCircle className="w-4 h-4" />
+                                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                                   <span>{character.totalChats}</span>
                                 </div>
                                 <div className="flex items-center space-x-1 text-gray-300">
-                                  <Heart className="w-4 h-4" />
+                                  <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                                   <span>{character.likesCount}</span>
                                 </div>
                               </div>
                               
-                              {/* Description preview - 3 lines */}
-                              <p className="text-gray-300 text-xs leading-tight line-clamp-3 mb-0">
+                              {/* Description preview - 2-3 lines based on screen size */}
+                              <p className="text-gray-300 text-xs leading-tight line-clamp-2 sm:line-clamp-3 mb-0">
                                 {character.originalCharacter.short_description || "No description available for this character."}
                               </p>
                             </div>
