@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const [characterResult, messageHistoryResult, userProfileResult] = await Promise.all([
+    const [characterResult, messageHistoryResult, userProfileResult, userSubscriptionResult] = await Promise.all([
       supabaseAdmin
         .from('character_definitions')
         .select('personality_summary, description, scenario, greeting')
@@ -91,7 +91,14 @@ Deno.serve(async (req) => {
         .from('profiles')
         .select('username')
         .eq('id', user.id)
-        .single()
+        .single(),
+      supabase
+        .from('subscriptions')
+        .select('plan_id, status, current_period_end')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .gt('current_period_end', new Date().toISOString())
+        .maybeSingle()
     ]);
 
     if (characterResult.error) {
@@ -105,10 +112,38 @@ Deno.serve(async (req) => {
     const character = characterResult.data;
     const messageHistory = messageHistoryResult.data || [];
     const userProfile = userProfileResult.data;
+    const userSubscription = userSubscriptionResult.data;
 
     if (messageHistoryResult.error) {
       console.error('Failed to fetch conversation history:', messageHistoryResult.error);
     }
+
+    // Determine user's model tier - Default to Guest Pass if no active subscription
+    let selectedModel = 'google/gemma-7b-it'; // Guest Pass - Fast & Fun
+    
+    if (userSubscription) {
+      // Get plan details
+      const { data: planData, error: planError } = await supabaseAdmin
+        .from('plans')
+        .select('name')
+        .eq('id', userSubscription.plan_id)
+        .single();
+      
+      if (planData) {
+        switch (planData.name) {
+          case 'True Fan':
+            selectedModel = 'gryphe/mythomax-l2-13b'; // Smart & Creative
+            break;
+          case 'The Whale':
+            selectedModel = 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo'; // Genius
+            break;
+          default:
+            selectedModel = 'google/gemma-7b-it'; // Guest Pass - Fast & Fun
+        }
+      }
+    }
+
+    console.log('Selected model for user tier:', selectedModel);
 
     // Fetch persona data if provided
     let selectedPersona = null;
@@ -172,33 +207,8 @@ Stay in character and respond naturally to the user's message.`;
 
     console.log('🎯 Streaming AI response for:', characterId);
 
-    // Enhanced prompt for context extraction
-    const contextPrompt = `You are ${replaceTemplates(character.personality_summary || 'a helpful assistant')}.
-
-${character.description ? `Description: ${replaceTemplates(character.description)}` : ''}
-${character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : ''}
-
-Stay in character and respond naturally. After your response, provide context data in this exact format:
-
-[CONTEXT_DATA]
-{
-  "mood": "current emotional state",
-  "location": "current location or setting", 
-  "clothing": "current clothing description",
-  "time_weather": "current time and weather",
-  "relationship": "relationship status/dynamic",
-  "character_position": "physical position/posture"
-}
-[/CONTEXT_DATA]`;
-
-    const contextMessages = [
-      { role: 'system', content: contextPrompt },
-      ...conversationContext,
-      { role: 'user', content: message }
-    ];
-
-    // Create streaming response
-    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // PHASE 1: CLEAN MESSAGE GENERATION - NO CONTEXT EXTRACTION
+    const cleanMessageResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openRouterKey}`,
@@ -207,29 +217,87 @@ Stay in character and respond naturally. After your response, provide context da
         'X-Title': 'AnimaChat-Streaming'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
-        messages: contextMessages,
+        model: selectedModel,
+        messages: messages,
         stream: true,
         temperature: 0.7,
         max_tokens: 1000
       })
     });
 
-    if (!openRouterResponse.ok) {
+    if (!cleanMessageResponse.ok) {
       throw new Error('Failed to get AI response');
     }
 
-    // Set up Server-Sent Events response with context processing
+    // Start context extraction in background (separate API call)
+    const extractContextInBackground = async () => {
+      if (!addonSettings || !Object.values(addonSettings).some(Boolean)) {
+        console.log('No addons enabled - skipping context extraction');
+        return null;
+      }
+
+      const contextPrompt = `You are ${replaceTemplates(character.personality_summary || 'a helpful assistant')}.
+
+${character.description ? `Description: ${replaceTemplates(character.description)}` : ''}
+${character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : ''}
+
+Based on the conversation, extract context information for the following fields in JSON format:
+{
+  "mood": "current emotional state",
+  "location": "current location or setting", 
+  "clothing": "current clothing description",
+  "time_weather": "current time and weather",
+  "relationship": "relationship status/dynamic",
+  "character_position": "physical position/posture"
+}
+
+Return only the JSON object with no additional text.`;
+
+      const contextMessages = [
+        { role: 'system', content: contextPrompt },
+        ...conversationContext,
+        { role: 'user', content: message }
+      ];
+
+      try {
+        const contextResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openRouterKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
+            'X-Title': 'AnimaChat-Context'
+          },
+          body: JSON.stringify({
+            model: 'mistralai/mistral-7b-instruct', // Always use Mistral for context extraction
+            messages: contextMessages,
+            temperature: 0.1,
+            max_tokens: 500
+          })
+        });
+
+        if (contextResponse.ok) {
+          const contextData = await contextResponse.json();
+          const contextStr = contextData.choices?.[0]?.message?.content || '{}';
+          return JSON.parse(contextStr);
+        }
+      } catch (error) {
+        console.error('Context extraction error:', error);
+      }
+      return null;
+    };
+
+    const contextExtractionPromise = extractContextInBackground();
+
+    // Set up Server-Sent Events response with clean message streaming
     const readable = new ReadableStream({
       start(controller) {
         const processStream = async () => {
           try {
-            const reader = openRouterResponse.body?.getReader();
+            const reader = cleanMessageResponse.body?.getReader();
             if (!reader) throw new Error('No reader available');
 
             let fullResponse = '';
-            let rawResponse = '';  // Store raw response for context extraction
-            let extractedContext = null;
 
             while (true) {
               const { done, value } = await reader.read();
@@ -242,71 +310,21 @@ Stay in character and respond naturally. After your response, provide context da
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    // Process context from raw response before closing
-                    if (rawResponse.includes('[CONTEXT_DATA]')) {
-                      const contextMatch = rawResponse.match(/\[CONTEXT_DATA\]\s*(\{[\s\S]*?\})\s*\[\/CONTEXT_DATA\]/);
-                      if (contextMatch) {
-                        try {
-                          extractedContext = JSON.parse(contextMatch[1]);
-                          console.log('✅ Context extracted:', extractedContext);
-                        } catch (e) {
-                          console.error('❌ Context parsing error:', e);
-                        }
-                      }
-                    }
-
-                    // PHASE 1: BACKEND FINAL MESSAGE GUARANTEE - BULLETPROOF CONTEXT STRIPPING
-                    let finalCleanMessage = fullResponse;
-                    
-                    // Layer 1: Remove complete context blocks
-                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '');
-                    
-                    // Layer 2: Remove incomplete context blocks
-                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXTDATA\][\s\S]*$/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '');
-                    
-                    // Layer 3: Remove JSON-like context structures
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"mood"[\s\S]*\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"location"[\s\S]*\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"clothing"[\s\S]*\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"time_weather"[\s\S]*\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"relationship"[\s\S]*\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"character_position"[\s\S]*\}/g, '');
-                    
-                    // Layer 4: Remove any remaining JSON fragments or patterns
-                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*$/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\}/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/^\s*"[a-z_]+"\s*:[\s\S]*$/g, '');
-                    
-                    // Layer 5: Clean up any remaining artifacts
-                    finalCleanMessage = finalCleanMessage.replace(/\[\/[A-Z_]+\][\s\S]*$/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
-                    finalCleanMessage = finalCleanMessage.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
-                    
-                    // Final cleanup and validation
-                    finalCleanMessage = finalCleanMessage.trim();
-                    
-                    // GUARANTEE: Never send empty or context-contaminated message
-                    if (!finalCleanMessage || finalCleanMessage.includes('[CONTEXT') || 
-                        finalCleanMessage.includes('"mood"') || finalCleanMessage.includes('"location"') ||
-                        finalCleanMessage.includes('"clothing"') || finalCleanMessage.includes('"time_weather"') ||
-                        finalCleanMessage.includes('"relationship"') || finalCleanMessage.includes('"character_position"')) {
-                      finalCleanMessage = "I apologize, but I need to respond again. Let me try that once more.";
-                    }
+                    // Clean message is guaranteed to be clean since it came from separate API call
+                    const finalCleanMessage = fullResponse.trim();
                     
                     console.log('✅ GUARANTEED clean message content:', finalCleanMessage.substring(0, 100) + '...');
 
-                    // Send GUARANTEED clean message content to frontend for final display
+                    // Send clean message content to frontend for final display
                     controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${finalCleanMessage.replace(/"/g, '\\"')}"}\n\n`));
 
-                    // Save context to database if extracted (DO NOT SAVE MESSAGE - let frontend handle it)
-                    if (extractedContext && addonSettings) {
-                      try {
-                        // Update user chat context for enabled addons with corrected key mapping
+                    // Wait for context extraction to complete and save to database
+                    try {
+                      const extractedContext = await contextExtractionPromise;
+                      if (extractedContext && addonSettings) {
+                        console.log('✅ Context extracted:', extractedContext);
+                        
+                        // Update user chat context for enabled addons
                         if (addonSettings.moodTracking && extractedContext.mood) {
                           await supabase.from('user_chat_context').upsert({
                             user_id: user.id,
@@ -374,9 +392,9 @@ Stay in character and respond naturally. After your response, provide context da
                         }
 
                         console.log('✅ Context saved successfully');
-                      } catch (contextError) {
-                        console.error('❌ Context save error:', contextError);
                       }
+                    } catch (contextError) {
+                      console.error('❌ Context save error:', contextError);
                     }
 
                     controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
@@ -387,59 +405,13 @@ Stay in character and respond naturally. After your response, provide context da
                   try {
                     const parsed = JSON.parse(data);
                     if (parsed.choices?.[0]?.delta?.content) {
-                      let rawContent = parsed.choices[0].delta.content;
+                      const content = parsed.choices[0].delta.content;
                       
-                      // Store raw content for context extraction
-                      rawResponse += rawContent;
+                      // Add to full response
+                      fullResponse += content;
                       
-                      // PHASE 1: BULLETPROOF REAL-TIME CONTEXT STRIPPING - Strip context data from raw content BEFORE adding to fullResponse
-                      let cleanContent = rawContent;
-                      
-                      // SUPER AGGRESSIVE context data removal - prevent ANY context data from accumulating
-                      if (cleanContent.includes('[CONTEXT') || cleanContent.includes('CONTEXT_DATA') || 
-                          cleanContent.includes('"mood"') || cleanContent.includes('"location"') ||
-                          cleanContent.includes('"clothing"') || cleanContent.includes('"time_weather"') ||
-                          cleanContent.includes('"relationship"') || cleanContent.includes('"character_position"') ||
-                          cleanContent.includes('{') || cleanContent.includes('}') || 
-                          cleanContent.includes('[/CONTEXT') || cleanContent.includes(':/') ||
-                          /\[[A-Z_]+\]/.test(cleanContent) || /"[a-z_]+"\s*:/.test(cleanContent)) {
-                        
-                        // Multi-layer context removal - ZERO TOLERANCE
-                        cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                        cleanContent = cleanContent.replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '');
-                        cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/\[CONTEXTDATA\][\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '');
-                        cleanContent = cleanContent.replace(/\[CONTEXT[^}]*$/g, '');
-                        cleanContent = cleanContent.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/\{[\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/^[\s\S]*?\}/g, '');
-                        cleanContent = cleanContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/^\s*"[a-z_]+"\s*:[\s\S]*$/g, '');
-                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
-                        
-                        console.log('🧹 Stripped context from chunk - raw:', rawContent);
-                        console.log('🧹 Stripped context from chunk - clean:', cleanContent);
-                      }
-                      
-                      // Add ONLY clean content to fullResponse
-                      fullResponse += cleanContent;
-                      
-                      // Only send clean content to client if there's actual content
-                      if (cleanContent.trim()) {
-                        const cleanParsed = {
-                          ...parsed,
-                          choices: [{
-                            ...parsed.choices[0],
-                            delta: {
-                              ...parsed.choices[0].delta,
-                              content: cleanContent
-                            }
-                          }]
-                        };
-                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(cleanParsed)}\n\n`));
-                      }
+                      // Stream clean content directly (no context stripping needed since it's already clean)
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
                     } else {
                       // Pass through non-content chunks
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
