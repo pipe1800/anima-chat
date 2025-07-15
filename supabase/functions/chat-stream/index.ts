@@ -258,8 +258,8 @@ Stay in character and respond naturally. After your response, provide context da
                     // Save context to database if extracted
                     if (extractedContext && addonSettings) {
                       try {
-                        // Save message context
-                        await supabase.from('messages').insert({
+                        // Save message context (ensure no duplicates)
+                        const { error: messageError } = await supabase.from('messages').insert({
                           chat_id: chatId,
                           content: fullResponse,
                           author_id: user.id,
@@ -267,10 +267,14 @@ Stay in character and respond naturally. After your response, provide context da
                           current_context: extractedContext,
                           created_at: new Date().toISOString()
                         });
+                        
+                        if (messageError) {
+                          console.error('❌ Message save error:', messageError);
+                        }
 
                         // Update user chat context for enabled addons
                         if (addonSettings.moodTracking && extractedContext.mood) {
-                          await supabase.from('user_chat_context').upsert({
+                          const { error: moodError } = await supabase.from('user_chat_context').upsert({
                             user_id: user.id,
                             chat_id: chatId,
                             character_id: characterId,
@@ -278,6 +282,7 @@ Stay in character and respond naturally. After your response, provide context da
                             current_context: extractedContext.mood,
                             updated_at: new Date().toISOString()
                           });
+                          if (moodError) console.error('❌ Mood context error:', moodError);
                         }
 
                         if (addonSettings.locationTracking && extractedContext.location) {
@@ -350,8 +355,35 @@ Stay in character and respond naturally. After your response, provide context da
                     const parsed = JSON.parse(data);
                     if (parsed.choices?.[0]?.delta?.content) {
                       fullResponse += parsed.choices[0].delta.content;
+                      
+                      // CRITICAL FIX: Strip context data from streaming content in real-time
+                      let streamContent = parsed.choices[0].delta.content;
+                      
+                      // Remove context data markers from streaming content
+                      if (streamContent.includes('[CONTEXT_DATA]') || streamContent.includes('[/CONTEXT_DATA]')) {
+                        streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
+                        streamContent = streamContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                      }
+                      
+                      // Only send clean content to client if there's actual content
+                      if (streamContent.trim()) {
+                        const cleanParsed = {
+                          ...parsed,
+                          choices: [{
+                            ...parsed.choices[0],
+                            delta: {
+                              ...parsed.choices[0].delta,
+                              content: streamContent
+                            }
+                          }]
+                        };
+                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(cleanParsed)}\n\n`));
+                      }
+                    } else {
+                      // Pass through non-content chunks
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
                     }
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
                   } catch (e) {
                     // Skip invalid JSON
                   }

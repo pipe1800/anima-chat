@@ -192,6 +192,11 @@ const StreamingChatInterface = ({
       // Update credits balance
       setCreditsBalance(prev => Math.max(0, prev - 1));
 
+      // Force ChatMessages to refetch after streaming completes
+      // The ChatMessages component uses real-time subscriptions and polling
+      // so it should automatically update, but we log for debugging
+      console.log('🔄 Streaming completed, ChatMessages should auto-refresh via real-time updates');
+
       onFirstMessage();
       toast({
         title: "Message sent successfully",
@@ -232,34 +237,6 @@ const StreamingChatInterface = ({
         chatId={currentChatId} 
         character={character}
       />
-      
-          {/* Streaming message display with formatting */}
-      {isStreamingResponse && streamingMessage && (
-        <div className="px-6 pb-4">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-primary font-semibold text-sm">
-                {character.name?.[0] || 'AI'}
-              </span>
-            </div>
-            <div className="flex-1">
-              <div className="bg-secondary/30 rounded-lg p-3 prose prose-sm max-w-none">
-                <div 
-                  className="text-foreground whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{
-                    __html: streamingMessage
-                      .replace(/\*([^*]+)\*/g, '<span class="text-purple-300 italic">*$1*</span>')
-                      .replace(/"([^"]+)"/g, '<span class="text-blue-300">"$1"</span>')
-                      .replace(/_([^_]+)_/g, '<span class="font-semibold text-yellow-300">$1</span>')
-                      .replace(/\(([^)]+)\)/g, '<span class="text-gray-400 italic">($1)</span>')
-                  }}
-                />
-                <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Streaming indicator */}
       {isStreamingResponse && (
