@@ -37,6 +37,8 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'details' | 'config'>('details');
   const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [filteredChatHistory, setFilteredChatHistory] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [characterDetails, setCharacterDetails] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
         if (user) {
           const { data: chats } = await getUserChats(user.id);
           setChatHistory(chats || []);
+          setFilteredChatHistory(chats || []);
           
           // Load user personas
           const userPersonas = await getUserPersonas();
@@ -257,7 +260,12 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
       if (error) throw error;
       
       // Update UI
-      setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+      const updatedChats = chatHistory.filter(chat => chat.id !== chatId);
+      setChatHistory(updatedChats);
+      setFilteredChatHistory(updatedChats.filter(chat => 
+        chat.character?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
       toast.success('Chat deleted successfully');
       
       // If we deleted the current chat, navigate to character's chat page
@@ -267,6 +275,38 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     } catch (error) {
       console.error('Error deleting chat:', error);
       toast.error('Failed to delete chat');
+    }
+  };
+
+  // Handle search functionality
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredChatHistory(chatHistory);
+    } else {
+      const filtered = chatHistory.filter(chat => 
+        chat.character?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredChatHistory(filtered);
+    }
+  }, [searchQuery, chatHistory]);
+
+  // Start new chat function
+  const handleStartNewChat = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await supabase.functions.invoke('create-chat-with-greeting', {
+        body: { characterId: character.id }
+      });
+      
+      if (response.error) throw response.error;
+      
+      const { chatId } = response.data;
+      navigate(`/chat/${character.id}/${chatId}`);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      toast.error('Failed to start new chat');
     }
   };
 
@@ -386,6 +426,8 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
                       placeholder="Search chats..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       className="bg-[#1a1a2e] border-gray-700/50 text-white placeholder-gray-400 pl-10 focus:ring-[#FF7A00] focus:border-[#FF7A00]"
                     />
                   </div>
@@ -393,10 +435,12 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                   <div className="space-y-2">
                     {loading ? (
                       <div className="text-gray-400 text-center py-4">Loading chats...</div>
-                    ) : chatHistory.length === 0 ? (
-                      <div className="text-gray-400 text-center py-4">No chat history yet</div>
+                    ) : filteredChatHistory.length === 0 ? (
+                      <div className="text-gray-400 text-center py-4">
+                        {searchQuery ? 'No chats match your search' : 'No chat history yet'}
+                      </div>
                     ) : (
-                      chatHistory.map((chat) => {
+                      filteredChatHistory.map((chat) => {
                         const isActiveChat = chat.id === currentChatId;
                         
                         return (
@@ -530,10 +574,18 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                       <div>
                         <h3 className="text-white font-semibold mb-3">Actions</h3>
                         <div className="space-y-3">
+                          <Button
+                            onClick={handleStartNewChat}
+                            className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Start New Chat
+                          </Button>
                           {isCharacterOwner && (
                             <Button
                               onClick={handleEditCharacter}
-                              className="w-full bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
+                              variant="outline"
+                              className="w-full bg-transparent border-gray-600/50 hover:bg-[#1a1a2e] hover:text-white text-gray-300"
                             >
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Character

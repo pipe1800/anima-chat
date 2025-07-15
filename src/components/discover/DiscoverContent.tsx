@@ -15,6 +15,10 @@ export function DiscoverContent() {
     label: string;
     type: string;
   }>>([]);
+  
+  // Check URL params for default tab
+  const urlParams = new URLSearchParams(window.location.search);
+  const defaultTab = urlParams.get('tab') === 'world-infos' ? 'world-infos' : 'characters';
   const removeFilter = (filterId: string) => {
     setActiveFilters(prev => prev.filter(filter => filter.id !== filterId));
     // Reset the corresponding filter state based on type
@@ -43,7 +47,7 @@ export function DiscoverContent() {
       </header>
 
       {/* Tabs */}
-      <Tabs defaultValue="characters" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <div className="border-b border-gray-700/50 bg-[#1a1a2e]">
           <div className="px-6 py-2">
             <TabsList className="bg-[#121212] border border-gray-700/50">

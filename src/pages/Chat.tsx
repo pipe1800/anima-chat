@@ -108,16 +108,61 @@ const Chat = () => {
     );
   }
 
-  if (!user || !selectedCharacter) {
+  // If we have characterId from URL but no selectedCharacter, fetch it
+  if (!user) {
+    navigate('/onboarding');
+    return null;
+  }
+  
+  if (!selectedCharacter && !characterId) {
     navigate('/onboarding');
     return null;
   }
 
+  // If we have characterId but no selectedCharacter, we need to fetch it
+  const [characterData, setCharacterData] = useState(selectedCharacter);
+  
+  useEffect(() => {
+    if (characterId && !selectedCharacter) {
+      // Fetch character data from the URL parameter
+      const fetchCharacter = async () => {
+        try {
+          const { data } = await supabase
+            .from('characters')
+            .select('*')
+            .eq('id', characterId)
+            .single();
+          
+          if (data) {
+            setCharacterData(data);
+          } else {
+            navigate('/dashboard');
+          }
+        } catch (error) {
+          console.error('Error fetching character:', error);
+          navigate('/dashboard');
+        }
+      };
+      
+      fetchCharacter();
+    } else if (selectedCharacter) {
+      setCharacterData(selectedCharacter);
+    }
+  }, [characterId, selectedCharacter, navigate]);
+
+  if (!characterData) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="text-white">Loading character...</div>
+      </div>
+    );
+  }
+
   // Map avatar_url to avatar for compatibility
   const character = {
-    ...selectedCharacter,
-    avatar: selectedCharacter.avatar_url || selectedCharacter.avatar,
-    fallback: selectedCharacter.name?.split(' ').map((n: string) => n[0]).join('') || 'C'
+    ...characterData,
+    avatar: characterData.avatar_url || characterData.avatar,
+    fallback: characterData.name?.split(' ').map((n: string) => n[0]).join('') || 'C'
   };
 
   return (
