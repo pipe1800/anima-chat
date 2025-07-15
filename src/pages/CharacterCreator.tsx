@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { MobileNavMenu } from '@/components/layout/MobileNavMenu';
+import { getUserCredits } from '@/lib/supabase-queries';
 import FoundationStep from '@/components/character-creator/FoundationStep';
 import PersonalityStep from '@/components/character-creator/PersonalityStep';
 import DialogueStep from '@/components/character-creator/DialogueStep';
@@ -54,10 +56,27 @@ const CharacterCreator = () => {
   const [isParsingCard, setIsParsingCard] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
+  const [userCredits, setUserCredits] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  // Fetch user credits for mobile nav
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      try {
+        const creditsResult = await getUserCredits(user.id);
+        if (creditsResult.data && typeof creditsResult.data.balance === 'number') {
+          setUserCredits(creditsResult.data.balance);
+        }
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+      }
+    };
+    fetchCredits();
+  }, [user]);
 
   // Check if we're editing a character from location state
   useEffect(() => {
@@ -425,17 +444,49 @@ const CharacterCreator = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="w-full">
-        <CreationStepsHeader
-          steps={steps}
-          currentStep={currentStep}
-          onStepChange={handleStepChange}
-        />
+    <div className="flex flex-col h-screen bg-[#121212]">
+      {/* Mobile Navigation */}
+      <div className="md:hidden bg-[#1b1b1b] border-b border-gray-700/50 p-4">
+        <div className="flex items-center justify-between">
+          <MobileNavMenu 
+            userCredits={userCredits} 
+            username={profile?.username || 'User'} 
+          />
+          <h1 className="text-white text-lg font-semibold">
+            {isEditing ? 'Edit Character' : 'Create Character'}
+          </h1>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        {renderCurrentStep()}
+      {/* Desktop Layout */}
+      <div className="hidden md:flex flex-col h-full">
+        <div className="w-full">
+          <CreationStepsHeader
+            steps={steps}
+            currentStep={currentStep}
+            onStepChange={handleStepChange}
+          />
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          {renderCurrentStep()}
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden flex flex-col flex-1 overflow-hidden">
+        <div className="px-4 py-2 bg-[#1b1b1b] border-b border-gray-700/50">
+          <CreationStepsHeader
+            steps={steps}
+            currentStep={currentStep}
+            onStepChange={handleStepChange}
+          />
+        </div>
+
+        <div className="flex-1 overflow-auto px-4 py-4">
+          {renderCurrentStep()}
+        </div>
       </div>
 
       {/* Loading Modal for PNG Character Card */}
