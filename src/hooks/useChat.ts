@@ -127,13 +127,15 @@ export const useSendMessage = () => {
       content, 
       characterId,
       trackedContext,
-      addonSettings
+      addonSettings,
+      selectedPersonaId
     }: { 
       chatId: string; 
       content: string; 
       characterId: string;
       trackedContext?: TrackedContext;
       addonSettings?: any;
+      selectedPersonaId?: string | null;
     }) => {
       if (!user) throw new Error('User not authenticated');
       
@@ -203,7 +205,7 @@ export const useSendMessage = () => {
         });
         
         // Invoke AI for response - now we need to return the updated context
-        const result = await invokeAIResponse(chatId, content, characterId, user.id, trackedContext, addonSettings);
+        const result = await invokeAIResponse(chatId, content, characterId, user.id, trackedContext, addonSettings, selectedPersonaId);
         
         return { chatId, content, optimisticId, updatedContext: result };
         
@@ -251,7 +253,8 @@ const invokeAIResponse = async (
   characterId: string, 
   userId: string,
   trackedContext?: TrackedContext,
-  addonSettings?: any
+  addonSettings?: any,
+  selectedPersonaId?: string | null
 ) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -264,7 +267,7 @@ const invokeAIResponse = async (
       user_message: userMessage,
       tracked_context: trackedContext,
       addon_settings: addonSettings,
-      selected_persona_id: null // TODO: Pass from ChatInterface when persona selection is implemented
+      selected_persona_id: selectedPersonaId
     };
     
     console.log('Frontend sending request:', JSON.stringify(requestPayload, null, 2));

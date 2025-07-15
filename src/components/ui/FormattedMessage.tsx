@@ -21,7 +21,7 @@ export function FormattedMessage({ content, className = '' }: FormattedMessagePr
             );
           case 'action':
             return (
-              <span key={index} className="italic text-muted-foreground/80">
+              <span key={index} className="italic text-muted-foreground/90">
                 *{segment.content}*
               </span>
             );

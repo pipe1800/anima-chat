@@ -380,7 +380,7 @@ ${Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).map(key => 
   switch(key) {
     case 'moodTracking': return '- moodTracking: Emotional state';
     case 'clothingInventory': return '- clothingInventory: Clothing/outfit';
-    case 'locationTracking': return '- locationTracking: Location/environment';
+    case 'locationTracking': return '- locationTracking: Location/environment (room, house, bedroom, kitchen, etc.)';
     case 'timeAndWeather': return '- timeAndWeather: Time/weather';
     case 'relationshipStatus': return '- relationshipStatus: Relationship status';
     case 'characterPosition': return '- characterPosition: Physical position';
@@ -503,10 +503,15 @@ ${replaceTemplates(character.scenario) || 'Casual conversation'}
 ${contextPrompt}
 
 **Roleplay Instructions:**
-- Text between *asterisks* represents actions, thoughts, or descriptions
-- Respond to these actions naturally and incorporate them into your roleplay
-- You can also use *asterisks* for your own actions and descriptions
+- Use "quotes" for all spoken dialogue
+- Use *asterisks* for actions, thoughts, or descriptions
+- Respond to actions naturally and incorporate them into your roleplay
 - Pay attention to actions when updating context information
+
+**Formatting Rules:**
+- ALL spoken words must be enclosed in "double quotes"
+- ALL actions, thoughts, and descriptions must be enclosed in *asterisks*
+- Example: "Hello there!" *she said with a smile* "How are you today?"
 
 Respond naturally to the conversation, keeping the character's personality consistent. Use the current context to inform your responses when relevant.`;
 
@@ -672,11 +677,11 @@ Respond naturally to the conversation, keeping the character's personality consi
     }
     if (addonSettingsObj.clothingInventory) {
       extractionFields['clothingInventory'] = currentContext.clothingInventory;
-      fieldInstructions += '\n- clothingInventory: Extract what the character is currently wearing or any clothing changes. Look for clothing descriptions in actions between *asterisks* or dialogue.';
+      fieldInstructions += '\n- clothingInventory: Extract clothing/outfit descriptions. Look for clothing in actions *...* or dialogue.';
     }
     if (addonSettingsObj.locationTracking) {
       extractionFields['locationTracking'] = currentContext.locationTracking;
-      fieldInstructions += '\n- locationTracking: Extract the current location or any location changes. Look for location descriptions in actions between *asterisks* or dialogue.';
+      fieldInstructions += '\n- locationTracking: Extract location (room, house, bedroom, kitchen, etc.). Look for location in actions *...* or dialogue.';
     }
     if (addonSettingsObj.timeAndWeather) {
       extractionFields['timeAndWeather'] = currentContext.timeAndWeather;

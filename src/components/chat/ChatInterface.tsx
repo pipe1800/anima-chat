@@ -15,7 +15,7 @@ import {
 } from '@/hooks/useChat';
 import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAddonSettings } from './useAddonSettings';
-import { AddonDebugPanel } from './AddonDebugPanel';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Character {
   id: string;
@@ -44,6 +44,8 @@ const ChatInterface = ({
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  
   // Use the addon settings hook for real-time updates
   const { data: addonSettings } = useAddonSettings(character.id);
   
@@ -96,6 +98,25 @@ const ChatInterface = ({
     }
   }, []);
 
+  // Fetch user's default persona for template replacement
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchUserPersona = async () => {
+      const { data: personas } = await supabase
+        .from('personas')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (personas && personas.length > 0) {
+        setSelectedPersonaId(personas[0].id);
+      }
+    };
+    
+    fetchUserPersona();
+  }, [user]);
+
   // Addon settings are now loaded via useAddonSettings hook
 
   // Stop typing indicator when AI message appears
@@ -132,7 +153,8 @@ const ChatInterface = ({
         content: messageContent,
         characterId: character.id,
         trackedContext: trackedContext,
-        addonSettings: currentAddonSettings
+        addonSettings: currentAddonSettings,
+        selectedPersonaId: selectedPersonaId
       });
 
       // Update tracked context if returned
