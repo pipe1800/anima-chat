@@ -42,75 +42,112 @@ interface ContextItem {
 export const ContextDisplay = ({ context, contextUpdates, currentContext, addonSettings, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Create all possible addon items
+  const allAddonItems = [
+    { label: 'Mood Tracking', key: 'mood', addonKey: 'moodTracking' },
+    { label: 'Clothing Inventory', key: 'clothing', addonKey: 'clothingInventory' },
+    { label: 'Location Tracking', key: 'location', addonKey: 'locationTracking' },
+    { label: 'Time & Weather', key: 'weather', addonKey: 'timeAndWeather' },
+    { label: 'Relationship Status', key: 'relationship', addonKey: 'relationshipStatus' },
+    { label: 'Character Position', key: 'character_position', addonKey: 'characterPosition' },
+  ];
+
   // Process context data into unified format
   let contextItems: ContextItem[] = [];
   
   // Handle contextUpdates (from historical messages)
   if (contextUpdates && Object.keys(contextUpdates).length > 0) {
-    contextItems = Object.entries(contextUpdates)
-      .filter(([key, update]) => {
-        return update && 
-               update.current !== 'No context' && 
-               isCharacterRelevantContext(key, update.current);
-      })
-      .map(([key, update]) => {
-        const isEnabled = addonSettings ? addonSettings[key as keyof typeof addonSettings] : true;
+    contextItems = allAddonItems.map(item => {
+      const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
+      const updateData = contextUpdates[item.addonKey];
+      
+      if (updateData && updateData.current !== 'No context' && isCharacterRelevantContext(item.addonKey, updateData.current)) {
         return {
-          label: getContextLabel(key),
-          value: capitalizeText(update.current),
-          key: key,
+          label: item.label,
+          value: capitalizeText(updateData.current),
+          key: item.key,
           isEnabled: isEnabled,
           isHistorical: !isEnabled
         };
-      });
+      } else if (isEnabled) {
+        return {
+          label: item.label,
+          value: 'No context yet',
+          key: item.key,
+          isEnabled: true,
+          isHistorical: false
+        };
+      }
+      return null;
+    }).filter(Boolean);
   } 
   // Handle currentContext (inherited states)
   else if (currentContext) {
-    contextItems = [
-      { label: 'Mood Tracking', value: currentContext.moodTracking, key: 'mood' },
-      { label: 'Clothing Inventory', value: currentContext.clothingInventory, key: 'clothing' },
-      { label: 'Location Tracking', value: currentContext.locationTracking, key: 'location' },
-      { label: 'Time & Weather', value: currentContext.timeAndWeather, key: 'weather' },
-      { label: 'Relationship Status', value: currentContext.relationshipStatus, key: 'relationship' },
-      { label: 'Character Position', value: currentContext.characterPosition, key: 'character_position' },
-    ]
-      .filter(item => item.value && 
-                     item.value !== 'No context' && 
-                     isCharacterRelevantContext(getAddonKey(item.key), item.value))
-      .map(item => {
-        const addonKey = getAddonKey(item.key);
-        const isEnabled = addonSettings ? addonSettings[addonKey] : true;
+    contextItems = allAddonItems.map(item => {
+      const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
+      const contextValue = currentContext[item.addonKey];
+      
+      if (contextValue && contextValue !== 'No context' && isCharacterRelevantContext(item.addonKey, contextValue)) {
         return {
-          ...item,
-          value: capitalizeText(item.value),
-          isEnabled,
+          label: item.label,
+          value: capitalizeText(contextValue),
+          key: item.key,
+          isEnabled: isEnabled,
           isHistorical: false
         };
-      });
+      } else if (isEnabled) {
+        return {
+          label: item.label,
+          value: 'No context yet',
+          key: item.key,
+          isEnabled: true,
+          isHistorical: false
+        };
+      }
+      return null;
+    }).filter(Boolean);
   }
   // Handle legacy context format
   else if (context) {
-    contextItems = [
-      { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
-      { label: 'Clothing Inventory', value: context.clothingInventory, key: 'clothing' },
-      { label: 'Location Tracking', value: context.locationTracking, key: 'location' },
-      { label: 'Time & Weather', value: context.timeAndWeather, key: 'weather' },
-      { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
-      { label: 'Character Position', value: context.characterPosition, key: 'character_position' },
-    ]
-      .filter(item => item.value && 
-                     item.value !== 'No context' && 
-                     isCharacterRelevantContext(getAddonKey(item.key), item.value))
-      .map(item => {
-        const addonKey = getAddonKey(item.key);
-        const isEnabled = addonSettings ? addonSettings[addonKey] : true;
+    contextItems = allAddonItems.map(item => {
+      const isEnabled = addonSettings ? addonSettings[item.addonKey] : true;
+      const contextValue = context[item.addonKey];
+      
+      if (contextValue && contextValue !== 'No context' && isCharacterRelevantContext(item.addonKey, contextValue)) {
         return {
-          ...item,
-          value: capitalizeText(item.value),
-          isEnabled,
+          label: item.label,
+          value: capitalizeText(contextValue),
+          key: item.key,
+          isEnabled: isEnabled,
           isHistorical: !isEnabled
         };
-      });
+      } else if (isEnabled) {
+        return {
+          label: item.label,
+          value: 'No context yet',
+          key: item.key,
+          isEnabled: true,
+          isHistorical: false
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+  // If no context data but addons are enabled, show all enabled addons with "No context yet"
+  else {
+    contextItems = allAddonItems.map(item => {
+      const isEnabled = addonSettings ? addonSettings[item.addonKey] : false;
+      if (isEnabled) {
+        return {
+          label: item.label,
+          value: 'No context yet',
+          key: item.key,
+          isEnabled: true,
+          isHistorical: false
+        };
+      }
+      return null;
+    }).filter(Boolean);
   }
 
   // Check if any stateful addons are enabled
@@ -152,7 +189,7 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
             ))
           ) : (
             <div className="text-sm text-muted-foreground">
-              Stateful Character Tracking is active - no context extracted yet.
+              No stateful addons are currently enabled.
             </div>
           )}
         </div>

@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     // Fetch Character Definition
     const { data: character, error: characterError } = await supabaseAdmin
       .from('character_definitions')
-      .select('personality_summary, description, scenario')
+      .select('personality_summary, description, scenario, greeting')
       .eq('character_id', character_id)
       .single();
 
@@ -298,27 +298,31 @@ Deno.serve(async (req) => {
 
     // Extract initial context from character card if this is the first message
     if (isFirstMessage && hasEnabledAddons) {
-      console.log('First message detected, extracting initial context from character card...');
+      console.log('First message detected, extracting initial context from character card + greeting + user message...');
       
-      // Build character context for analysis
+      // Build character context for analysis including greeting
       const characterContent = [
         character.description ? `Description: ${character.description}` : '',
         character.personality_summary ? `Personality: ${character.personality_summary}` : '',
-        character.scenario ? `Scenario: ${JSON.stringify(character.scenario)}` : ''
+        character.scenario ? `Scenario: ${JSON.stringify(character.scenario)}` : '',
+        character.greeting ? `Character Greeting: ${character.greeting}` : ''
       ].filter(Boolean).join('\n\n');
 
-      // Build extraction prompt for character card
-      const characterExtractionPrompt = `You are analyzing a character card to extract initial context for enabled tracking addons. Extract relevant information ONLY for the enabled fields below.
+      // Build extraction prompt for character card + greeting + user message
+      const characterExtractionPrompt = `You are analyzing a character card, the character's greeting, and the user's first message to extract initial context for enabled tracking addons. Extract relevant information ONLY for the enabled fields below.
 
 Rules:
-1. Extract information that is explicitly stated or strongly implied in the character card
+1. Extract information that is explicitly stated or strongly implied in the character card, greeting, or user message
 2. If no information is available for a field, return "No context"
 3. Be specific and descriptive when information is available
-4. Focus on the character's starting/default state
+4. Focus on the character's starting/default state as established by the card, greeting, and first interaction
 5. Return valid JSON only
 
 Character Card Content:
 ${characterContent}
+
+User's First Message:
+${user_message}
 
 Enabled Fields to Extract:
 ${Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).map(key => {
@@ -351,7 +355,7 @@ ${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[ke
         body: JSON.stringify({
           model: 'mistralai/mistral-7b-instruct', // Always use Mistral for character card analysis
           messages: [
-            { role: 'system', content: 'You are a precise character analysis bot. Extract only the information that is explicitly stated or strongly implied. Return valid JSON only.' },
+            { role: 'system', content: 'You are a precise character analysis bot. Extract only the information that is explicitly stated or strongly implied from the character card, greeting, and user message. Return valid JSON only.' },
             { role: 'user', content: characterExtractionPrompt }
           ],
           temperature: 0.1
