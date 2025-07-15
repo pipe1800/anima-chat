@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 
-import DiscordCTA from '../DiscordCTA';
+
 import { MobileNavMenu } from '@/components/layout/MobileNavMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -226,7 +226,7 @@ export function DashboardContent() {
         </div>
       </header>
 
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="p-3 sm:p-6 md:p-6 space-y-4 sm:space-y-6">
         {/* Stats cards above Daily Message Limit */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-[#1a1a2e] border-gray-700/50 hover:border-[#FF7A00]/50 transition-colors">
@@ -280,8 +280,8 @@ export function DashboardContent() {
 
 
         {/* Your Dashboard sections - moved above Daily Quest */}
-        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[400px] sm:min-h-[800px]">
-          <CardHeader className="pb-2 sm:pb-4">
+        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[400px] sm:min-h-[800px] md:mx-0 -mx-3">
+          <CardHeader className="pb-2 sm:pb-4 px-3 sm:px-6">
             <CardTitle className="text-white text-xl sm:text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-6">
@@ -374,7 +374,7 @@ export function DashboardContent() {
                 </TabsContent>
 
                 <TabsContent value="my-characters" className="mt-3 sm:mt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {formattedMyCharacters.length > 0 ? (
                       formattedMyCharacters.map((character) => (
                         <Card
@@ -450,7 +450,7 @@ export function DashboardContent() {
                 </TabsContent>
 
                 <TabsContent value="favorites" className="mt-3 sm:mt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                     {formattedFavoriteCharacters.length > 0 ? (
                       formattedFavoriteCharacters.map((character) => (
                         <Card
@@ -517,9 +517,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-{/* Daily Quest section hidden for now */}
-
-        <DiscordCTA />
+{/* Discord CTA section removed */}
       </div>
     </div>
   );
