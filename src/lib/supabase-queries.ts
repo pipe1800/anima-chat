@@ -59,6 +59,8 @@ export const getUserActiveSubscription = async (userId: string) => {
     `)
     .eq('user_id', userId)
     .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   return { data, error }
@@ -530,7 +532,7 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
       is_ai_message,
       created_at,
       author_id,
-      message_context (
+      message_context(
         context_updates
       )
     `)
@@ -554,7 +556,7 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
       is_ai_message,
       created_at,
       author_id,
-      message_context (
+      message_context(
         context_updates
       )
     `)
