@@ -85,15 +85,22 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
         )}
       </div>
       
-      {/* Show context display for AI messages with context updates or current context */}
+      {/* Show context display for AI messages when addons are enabled */}
       {!isUser && (
         <div className="mt-3 ml-11">
           {messages.map(msg => {
-            // Show context if there are updates or if there's current context state
+            // Show context if there are updates, current context, or any stateful addons are enabled
             const hasContextUpdates = msg.contextUpdates && Object.keys(msg.contextUpdates).length > 0;
             const hasCurrentContext = msg.current_context && Object.keys(msg.current_context).length > 0;
+            const hasEnabledAddons = addonSettings && (
+              addonSettings.moodTracking || 
+              addonSettings.clothingInventory || 
+              addonSettings.locationTracking || 
+              addonSettings.timeAndWeather || 
+              addonSettings.relationshipStatus
+            );
             
-            if (hasContextUpdates || hasCurrentContext) {
+            if (hasContextUpdates || hasCurrentContext || hasEnabledAddons) {
               return (
                 <div key={`${msg.id}-context`} className="mb-2">
                   <ContextDisplay 

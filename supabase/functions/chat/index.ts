@@ -123,6 +123,26 @@ Deno.serve(async (req) => {
 
     console.log('Character definition found');
 
+    // Save the user message to the database first
+    const { error: userMessageError } = await supabase
+      .from('messages')
+      .insert({
+        chat_id: chat_id,
+        author_id: user.id,
+        content: user_message,
+        is_ai_message: false,
+        model_id: null,
+        token_cost: 0
+      });
+
+    if (userMessageError) {
+      console.error('Error saving user message:', userMessageError);
+      return new Response(JSON.stringify({ error: 'Failed to save user message' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Fetch user's addon settings for dynamic world info
     const { data: addonSettings, error: addonError } = await supabase
       .from('user_character_addons')
@@ -181,6 +201,10 @@ Deno.serve(async (req) => {
     }
 
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
+
+    // Check if this is the first message (only user message should exist)
+    const isFirstMessage = messageHistory?.length === 1;
+    console.log('Is first message:', isFirstMessage);
 
     // Load existing context from database
     const addonSettingsObj = addon_settings || {};
@@ -263,6 +287,128 @@ Deno.serve(async (req) => {
     }
 
     console.log('Current context loaded:', currentContext);
+
+    // Check if any addons are enabled
+    const hasEnabledAddons = addonSettingsObj.moodTracking || 
+                           addonSettingsObj.clothingInventory || 
+                           addonSettingsObj.locationTracking || 
+                           addonSettingsObj.timeAndWeather || 
+                           addonSettingsObj.relationshipStatus ||
+                           addonSettingsObj.characterPosition;
+
+    // Extract initial context from character card if this is the first message
+    if (isFirstMessage && hasEnabledAddons) {
+      console.log('First message detected, extracting initial context from character card...');
+      
+      // Build character context for analysis
+      const characterContent = [
+        character.description ? `Description: ${character.description}` : '',
+        character.personality_summary ? `Personality: ${character.personality_summary}` : '',
+        character.scenario ? `Scenario: ${JSON.stringify(character.scenario)}` : ''
+      ].filter(Boolean).join('\n\n');
+
+      // Build extraction prompt for character card
+      const characterExtractionPrompt = `You are analyzing a character card to extract initial context for enabled tracking addons. Extract relevant information ONLY for the enabled fields below.
+
+Rules:
+1. Extract information that is explicitly stated or strongly implied in the character card
+2. If no information is available for a field, return "No context"
+3. Be specific and descriptive when information is available
+4. Focus on the character's starting/default state
+5. Return valid JSON only
+
+Character Card Content:
+${characterContent}
+
+Enabled Fields to Extract:
+${Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).map(key => {
+  switch(key) {
+    case 'moodTracking': return '- moodTracking: Character\'s initial emotional state or typical mood';
+    case 'clothingInventory': return '- clothingInventory: Character\'s default clothing or outfit';
+    case 'locationTracking': return '- locationTracking: Character\'s starting location or typical environment';
+    case 'timeAndWeather': return '- timeAndWeather: Time period or weather conditions from the scenario';
+    case 'relationshipStatus': return '- relationshipStatus: Character\'s relationship situation or romantic status';
+    case 'characterPosition': return '- characterPosition: Character\'s default physical position, stance, or posture';
+    default: return `- ${key}: Extract relevant information for ${key}`;
+  }
+}).join('\n')}
+
+Return the extracted context in this exact JSON format:
+${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).reduce((acc, key) => {
+  acc[key] = 'No context';
+  return acc;
+}, {}), null, 2)}`;
+
+      // Call extraction LLM for character card
+      const characterExtractionResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
+          'X-Title': 'AnimaChat-CharacterContext'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: 'You are a precise character analysis bot. Extract only the information that is explicitly stated or strongly implied. Return valid JSON only.' },
+            { role: 'user', content: characterExtractionPrompt }
+          ],
+          temperature: 0.1
+        })
+      });
+
+      if (characterExtractionResponse.ok) {
+        try {
+          const characterExtractionData = await characterExtractionResponse.json();
+          const characterContextStr = characterExtractionData.choices?.[0]?.message?.content || '{}';
+          console.log('Character card extraction response:', characterContextStr);
+          
+          const characterContext = JSON.parse(characterContextStr);
+          console.log('Extracted character context:', characterContext);
+          
+          // Update current context with character card data
+          Object.keys(characterContext).forEach(key => {
+            if (addonSettingsObj[key] && characterContext[key] !== 'No context') {
+              currentContext[key] = characterContext[key];
+            }
+          });
+          
+          // Save initial context to database
+          const contextMappings = [
+            { type: 'mood', value: currentContext.moodTracking, key: 'moodTracking' },
+            { type: 'clothing', value: currentContext.clothingInventory, key: 'clothingInventory' },
+            { type: 'location', value: currentContext.locationTracking, key: 'locationTracking' },
+            { type: 'time_weather', value: currentContext.timeAndWeather, key: 'timeAndWeather' },
+            { type: 'relationship', value: currentContext.relationshipStatus, key: 'relationshipStatus' },
+            { type: 'character_position', value: currentContext.characterPosition, key: 'characterPosition' }
+          ];
+
+          for (const mapping of contextMappings) {
+            const isAddonEnabled = addonSettingsObj[mapping.key];
+            if (isAddonEnabled && mapping.value && mapping.value !== 'No context') {
+              console.log(`Saving initial context for ${mapping.type}:`, mapping.value);
+              await supabase
+                .from('user_chat_context')
+                .upsert({
+                  user_id: user.id,
+                  character_id: character_id,
+                  chat_id: chat_id,
+                  context_type: mapping.type,
+                  current_context: mapping.value
+                });
+            }
+          }
+          
+          console.log('Initial context from character card saved successfully');
+          
+        } catch (parseError) {
+          console.error('Failed to parse character card extraction:', parseError);
+        }
+      } else {
+        console.error('Character card extraction failed:', characterExtractionResponse.status);
+      }
+    }
 
     // Construct context injection for system prompt - only for enabled addons
     const contextParts = [];
@@ -431,13 +577,7 @@ Respond naturally to the conversation, keeping the character's personality consi
 
     console.log('AI response saved successfully');
 
-    // Check if any addons are enabled before extracting context
-    const hasEnabledAddons = addonSettingsObj.moodTracking || 
-                           addonSettingsObj.clothingInventory || 
-                           addonSettingsObj.locationTracking || 
-                           addonSettingsObj.timeAndWeather || 
-                           addonSettingsObj.relationshipStatus ||
-                           addonSettingsObj.characterPosition;
+    // Check if any addons are enabled before extracting context (already defined above)
 
     console.log('Checking enabled addons:', {
       moodTracking: addonSettingsObj.moodTracking,

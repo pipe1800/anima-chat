@@ -113,8 +113,17 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
       });
   }
 
-  // Don't render if no relevant context
-  if (contextItems.length === 0) {
+  // Check if any stateful addons are enabled
+  const hasEnabledAddons = addonSettings && (
+    addonSettings.moodTracking || 
+    addonSettings.clothingInventory || 
+    addonSettings.locationTracking || 
+    addonSettings.timeAndWeather || 
+    addonSettings.relationshipStatus
+  );
+
+  // Don't render if no relevant context and no enabled addons
+  if (contextItems.length === 0 && !hasEnabledAddons) {
     return null;
   }
 
@@ -134,11 +143,17 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
 
       {isExpanded && (
         <div className="mt-2 space-y-1">
-          {contextItems.map((item) => (
-            <div key={item.key} className={`text-sm ${item.isHistorical ? 'text-muted-foreground' : 'text-foreground'}`}>
-              <span className="font-medium">{item.label}:</span> {item.value}.
+          {contextItems.length > 0 ? (
+            contextItems.map((item) => (
+              <div key={item.key} className={`text-sm ${item.isHistorical ? 'text-muted-foreground' : 'text-foreground'}`}>
+                <span className="font-medium">{item.label}:</span> {item.value}.
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Context tracking is active - no data extracted yet.
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
