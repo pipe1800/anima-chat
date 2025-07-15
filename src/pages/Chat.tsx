@@ -15,6 +15,7 @@ const Chat = () => {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [characterData, setCharacterData] = useState(null); // Move this to top
   const location = useLocation();
   const navigate = useNavigate();
   const { characterId, chatId } = useParams();
@@ -119,10 +120,12 @@ const Chat = () => {
     return null;
   }
 
-  // If we have characterId but no selectedCharacter, we need to fetch it
-  const [characterData, setCharacterData] = useState(selectedCharacter);
-  
+  // Character data fetching effect
   useEffect(() => {
+    // Initialize character data from selectedCharacter if available
+    if (selectedCharacter) {
+      setCharacterData(selectedCharacter);
+    }
     if (characterId && !selectedCharacter) {
       // Fetch character data from the URL parameter
       const fetchCharacter = async () => {
@@ -145,8 +148,6 @@ const Chat = () => {
       };
       
       fetchCharacter();
-    } else if (selectedCharacter) {
-      setCharacterData(selectedCharacter);
     }
   }, [characterId, selectedCharacter, navigate]);
 
