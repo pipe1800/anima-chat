@@ -23,6 +23,7 @@ interface ChatConfigurationTabProps {
   setShowPersonaModal: (show: boolean) => void;
   worldInfoDropdownVisible: boolean;
   onWorldInfoSelect: (worldInfo: any) => void;
+  currentChatId?: string;
 }
 
 export const ChatConfigurationTab = ({
@@ -33,7 +34,8 @@ export const ChatConfigurationTab = ({
   setSelectedPersona,
   setShowPersonaModal,
   worldInfoDropdownVisible,
-  onWorldInfoSelect
+  onWorldInfoSelect,
+  currentChatId
 }: ChatConfigurationTabProps) => {
   const { subscription } = useAuth();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
@@ -154,7 +156,14 @@ export const ChatConfigurationTab = ({
 
   useEffect(() => {
     loadAddonSettings();
-  }, [characterId, userId]);
+    // Load background image for current chat
+    if (currentChatId) {
+      const savedBackground = localStorage.getItem(`chat-background-${currentChatId}`);
+      if (savedBackground) {
+        setBackgroundImage(savedBackground);
+      }
+    }
+  }, [characterId, userId, currentChatId]);
 
   const loadAddonSettings = async () => {
     try {
@@ -215,7 +224,12 @@ export const ChatConfigurationTab = ({
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setBackgroundImage(e.target?.result as string);
+        const imageData = e.target?.result as string;
+        setBackgroundImage(imageData);
+        // Save to localStorage for the current chat
+        if (currentChatId) {
+          localStorage.setItem(`chat-background-${currentChatId}`, imageData);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -223,6 +237,10 @@ export const ChatConfigurationTab = ({
 
   const clearBackgroundImage = () => {
     setBackgroundImage(null);
+    // Remove from localStorage for the current chat
+    if (currentChatId) {
+      localStorage.removeItem(`chat-background-${currentChatId}`);
+    }
   };
 
   const totalCost = calculateAddonCreditCost(tempAddonSettings);
@@ -313,12 +331,14 @@ export const ChatConfigurationTab = ({
         <WorldInfoDropdown 
           isVisible={true}
           onWorldInfoSelect={onWorldInfoSelect}
+          disabled={!tempAddonSettings.dynamicWorldInfo}
         />
       </Card>
 
       {/* Background Image */}
       <Card className="bg-[#1a1a2e] border-gray-700/50 p-4">
         <h3 className="text-white font-medium text-sm mb-3">Chat Background</h3>
+        <p className="text-xs text-gray-400 mb-3">Recommended size: 1920x1080px for best display</p>
         
         <div className="space-y-3">
           <div className="flex items-center justify-between">

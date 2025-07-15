@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { InsufficientCreditsModal } from './InsufficientCreditsModal';
@@ -12,6 +12,7 @@ import {
   useChatMessages,
   type Message
 } from '@/hooks/useChat';
+import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 
 interface Character {
   id: string;
@@ -36,6 +37,17 @@ const ChatInterface = ({
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
+  const [addonSettings, setAddonSettings] = useState<AddonSettings>({
+    dynamicWorldInfo: false,
+    enhancedMemory: false,
+    moodTracking: false,
+    clothingInventory: false,
+    locationTracking: false,
+    timeWeather: false,
+    relationshipStatus: false,
+    chainOfThought: false,
+    fewShotExamples: false,
+  });
   
   // Listen to message updates to stop typing when AI responds
   const { data: messagesData } = useChatMessages(currentChatId);
@@ -63,6 +75,21 @@ const ChatInterface = ({
       inputRef.current.focus();
     }
   }, []);
+
+  // Load addon settings
+  useEffect(() => {
+    const loadAddonSettings = async () => {
+      if (user && character.id) {
+        try {
+          const settings = await getUserCharacterAddonSettings(user.id, character.id);
+          setAddonSettings(settings);
+        } catch (error) {
+          console.error('Error loading addon settings:', error);
+        }
+      }
+    };
+    loadAddonSettings();
+  }, [user, character.id]);
 
   // Stop typing indicator when AI message appears
   useEffect(() => {
@@ -177,13 +204,21 @@ const ChatInterface = ({
             className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif]"
             disabled={creditsBalance < 1}
           />
-          <Button
-            type="submit"
-            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"
-            disabled={!inputValue.trim() || creditsBalance < 1}
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            {/* Enhanced Memory indicator */}
+            {addonSettings.enhancedMemory && (
+              <div className="flex items-center justify-center w-10 h-10 text-[#FF7A00]">
+                <Wand2 className="w-5 h-5" />
+              </div>
+            )}
+            <Button
+              type="submit"
+              className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"
+              disabled={!inputValue.trim() || creditsBalance < 1}
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </div>
         </form>
         
         {/* Credit balance indicator */}

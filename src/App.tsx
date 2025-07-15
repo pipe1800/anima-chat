@@ -81,6 +81,16 @@ const App = () => (
               <Chat />
             </OnboardingGuard>
           } />
+          <Route path="/chat/:characterId" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Chat />
+            </OnboardingGuard>
+          } />
+          <Route path="/chat/:characterId/:chatId" element={
+            <OnboardingGuard requireOnboardingComplete={true}>
+              <Chat />
+            </OnboardingGuard>
+          } />
           <Route path="/character-creator" element={
             <OnboardingGuard requireOnboardingComplete={true}>
               <AuthenticatedLayout>

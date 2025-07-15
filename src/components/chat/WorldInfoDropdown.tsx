@@ -19,11 +19,13 @@ interface WorldInfo {
 interface WorldInfoDropdownProps {
   isVisible: boolean;
   onWorldInfoSelect: (worldInfo: WorldInfo | null) => void;
+  disabled?: boolean;
 }
 
 export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({ 
   isVisible, 
-  onWorldInfoSelect 
+  onWorldInfoSelect,
+  disabled = false
 }) => {
   const { user } = useAuth();
   const { handleStepAction } = useTutorial();
@@ -96,6 +98,7 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
   }, [isVisible, user]);
 
   const handleWorldInfoSelect = (worldInfo: WorldInfo | null) => {
+    if (disabled) return;
     setSelectedWorldInfo(worldInfo);
     onWorldInfoSelect(worldInfo);
     
@@ -104,6 +107,14 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
       handleStepAction('world-info-selected');
     }
   };
+
+  // Clear selection when disabled
+  useEffect(() => {
+    if (disabled && selectedWorldInfo) {
+      setSelectedWorldInfo(null);
+      onWorldInfoSelect(null);
+    }
+  }, [disabled, selectedWorldInfo, onWorldInfoSelect]);
 
   const handleCreateWorldInfo = () => {
     navigate('/world-info-creator');
@@ -120,13 +131,18 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="text-gray-400 hover:text-white hover:bg-gray-800 px-3"
+          className={`px-3 ${
+            disabled 
+              ? 'text-gray-500 cursor-not-allowed opacity-50' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          }`}
           data-tutorial="world-info-dropdown"
+          disabled={disabled}
         >
           <div className="flex items-center space-x-2">
             <BookOpen className="w-4 h-4" />
             <span className="text-sm">
-              {selectedWorldInfo ? selectedWorldInfo.name : 'Select World Info'}
+              {disabled ? 'World Info (Disabled)' : selectedWorldInfo ? selectedWorldInfo.name : 'Select World Info'}
             </span>
             <ChevronDown className="w-4 h-4" />
           </div>

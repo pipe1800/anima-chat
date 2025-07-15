@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -17,9 +17,10 @@ const Chat = () => {
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { characterId, chatId } = useParams();
   
   const selectedCharacter = location.state?.selectedCharacter;
-  const existingChatId = location.state?.existingChatId;
+  const existingChatId = chatId || location.state?.existingChatId;
   const fromOnboarding = location.state?.fromOnboarding;
 
   useEffect(() => {

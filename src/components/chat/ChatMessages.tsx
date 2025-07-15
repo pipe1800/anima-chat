@@ -22,6 +22,7 @@ interface ChatMessagesProps {
 const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [backgroundImage, setBackgroundImage] = React.useState<string | null>(null);
   
   const {
     data,
@@ -35,6 +36,16 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
   // Enable real-time updates with fallback polling
   const { isSubscribed, debugInfo } = useRealtimeMessages(chatId);
   useMessagePolling(chatId, isSubscribed);
+
+  // Load background image for current chat
+  useEffect(() => {
+    if (chatId) {
+      const savedBackground = localStorage.getItem(`chat-background-${chatId}`);
+      setBackgroundImage(savedBackground);
+    } else {
+      setBackgroundImage(null);
+    }
+  }, [chatId]);
 
   // Use only fetched messages from database (single source of truth)
   const allMessages = React.useMemo(() => {
@@ -111,8 +122,19 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
   return (
     <div 
       ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif]"
+      className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif] relative"
+      style={{
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
     >
+      {/* Background overlay for better readability */}
+      {backgroundImage && (
+        <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+      )}
+      <div className="relative z-10">
       {/* Load Earlier Messages Button */}
       {hasNextPage && (
         <div className="flex justify-center mb-4">
@@ -153,6 +175,7 @@ const ChatMessages = ({ chatId, character }: ChatMessagesProps) => {
         </div>
       )}
       <div ref={messagesEndRef} />
+      </div>
     </div>
   );
 };

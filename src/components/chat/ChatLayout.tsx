@@ -260,9 +260,9 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
       setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
       toast.success('Chat deleted successfully');
       
-      // If we deleted the current chat, navigate away
+      // If we deleted the current chat, navigate to character's chat page
       if (chatId === currentChatId) {
-        navigate('/dashboard');
+        navigate(`/chat/${character.id}`);
       }
     } catch (error) {
       console.error('Error deleting chat:', error);
@@ -304,7 +304,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
               className="text-gray-400 hover:text-white hover:bg-gray-800"
               data-tutorial="right-panel-toggle"
             >
-              <Settings className="w-6 h-6" />
+              <Settings className="w-7 h-7" />
             </Button>
           </div>
         </header>
@@ -580,6 +580,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                   setShowPersonaModal={setShowPersonaModal}
                   worldInfoDropdownVisible={worldInfoDropdownVisible}
                   onWorldInfoSelect={handleWorldInfoSelect}
+                  currentChatId={currentChatId}
                 />
               )}
             </div>
