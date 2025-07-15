@@ -16,6 +16,7 @@ import {
 import { getUserCharacterAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 import { useAddonSettings } from './useAddonSettings';
 import { AddonDebugPanel } from './AddonDebugPanel';
+import { AddonStatusDebug } from '@/components/debug/AddonStatusDebug';
 
 interface Character {
   id: string;
@@ -250,6 +251,11 @@ const ChatInterface = ({
           <p className="text-gray-400 text-xs">
             {creditsBalance.toLocaleString()} credits remaining
           </p>
+        </div>
+        
+        {/* Debug Panel */}
+        <div className="mt-4 max-w-md mx-auto">
+          <AddonStatusDebug characterId={character.id} />
         </div>
       </div>
     </div>

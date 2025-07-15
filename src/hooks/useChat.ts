@@ -257,24 +257,38 @@ const invokeAIResponse = async (
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('User not authenticated');
     
+    const requestPayload = {
+      character_id: characterId,
+      chat_id: chatId,
+      model: 'mistral/mistral-7b-instruct',
+      user_message: userMessage,
+      tracked_context: trackedContext,
+      addon_settings: addonSettings
+    };
+    
+    console.log('Frontend sending request:', JSON.stringify(requestPayload, null, 2));
+    console.log('Field validation:', {
+      character_id: !!characterId,
+      chat_id: !!chatId,
+      model: !!requestPayload.model,
+      user_message: !!userMessage,
+      tracked_context: !!trackedContext,
+      addon_settings: !!addonSettings
+    });
+    
     const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        character_id: characterId,
-        chat_id: chatId,
-        model: 'mistral/mistral-7b-instruct',
-        user_message: userMessage,
-        tracked_context: trackedContext,
-        addon_settings: addonSettings
-      }),
+      body: JSON.stringify(requestPayload),
     });
     
     if (!response.ok) {
-      throw new Error(`AI response failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Edge function error response:', errorText);
+      throw new Error(`AI response failed: ${response.status} - ${errorText}`);
     }
     
     const responseData = await response.json();

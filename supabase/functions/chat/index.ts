@@ -64,6 +64,16 @@ Deno.serve(async (req) => {
     const { model, user_message, chat_id, character_id, tracked_context, addon_settings } = requestBody;
 
     console.log('Full request body:', JSON.stringify(requestBody, null, 2));
+    console.log('Field validation in edge function:', {
+      model: !!model,
+      user_message: !!user_message,
+      chat_id: !!chat_id,
+      character_id: !!character_id,
+      model_value: model,
+      user_message_length: user_message?.length,
+      chat_id_value: chat_id,
+      character_id_value: character_id
+    });
 
     if (!model || !user_message || !chat_id || !character_id) {
       console.error('Missing required fields. Received:', { model, user_message: !!user_message, chat_id, character_id });
@@ -375,7 +385,9 @@ Respond naturally to the conversation, keeping the character's personality consi
       body: JSON.stringify({
         model: 'mistral/mistral-7b-instruct',
         messages: conversationMessages,
-        stream: false // Changed to false for context extraction
+        stream: false,
+        temperature: 0.7,
+        max_tokens: 1000
       })
     });
 
@@ -395,6 +407,29 @@ Respond naturally to the conversation, keeping the character's personality consi
     const aiResponseContent = responseData.choices?.[0]?.message?.content || '';
 
     console.log('AI response generated successfully, length:', aiResponseContent.length);
+
+    // Save the AI response to the database first
+    console.log('Saving AI response to database...');
+    const { error: saveError } = await supabase
+      .from('messages')
+      .insert({
+        chat_id: chat_id,
+        author_id: user.id,
+        content: aiResponseContent,
+        is_ai_message: true,
+        model_id: 'mistral/mistral-7b-instruct',
+        token_cost: 1
+      });
+
+    if (saveError) {
+      console.error('Error saving AI message:', saveError);
+      return new Response(JSON.stringify({ error: 'Failed to save AI response' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('AI response saved successfully');
 
     // Check if any addons are enabled before extracting context
     const hasEnabledAddons = addonSettingsObj.moodTracking || 
@@ -541,21 +576,19 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         
         console.log('Context extracted successfully:', updatedContext);
         
-        // Save the AI response message first
+        // Get the AI message ID for context linking
         const { data: aiMessage, error: aiMessageError } = await supabase
           .from('messages')
-          .insert({
-            chat_id: chat_id,
-            author_id: user.id,
-            content: aiResponseContent,
-            is_ai_message: true,
-            model_id: 'mistral/mistral-7b-instruct'
-          })
           .select('id')
+          .eq('chat_id', chat_id)
+          .eq('content', aiResponseContent)
+          .eq('is_ai_message', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .single();
 
         if (aiMessageError) {
-          console.error('Failed to save AI message:', aiMessageError);
+          console.error('Failed to get AI message ID:', aiMessageError);
         }
 
         // Save updated context to database
