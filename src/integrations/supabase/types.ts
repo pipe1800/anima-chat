@@ -974,6 +974,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_disabled_addon_context: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       consume_credits: {
         Args: { user_id_param: string; credits_to_consume: number }
         Returns: boolean
