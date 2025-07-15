@@ -280,7 +280,7 @@ export function DashboardContent() {
 
 
         {/* Your Dashboard sections - moved above Daily Quest */}
-        <Card className="bg-[#1a1a2e] border-gray-700/50 min-h-[400px] sm:min-h-[800px] md:mx-0 -mx-3">
+        <Card className="bg-[#1a1a2e] border-gray-700/50 md:mx-0 -mx-3" style={{ minHeight: 'calc(100vh - 300px)' }}>
           <CardHeader className="pb-2 sm:pb-4 px-3 sm:px-6">
             <CardTitle className="text-white text-xl sm:text-2xl">Your Dashboard</CardTitle>
           </CardHeader>
