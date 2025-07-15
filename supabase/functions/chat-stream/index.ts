@@ -355,26 +355,24 @@ Stay in character and respond naturally. After your response, provide context da
                       // ENHANCED CONTEXT STRIPPING: Remove context data from streaming content in real-time
                       let streamContent = parsed.choices[0].delta.content;
                       
-                      // More aggressive context data removal
-                      if (streamContent.includes('[CONTEXT_DATA]') || streamContent.includes('[/CONTEXT_DATA]') || 
-                          streamContent.includes('[CONTEXT') || streamContent.includes('CONTEXT_DATA]') ||
+                      // Super aggressive context data removal - prevent any context data from streaming
+                      if (streamContent.includes('[CONTEXT') || streamContent.includes('CONTEXT_DATA') || 
                           streamContent.includes('"mood"') || streamContent.includes('"location"') ||
                           streamContent.includes('"clothing"') || streamContent.includes('"time_weather"') ||
-                          streamContent.includes('"relationship"') || streamContent.includes('"character_position"')) {
+                          streamContent.includes('"relationship"') || streamContent.includes('"character_position"') ||
+                          streamContent.includes('{') || streamContent.includes('}') || 
+                          streamContent.includes('[/CONTEXT') || streamContent.includes(':/') ||
+                          /\[[A-Z_]+\]/.test(streamContent) || /"[a-z_]+"\s*:/.test(streamContent)) {
                         
-                        // Remove complete context blocks
+                        // Remove any context-related content completely
                         streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
                         streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
                         streamContent = streamContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
-                        
-                        // Remove partial context starts
                         streamContent = streamContent.replace(/\[CONTEXT[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"mood"[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"location"[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"clothing"[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"time_weather"[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"relationship"[^}]*$/g, '');
-                        streamContent = streamContent.replace(/\{[^}]*"character_position"[^}]*$/g, '');
+                        streamContent = streamContent.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
+                        streamContent = streamContent.replace(/\{[\s\S]*$/g, '');
+                        streamContent = streamContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
+                        streamContent = streamContent.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
                         
                         console.log('🧹 Stripped context from stream chunk:', streamContent);
                       }

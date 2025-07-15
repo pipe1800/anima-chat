@@ -157,7 +157,8 @@ const StreamingChatInterface = ({
 
       const reader = streamResponse.body?.getReader();
       const decoder = new TextDecoder();
-      let fullResponse = '';
+      let streamingDisplay = '';
+      let finalCleanContent = '';
 
       if (reader) {
         while (true) {
@@ -175,17 +176,31 @@ const StreamingChatInterface = ({
               try {
                 const parsed = JSON.parse(data);
                 
-                // Handle final clean message from backend
+                // Handle final clean message from backend - THIS IS THE CLEAN VERSION
                 if (parsed.type === 'final_message') {
-                  fullResponse = parsed.content;
-                  setStreamingMessage(fullResponse);
+                  finalCleanContent = parsed.content;
+                  setStreamingMessage(finalCleanContent);
+                  console.log('✅ Received clean final message:', finalCleanContent.substring(0, 50) + '...');
                   continue;
                 }
                 
-                // Handle streaming content chunks
+                // Handle streaming content chunks for display only
                 if (parsed.choices?.[0]?.delta?.content) {
-                  fullResponse += parsed.choices[0].delta.content;
-                  setStreamingMessage(fullResponse);
+                  let streamContent = parsed.choices[0].delta.content;
+                  
+                  // Client-side fail-safe context stripping
+                  if (streamContent.includes('[CONTEXT') || streamContent.includes('"mood"') || 
+                      streamContent.includes('"location"') || streamContent.includes('"clothing"') ||
+                      streamContent.includes('"time_weather"') || streamContent.includes('"relationship"') ||
+                      streamContent.includes('"character_position"') || streamContent.includes('{')) {
+                    streamContent = streamContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                    streamContent = streamContent.replace(/\[CONTEXT[^}]*$/g, '');
+                    streamContent = streamContent.replace(/\{[\s\S]*$/g, '');
+                    streamContent = streamContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
+                  }
+                  
+                  streamingDisplay += streamContent;
+                  setStreamingMessage(streamingDisplay);
                 }
               } catch (e) {
                 console.warn('Failed to parse streaming chunk:', e);
@@ -195,11 +210,20 @@ const StreamingChatInterface = ({
         }
       }
 
-      // Now save the clean AI message to database (frontend handles it)
-      if (fullResponse.trim()) {
+      // CRITICAL: Only save the clean final message, never the streaming accumulation
+      const messageToSave = finalCleanContent || streamingDisplay;
+      
+      // Additional fail-safe context stripping before database save
+      const cleanMessage = messageToSave
+        .replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '')
+        .replace(/\[CONTEXT_DATA\][\s\S]*$/g, '')
+        .replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '')
+        .trim();
+
+      if (cleanMessage) {
         const aiMessage = {
           id: crypto.randomUUID(),
-          content: fullResponse,
+          content: cleanMessage,
           author_id: user.id,
           chat_id: currentChatId,
           is_ai_message: true,
@@ -214,7 +238,7 @@ const StreamingChatInterface = ({
         if (insertError) {
           console.error('Error saving AI message:', insertError);
         } else {
-          console.log('✅ Clean AI message saved to database');
+          console.log('✅ Clean AI message saved to database:', cleanMessage.substring(0, 50) + '...');
         }
 
         // Update chat's last message timestamp
