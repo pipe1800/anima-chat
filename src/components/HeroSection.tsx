@@ -66,7 +66,7 @@ const HeroSection = () => {
               <div className="border-t border-gray-700/30 my-4"></div>
               
               <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                <div className="flex items-center px-4 rounded-lg border border-[#FF7A00]/50 hover:bg-[#FF7A00]/10 transition-colors py-[16px] my-[13px]">
+                <div className="flex items-center px-4 rounded-lg border border-[#FF7A00]/50 hover:bg-[#FF7A00]/10 transition-colors py-[9px] my-[20px]">
                   <span className="text-[#FF7A00] font-medium text-lg">Login</span>
                 </div>
               </Link>
