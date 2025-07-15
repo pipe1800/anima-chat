@@ -255,15 +255,53 @@ Stay in character and respond naturally. After your response, provide context da
                       }
                     }
 
-                    // Additional final cleanup for any remaining context data
-                    fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
-                    fullResponse = fullResponse.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '').trim();
-                    fullResponse = fullResponse.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '').trim();
+                    // PHASE 1: BACKEND FINAL MESSAGE GUARANTEE - BULLETPROOF CONTEXT STRIPPING
+                    let finalCleanMessage = fullResponse;
                     
-                    console.log('✅ Clean message content:', fullResponse.substring(0, 100) + '...');
+                    // Layer 1: Remove complete context blocks
+                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '');
+                    
+                    // Layer 2: Remove incomplete context blocks
+                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\[CONTEXTDATA\][\s\S]*$/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '');
+                    
+                    // Layer 3: Remove JSON-like context structures
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"mood"[\s\S]*\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"location"[\s\S]*\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"clothing"[\s\S]*\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"time_weather"[\s\S]*\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"relationship"[\s\S]*\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*"character_position"[\s\S]*\}/g, '');
+                    
+                    // Layer 4: Remove any remaining JSON fragments or patterns
+                    finalCleanMessage = finalCleanMessage.replace(/\{[\s\S]*$/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\}/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/^\s*"[a-z_]+"\s*:[\s\S]*$/g, '');
+                    
+                    // Layer 5: Clean up any remaining artifacts
+                    finalCleanMessage = finalCleanMessage.replace(/\[\/[A-Z_]+\][\s\S]*$/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
+                    finalCleanMessage = finalCleanMessage.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
+                    
+                    // Final cleanup and validation
+                    finalCleanMessage = finalCleanMessage.trim();
+                    
+                    // GUARANTEE: Never send empty or context-contaminated message
+                    if (!finalCleanMessage || finalCleanMessage.includes('[CONTEXT') || 
+                        finalCleanMessage.includes('"mood"') || finalCleanMessage.includes('"location"') ||
+                        finalCleanMessage.includes('"clothing"') || finalCleanMessage.includes('"time_weather"') ||
+                        finalCleanMessage.includes('"relationship"') || finalCleanMessage.includes('"character_position"')) {
+                      finalCleanMessage = "I apologize, but I need to respond again. Let me try that once more.";
+                    }
+                    
+                    console.log('✅ GUARANTEED clean message content:', finalCleanMessage.substring(0, 100) + '...');
 
-                    // Send clean message content to frontend for final display
-                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${fullResponse.replace(/"/g, '\\"')}"}\n\n`));
+                    // Send GUARANTEED clean message content to frontend for final display
+                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${finalCleanMessage.replace(/"/g, '\\"')}"}\n\n`));
 
                     // Save context to database if extracted (DO NOT SAVE MESSAGE - let frontend handle it)
                     if (extractedContext && addonSettings) {
@@ -354,10 +392,10 @@ Stay in character and respond naturally. After your response, provide context da
                       // Store raw content for context extraction
                       rawResponse += rawContent;
                       
-                      // CRITICAL FIX: Strip context data from raw content BEFORE adding to fullResponse
+                      // PHASE 1: BULLETPROOF REAL-TIME CONTEXT STRIPPING - Strip context data from raw content BEFORE adding to fullResponse
                       let cleanContent = rawContent;
                       
-                      // Super aggressive context data removal - prevent any context data from accumulating
+                      // SUPER AGGRESSIVE context data removal - prevent ANY context data from accumulating
                       if (cleanContent.includes('[CONTEXT') || cleanContent.includes('CONTEXT_DATA') || 
                           cleanContent.includes('"mood"') || cleanContent.includes('"location"') ||
                           cleanContent.includes('"clothing"') || cleanContent.includes('"time_weather"') ||
@@ -366,14 +404,19 @@ Stay in character and respond naturally. After your response, provide context da
                           cleanContent.includes('[/CONTEXT') || cleanContent.includes(':/') ||
                           /\[[A-Z_]+\]/.test(cleanContent) || /"[a-z_]+"\s*:/.test(cleanContent)) {
                         
-                        // Remove any context-related content completely
+                        // Multi-layer context removal - ZERO TOLERANCE
                         cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        cleanContent = cleanContent.replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '');
                         cleanContent = cleanContent.replace(/\[CONTEXT_DATA\][\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/\[CONTEXTDATA\][\s\S]*$/g, '');
                         cleanContent = cleanContent.replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '');
+                        cleanContent = cleanContent.replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '');
                         cleanContent = cleanContent.replace(/\[CONTEXT[^}]*$/g, '');
                         cleanContent = cleanContent.replace(/\[[A-Z_]+\][\s\S]*$/g, '');
                         cleanContent = cleanContent.replace(/\{[\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/^[\s\S]*?\}/g, '');
                         cleanContent = cleanContent.replace(/"[a-z_]+"\s*:[\s\S]*$/g, '');
+                        cleanContent = cleanContent.replace(/^\s*"[a-z_]+"\s*:[\s\S]*$/g, '');
                         cleanContent = cleanContent.replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '');
                         
                         console.log('🧹 Stripped context from chunk - raw:', rawContent);

@@ -176,9 +176,35 @@ const StreamingChatInterface = ({
               try {
                 const parsed = JSON.parse(data);
                 
-                // Handle final clean message from backend - THIS IS THE CLEAN VERSION
+                // PHASE 2: FRONTEND FINAL MESSAGE HANDLING - Handle final clean message from backend
                 if (parsed.type === 'final_message') {
                   finalCleanContent = parsed.content;
+                  
+                  // ADDITIONAL FRONTEND VALIDATION - Never trust any content with context patterns
+                  if (finalCleanContent && (finalCleanContent.includes('[CONTEXT') || 
+                      finalCleanContent.includes('"mood"') || finalCleanContent.includes('"location"') ||
+                      finalCleanContent.includes('"clothing"') || finalCleanContent.includes('"time_weather"') ||
+                      finalCleanContent.includes('"relationship"') || finalCleanContent.includes('"character_position"'))) {
+                    console.error('❌ CONTAMINATED final message detected, applying emergency stripping');
+                    finalCleanContent = finalCleanContent
+                      .replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '')
+                      .replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '')
+                      .replace(/\[CONTEXT_DATA\][\s\S]*$/g, '')
+                      .replace(/\[CONTEXTDATA\][\s\S]*$/g, '')
+                      .replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '')
+                      .replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '')
+                      .replace(/\{[\s\S]*"mood"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*"location"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*"clothing"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*"time_weather"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*"relationship"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*"character_position"[\s\S]*\}/g, '')
+                      .replace(/\{[\s\S]*$/g, '')
+                      .replace(/^[\s\S]*?\}/g, '')
+                      .replace(/"[a-z_]+"\s*:[\s\S]*$/g, '')
+                      .trim();
+                  }
+                  
                   setStreamingMessage(finalCleanContent);
                   console.log('✅ Received clean final message:', finalCleanContent.substring(0, 50) + '...');
                   continue;
@@ -210,26 +236,51 @@ const StreamingChatInterface = ({
         }
       }
 
-      // CRITICAL: Only save the clean final message, never the streaming accumulation
-      const messageToSave = finalCleanContent || streamingDisplay;
+      // PHASE 2: FRONTEND FALLBACK SAFETY - NEVER use contaminated streamingDisplay
+      let messageToSave = '';
       
-      // BULLETPROOF fail-safe context stripping before database save
+      // PRIORITY 1: Use clean final message from backend (preferred)
+      if (finalCleanContent && finalCleanContent.trim()) {
+        messageToSave = finalCleanContent;
+      } else {
+        // PRIORITY 2: Emergency fallback - but NEVER use contaminated streamingDisplay directly
+        console.error('❌ No clean final message received, applying emergency cleaning to streamingDisplay');
+        messageToSave = streamingDisplay;
+      }
+      
+      // PHASE 2: BULLETPROOF FAIL-SAFE CONTEXT STRIPPING - Multiple layers of protection
       let cleanMessage = messageToSave
+        // Layer 1: Remove complete context blocks
         .replace(/\[CONTEXT_DATA\][\s\S]*?\[\/CONTEXT_DATA\]/g, '')
-        .replace(/\[CONTEXT_DATA\][\s\S]*$/g, '')
-        .replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '')
         .replace(/\[CONTEXTDATA\][\s\S]*?\[\/CONTEXTDATA\]/g, '')
+        // Layer 2: Remove incomplete context blocks
+        .replace(/\[CONTEXT_DATA\][\s\S]*$/g, '')
         .replace(/\[CONTEXTDATA\][\s\S]*$/g, '')
+        .replace(/^[\s\S]*?\[\/CONTEXT_DATA\]/g, '')
         .replace(/^[\s\S]*?\[\/CONTEXTDATA\]/g, '')
+        // Layer 3: Remove JSON-like context structures
         .replace(/\{[\s\S]*"mood"[\s\S]*\}/g, '')
         .replace(/\{[\s\S]*"location"[\s\S]*\}/g, '')
         .replace(/\{[\s\S]*"clothing"[\s\S]*\}/g, '')
         .replace(/\{[\s\S]*"time_weather"[\s\S]*\}/g, '')
         .replace(/\{[\s\S]*"relationship"[\s\S]*\}/g, '')
         .replace(/\{[\s\S]*"character_position"[\s\S]*\}/g, '')
+        // Layer 4: Remove any remaining JSON fragments
+        .replace(/\{[\s\S]*$/g, '')
+        .replace(/^[\s\S]*?\}/g, '')
+        .replace(/"[a-z_]+"\s*:[\s\S]*$/g, '')
+        .replace(/^\s*"[a-z_]+"\s*:[\s\S]*$/g, '')
+        // Layer 5: Remove any remaining context artifacts
+        .replace(/\[\/[A-Z_]+\][\s\S]*$/g, '')
+        .replace(/^[\s\S]*?\[\/[A-Z_]+\]/g, '')
+        .replace(/\[[A-Z_]+\][\s\S]*$/g, '')
         .trim();
 
-      if (cleanMessage) {
+      // PHASE 2: VALIDATION - Never save content with context patterns
+      if (cleanMessage && !cleanMessage.includes('[CONTEXT') && 
+          !cleanMessage.includes('"mood"') && !cleanMessage.includes('"location"') &&
+          !cleanMessage.includes('"clothing"') && !cleanMessage.includes('"time_weather"') &&
+          !cleanMessage.includes('"relationship"') && !cleanMessage.includes('"character_position"')) {
         const aiMessage = {
           id: crypto.randomUUID(),
           content: cleanMessage,
@@ -247,7 +298,7 @@ const StreamingChatInterface = ({
         if (insertError) {
           console.error('Error saving AI message:', insertError);
         } else {
-          console.log('✅ Clean AI message saved to database:', cleanMessage.substring(0, 50) + '...');
+          console.log('✅ GUARANTEED clean AI message saved to database:', cleanMessage.substring(0, 50) + '...');
         }
 
         // Update chat's last message timestamp
@@ -255,6 +306,9 @@ const StreamingChatInterface = ({
           .from('chats')
           .update({ last_message_at: new Date().toISOString() })
           .eq('id', currentChatId);
+      } else {
+        console.error('❌ BLOCKED: Attempted to save contaminated or empty message:', messageToSave.substring(0, 100));
+        throw new Error('Message validation failed - contains context data or is empty');
       }
 
       // Update credits balance
