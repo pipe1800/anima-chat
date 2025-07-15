@@ -78,10 +78,16 @@ export function MessageGroup({ group, character, trackedContext }: MessageGroupP
         )}
       </div>
       
-      {/* Context display temporarily disabled for basic functionality */}
-      {!isUser && trackedContext && (
+      {/* Show context display only for AI messages with context updates */}
+      {!isUser && (
         <div className="mt-3 ml-11">
-          <ContextDisplay context={trackedContext} />
+          {messages.map(msg => 
+            msg.contextUpdates ? (
+              <div key={`${msg.id}-context`} className="mb-2">
+                <ContextDisplay contextUpdates={msg.contextUpdates} />
+              </div>
+            ) : null
+          )}
         </div>
       )}
     </div>

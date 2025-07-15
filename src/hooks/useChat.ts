@@ -58,7 +58,8 @@ export const useChatMessages = (chatId: string | null) => {
         content: msg.content,
         isUser: !msg.is_ai_message,
         timestamp: new Date(msg.created_at),
-        status: 'sent'
+        status: 'sent',
+        contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
       }));
       
       return {
@@ -336,7 +337,8 @@ export const useChatCache = () => {
           content: msg.content,
           isUser: !msg.is_ai_message,
           timestamp: new Date(msg.created_at),
-          status: 'sent'
+          status: 'sent',
+          contextUpdates: (msg as any).message_context?.[0]?.context_updates || undefined
         }));
         
         return {
@@ -409,7 +411,18 @@ export const useRealtimeMessages = (chatId: string | null) => {
             status: 'sent'
           };
           
-          // Add new messages to the cache with simplified duplicate prevention
+          // For AI messages, trigger a refetch to get context updates
+          if (payload.new.is_ai_message) {
+            // Delay refetch slightly to ensure context data is saved
+            setTimeout(() => {
+              queryClient.invalidateQueries({ 
+                queryKey: ['chat', 'messages', chatId],
+                refetchType: 'active'
+              });
+            }, 500);
+          }
+          
+          // Add new messages to the cache with enhanced duplicate prevention
           queryClient.setQueryData(['chat', 'messages', chatId], (old: InfiniteData<ChatPage> | undefined) => {
             if (!old || !old.pages.length) {
               addDebugInfo('Creating initial message structure');
@@ -423,7 +436,7 @@ export const useRealtimeMessages = (chatId: string | null) => {
               };
             }
             
-            // Simple ID-based duplicate prevention
+            // Enhanced duplicate prevention - check all pages
             const messageExists = old.pages.some(page => 
               page.messages.some(msg => msg.id === newMessage.id)
             );
@@ -431,6 +444,23 @@ export const useRealtimeMessages = (chatId: string | null) => {
             if (messageExists) {
               addDebugInfo('Duplicate message prevented');
               return old;
+            }
+            
+            // For AI messages, also check for potential duplicates by content and timestamp
+            if (!newMessage.isUser) {
+              const recentAIMessages = old.pages[0]?.messages.filter(msg => 
+                !msg.isUser && 
+                Math.abs(msg.timestamp.getTime() - newMessage.timestamp.getTime()) < 5000 // 5 seconds
+              ) || [];
+              
+              const contentMatch = recentAIMessages.some(msg => 
+                msg.content === newMessage.content
+              );
+              
+              if (contentMatch) {
+                addDebugInfo('Duplicate AI message content prevented');
+                return old;
+              }
             }
             
             addDebugInfo('Adding message to UI');

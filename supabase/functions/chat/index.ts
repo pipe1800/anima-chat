@@ -344,6 +344,10 @@ Respond naturally to the conversation, keeping the character's personality consi
       relationshipStatus: addonSettingsObj.relationshipStatus,
       hasEnabledAddons
     });
+    
+    // Add more detailed logging about addon settings
+    console.log('Raw addon_settings received:', JSON.stringify(addon_settings, null, 2));
+    console.log('Processed addonSettingsObj:', JSON.stringify(addonSettingsObj, null, 2));
 
     if (!hasEnabledAddons) {
       console.log('No addons enabled, skipping context extraction');
@@ -433,6 +437,8 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         
         // Try to parse the JSON response
         const extractedContext = JSON.parse(extractedContextStr);
+        console.log('Extracted context from LLM:', JSON.stringify(extractedContext, null, 2));
+        
         updatedContext = {
           moodTracking: addonSettingsObj.moodTracking ? (extractedContext.moodTracking || currentContext.moodTracking) : currentContext.moodTracking,
           clothingInventory: addonSettingsObj.clothingInventory ? (extractedContext.clothingInventory || currentContext.clothingInventory) : currentContext.clothingInventory,
