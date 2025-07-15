@@ -60,6 +60,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
   // Tutorial state
   const { handleStepAction, worldInfoDropdownVisible, disableInteractions } = useTutorial();
   const [selectedWorldInfo, setSelectedWorldInfo] = useState<any>(null);
+  const [selectedWorldInfoId, setSelectedWorldInfoId] = useState<string | null>(null);
   
   const navigate = useNavigate();
 
@@ -102,6 +103,19 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
 
         const { data: charDetails } = await getCharacterDetails(character.id);
         setCharacterDetails(charDetails);
+        
+        // Load user's world info selection for this character
+        if (user) {
+          try {
+            const { getUserCharacterWorldInfo } = await import('@/lib/user-world-info-operations');
+            const result = await getUserCharacterWorldInfo(user.id, character.id);
+            if (result.worldInfoId) {
+              setSelectedWorldInfoId(result.worldInfoId);
+            }
+          } catch (error) {
+            console.error('Error loading user world info selection:', error);
+          }
+        }
       } catch (error) {
         console.error('Error loading chat data:', error);
       } finally {
@@ -175,8 +189,32 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
     handleStepAction('right-panel-toggled');
   };
 
-  const handleWorldInfoSelect = (worldInfo: any) => {
+  const handleWorldInfoSelect = async (worldInfo: any) => {
     setSelectedWorldInfo(worldInfo);
+    
+    // Save user's world info selection to database
+    if (!currentUser) return;
+    
+    try {
+      const { saveUserCharacterWorldInfo, removeUserCharacterWorldInfo } = await import('@/lib/user-world-info-operations');
+      
+      if (worldInfo) {
+        const result = await saveUserCharacterWorldInfo(currentUser.id, character.id, worldInfo.id);
+        if (!result.success) {
+          console.error('Failed to save world info selection:', result.error);
+          toast.error('Failed to save world info selection');
+        }
+      } else {
+        const result = await removeUserCharacterWorldInfo(currentUser.id, character.id);
+        if (!result.success) {
+          console.error('Failed to remove world info selection:', result.error);
+          toast.error('Failed to remove world info selection');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling world info selection:', error);
+      toast.error('Error updating world info selection');
+    }
   };
 
   // Persona handlers
@@ -633,6 +671,7 @@ export const ChatLayout = ({ character, children, currentChatId }: ChatLayoutPro
                   worldInfoDropdownVisible={worldInfoDropdownVisible}
                   onWorldInfoSelect={handleWorldInfoSelect}
                   currentChatId={currentChatId}
+                  selectedWorldInfoId={selectedWorldInfoId}
                 />
               )}
             </div>

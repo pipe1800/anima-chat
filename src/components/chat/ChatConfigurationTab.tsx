@@ -24,6 +24,7 @@ interface ChatConfigurationTabProps {
   worldInfoDropdownVisible: boolean;
   onWorldInfoSelect: (worldInfo: any) => void;
   currentChatId?: string;
+  selectedWorldInfoId?: string | null;
 }
 
 export const ChatConfigurationTab = ({
@@ -35,7 +36,8 @@ export const ChatConfigurationTab = ({
   setShowPersonaModal,
   worldInfoDropdownVisible,
   onWorldInfoSelect,
-  currentChatId
+  currentChatId,
+  selectedWorldInfoId
 }: ChatConfigurationTabProps) => {
   const { subscription } = useAuth();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
@@ -332,6 +334,7 @@ export const ChatConfigurationTab = ({
           isVisible={true}
           onWorldInfoSelect={onWorldInfoSelect}
           disabled={!tempAddonSettings.dynamicWorldInfo}
+          selectedWorldInfoId={selectedWorldInfoId}
         />
       </Card>
 

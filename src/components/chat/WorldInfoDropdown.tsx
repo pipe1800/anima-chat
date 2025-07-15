@@ -20,12 +20,14 @@ interface WorldInfoDropdownProps {
   isVisible: boolean;
   onWorldInfoSelect: (worldInfo: WorldInfo | null) => void;
   disabled?: boolean;
+  selectedWorldInfoId?: string | null;
 }
 
-export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({ 
-  isVisible, 
+export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
+  isVisible,
   onWorldInfoSelect,
-  disabled = false
+  disabled = false,
+  selectedWorldInfoId
 }) => {
   const { user } = useAuth();
   const { handleStepAction } = useTutorial();
@@ -185,7 +187,7 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
                   <div className="text-gray-400 font-medium text-sm">None</div>
                   <div className="text-gray-500 text-xs">No world info selected</div>
                 </div>
-                {selectedWorldInfo === null && (
+                {(selectedWorldInfo === null && !selectedWorldInfoId) && (
                   <div className="w-2 h-2 bg-[#FF7A00] rounded-full" />
                 )}
               </DropdownMenuItem>
@@ -216,7 +218,7 @@ export const WorldInfoDropdown: React.FC<WorldInfoDropdownProps> = ({
                         Mine
                       </Badge>
                     )}
-                    {selectedWorldInfo?.id === worldInfo.id && (
+                     {(selectedWorldInfo?.id === worldInfo.id || selectedWorldInfoId === worldInfo.id) && (
                       <div className="w-2 h-2 bg-[#FF7A00] rounded-full" />
                     )}
                   </div>

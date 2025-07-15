@@ -649,6 +649,33 @@ export type Database = {
           },
         ]
       }
+      user_character_world_info_settings: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          world_info_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          world_info_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          world_info_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding_progress: {
         Row: {
           completed_at: string | null

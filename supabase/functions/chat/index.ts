@@ -106,24 +106,37 @@ Deno.serve(async (req) => {
     const isWorldInfoEnabled = addonSettings?.addon_settings?.dynamicWorldInfo || false;
     console.log('Dynamic World Info enabled:', isWorldInfoEnabled);
 
-    // Fetch world info entries if addon is enabled
+    // Fetch user's world info setting for this character
     let worldInfoEntries = [];
     if (isWorldInfoEnabled) {
-      const { data: worldInfoData, error: worldInfoError } = await supabaseAdmin
-        .from('character_world_info_link')
-        .select(`
-          world_info_entries (
-            keywords,
-            entry_text
-          )
-        `)
-        .eq('character_id', character_id);
+      console.log('Fetching user world info setting for user:', user.id, 'character:', character_id);
+      
+      const { data: userWorldInfoSetting, error: settingError } = await supabase
+        .from('user_character_world_info_settings')
+        .select('world_info_id')
+        .eq('user_id', user.id)
+        .eq('character_id', character_id)
+        .maybeSingle();
 
-      if (worldInfoError) {
-        console.error('Failed to fetch world info:', worldInfoError);
+      if (settingError) {
+        console.error('Failed to fetch user world info setting:', settingError);
+      } else if (userWorldInfoSetting?.world_info_id) {
+        console.log('Found user world info setting, world_info_id:', userWorldInfoSetting.world_info_id);
+        
+        // Fetch the world info entries for the user's selected world info
+        const { data: worldInfoData, error: worldInfoError } = await supabaseAdmin
+          .from('world_info_entries')
+          .select('keywords, entry_text')
+          .eq('world_info_id', userWorldInfoSetting.world_info_id);
+
+        if (worldInfoError) {
+          console.error('Failed to fetch world info entries:', worldInfoError);
+        } else {
+          worldInfoEntries = worldInfoData || [];
+          console.log('World info entries fetched:', worldInfoEntries.length);
+        }
       } else {
-        worldInfoEntries = worldInfoData?.map(link => link.world_info_entries).filter(Boolean) || [];
-        console.log('World info entries fetched:', worldInfoEntries.length);
+        console.log('No world info setting found for this user-character combination');
       }
     }
 
