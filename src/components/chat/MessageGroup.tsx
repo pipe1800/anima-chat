@@ -28,6 +28,7 @@ interface MessageGroupProps {
     locationTracking?: boolean;
     timeAndWeather?: boolean;
     relationshipStatus?: boolean;
+    characterPosition?: boolean;
   };
 }
 
@@ -97,7 +98,8 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
               addonSettings.clothingInventory || 
               addonSettings.locationTracking || 
               addonSettings.timeAndWeather || 
-              addonSettings.relationshipStatus
+              addonSettings.relationshipStatus ||
+              addonSettings.characterPosition
             );
             
             if (hasContextUpdates || hasCurrentContext || hasEnabledAddons) {

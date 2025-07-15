@@ -123,25 +123,44 @@ Deno.serve(async (req) => {
 
     console.log('Character definition found');
 
-    // Save the user message to the database first
-    const { error: userMessageError } = await supabase
-      .from('messages')
-      .insert({
-        chat_id: chat_id,
-        author_id: user.id,
-        content: user_message,
-        is_ai_message: false,
-        model_id: null,
-        token_cost: 0
-      });
+    // Note: User message is already saved by the frontend hook to prevent duplication
+    // We'll only save the AI response here
 
-    if (userMessageError) {
-      console.error('Error saving user message:', userMessageError);
-      return new Response(JSON.stringify({ error: 'Failed to save user message' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Get user's subscription and plan for model selection
+    const { data: userSubscription, error: subError } = await supabase
+      .from('subscriptions')
+      .select('plan_id, status, current_period_end')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .gt('current_period_end', new Date().toISOString())
+      .maybeSingle();
+
+    // Default to Guest Pass if no active subscription
+    let selectedModel = 'openai/gpt-4o-mini'; // Guest Pass - Fast & Fun
+    
+    if (userSubscription) {
+      // Get plan details
+      const { data: planData, error: planError } = await supabaseAdmin
+        .from('plans')
+        .select('name')
+        .eq('id', userSubscription.plan_id)
+        .single();
+      
+      if (planData) {
+        switch (planData.name) {
+          case 'True Fan':
+            selectedModel = 'mythomax/mythomax-l2-13b'; // Smart & Creative
+            break;
+          case 'The Whale':
+            selectedModel = 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo'; // Genius
+            break;
+          default:
+            selectedModel = 'openai/gpt-4o-mini'; // Guest Pass - Fast & Fun
+        }
+      }
     }
+
+    console.log('Selected model for user tier:', selectedModel);
 
     // Fetch user's addon settings for dynamic world info
     const { data: addonSettings, error: addonError } = await supabase
@@ -203,6 +222,7 @@ Deno.serve(async (req) => {
     console.log('Conversation history fetched:', messageHistory?.length || 0, 'messages');
 
     // Check if this is the first message (only user message should exist)
+    // After removing duplicate user message save, first message should have exactly 1 message
     const isFirstMessage = messageHistory?.length === 1;
     console.log('Is first message:', isFirstMessage);
 
@@ -222,65 +242,45 @@ Deno.serve(async (req) => {
 
     console.log('Loaded context from database:', contextData);
 
-    // Initialize context for enabled addons only
-    if (addonSettingsObj.moodTracking) currentContext.moodTracking = 'No context';
-    if (addonSettingsObj.clothingInventory) currentContext.clothingInventory = 'No context';
-    if (addonSettingsObj.locationTracking) currentContext.locationTracking = 'No context';
-    if (addonSettingsObj.timeAndWeather) currentContext.timeAndWeather = 'No context';
-    if (addonSettingsObj.relationshipStatus) currentContext.relationshipStatus = 'No context';
-    if (addonSettingsObj.characterPosition) currentContext.characterPosition = 'No context';
+    // Initialize context for ALL addons first (even disabled ones for context preservation)
+    currentContext.moodTracking = 'No context';
+    currentContext.clothingInventory = 'No context';
+    currentContext.locationTracking = 'No context';
+    currentContext.timeAndWeather = 'No context';
+    currentContext.relationshipStatus = 'No context';
+    currentContext.characterPosition = 'No context';
 
-    // Load existing context from database, but only for enabled addons
+    // Load existing context from database for ALL addons (preserve disabled context)
     if (contextData) {
       for (const row of contextData) {
         switch (row.context_type) {
           case 'mood':
-            if (addonSettingsObj.moodTracking) {
-              currentContext.moodTracking = row.current_context || 'No context';
-            }
+            currentContext.moodTracking = row.current_context || 'No context';
             break;
           case 'clothing':
-            if (addonSettingsObj.clothingInventory) {
-              currentContext.clothingInventory = row.current_context || 'No context';
-            }
+            currentContext.clothingInventory = row.current_context || 'No context';
             break;
           case 'location':
-            if (addonSettingsObj.locationTracking) {
-              currentContext.locationTracking = row.current_context || 'No context';
-            }
+            currentContext.locationTracking = row.current_context || 'No context';
             break;
           case 'time_weather':
-            if (addonSettingsObj.timeAndWeather) {
-              currentContext.timeAndWeather = row.current_context || 'No context';
-            }
+            currentContext.timeAndWeather = row.current_context || 'No context';
             break;
           case 'relationship':
-            if (addonSettingsObj.relationshipStatus) {
-              currentContext.relationshipStatus = row.current_context || 'No context';
-            }
+            currentContext.relationshipStatus = row.current_context || 'No context';
             break;
           case 'character_position':
-            if (addonSettingsObj.characterPosition) {
-              currentContext.characterPosition = row.current_context || 'No context';
-            }
+            currentContext.characterPosition = row.current_context || 'No context';
             break;
         }
       }
     }
 
-    // Override with tracked context if provided (for enabled addons only)
+    // Override with tracked context if provided (preserve all context even for disabled addons)
     if (tracked_context) {
       Object.keys(tracked_context).forEach(key => {
-        // Only include context for enabled addons
-        const isEnabled = 
-          (key === 'moodTracking' && addonSettingsObj.moodTracking) ||
-          (key === 'clothingInventory' && addonSettingsObj.clothingInventory) ||
-          (key === 'locationTracking' && addonSettingsObj.locationTracking) ||
-          (key === 'timeAndWeather' && addonSettingsObj.timeAndWeather) ||
-          (key === 'relationshipStatus' && addonSettingsObj.relationshipStatus) ||
-          (key === 'characterPosition' && addonSettingsObj.characterPosition);
-        
-        if (isEnabled) {
+        // Update context for all addons to preserve state
+        if (tracked_context[key] && tracked_context[key] !== 'No context') {
           currentContext[key] = tracked_context[key];
         }
       });
@@ -349,7 +349,7 @@ ${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[ke
           'X-Title': 'AnimaChat-CharacterContext'
         },
         body: JSON.stringify({
-          model: model,
+          model: 'mistralai/mistral-7b-instruct', // Always use Mistral for character card analysis
           messages: [
             { role: 'system', content: 'You are a precise character analysis bot. Extract only the information that is explicitly stated or strongly implied. Return valid JSON only.' },
             { role: 'user', content: characterExtractionPrompt }
@@ -529,7 +529,7 @@ Respond naturally to the conversation, keeping the character's personality consi
         'X-Title': 'AnimaChat'
       },
       body: JSON.stringify({
-        model: model,
+        model: selectedModel, // Use tier-based model for chat responses
         messages: conversationMessages,
         stream: false,
         temperature: 0.7,
@@ -563,7 +563,7 @@ Respond naturally to the conversation, keeping the character's personality consi
         author_id: user.id,
         content: aiResponseContent,
         is_ai_message: true,
-        model_id: model,
+        model_id: selectedModel, // Store the actual model used
         token_cost: 1
       });
 
@@ -673,7 +673,7 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         'X-Title': 'AnimaChat-Context'
       },
       body: JSON.stringify({
-        model: model,
+        model: 'mistralai/mistral-7b-instruct', // Always use Mistral for context extraction
         messages: [
           { role: 'system', content: 'You are a precise data extraction bot. You must extract information for ALL enabled fields, not just some of them. Return valid JSON only.' },
           { role: 'user', content: extractionPrompt }
@@ -788,18 +788,30 @@ ${JSON.stringify(extractionFields, null, 2)}`;
           }
         }
 
-        // Save message-specific context if there are updates and we have the message ID
-        if (hasContextUpdates && aiMessage?.id) {
-          console.log('Saving message-specific context:', contextUpdates);
+        // Always save the current context state to AI messages for inheritance
+        if (aiMessage?.id) {
+          if (hasContextUpdates) {
+            console.log('Saving message-specific context:', contextUpdates);
+            await supabase
+              .from('message_context')
+              .insert({
+                message_id: aiMessage.id,
+                user_id: user.id,
+                character_id: character_id,
+                chat_id: chat_id,
+                context_updates: contextUpdates
+              });
+          }
+          
+          // Also save the current context state for inheritance
+          console.log('Saving current context state to AI message:', updatedContext);
           await supabase
-            .from('message_context')
-            .insert({
-              message_id: aiMessage.id,
-              user_id: user.id,
-              character_id: character_id,
-              chat_id: chat_id,
-              context_updates: contextUpdates
-            });
+            .from('messages')
+            .update({
+              // Store context as JSON in a dedicated column or as metadata
+              current_context: updatedContext
+            })
+            .eq('id', aiMessage.id);
         }
         
       } catch (parseError) {

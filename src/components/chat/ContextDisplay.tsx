@@ -119,11 +119,12 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
     addonSettings.clothingInventory || 
     addonSettings.locationTracking || 
     addonSettings.timeAndWeather || 
-    addonSettings.relationshipStatus
+    addonSettings.relationshipStatus ||
+    addonSettings.characterPosition
   );
 
-  // Don't render if no relevant context and no enabled addons
-  if (contextItems.length === 0 && !hasEnabledAddons) {
+  // Always show dropdown if addons are enabled, even if no context yet
+  if (!hasEnabledAddons) {
     return null;
   }
 
@@ -151,7 +152,7 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
             ))
           ) : (
             <div className="text-sm text-muted-foreground">
-              Context tracking is active - no data extracted yet.
+              Stateful Character Tracking is active - no context extracted yet.
             </div>
           )}
         </div>

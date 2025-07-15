@@ -74,6 +74,21 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
     return data?.pages?.flatMap(page => page.messages) || [];
   }, [data?.pages]);
 
+  // Extract most recent context from AI messages
+  const mostRecentContext = React.useMemo(() => {
+    if (!allMessages.length) return trackedContext;
+    
+    // Find the most recent AI message with context
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      const message = allMessages[i];
+      if (!message.isUser && message.current_context) {
+        return message.current_context;
+      }
+    }
+    
+    return trackedContext;
+  }, [allMessages, trackedContext]);
+
   // Group messages for better visual organization
   const messageGroups = React.useMemo(() => {
     return groupMessages(allMessages);
@@ -185,7 +200,7 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
             key={group.id} 
             group={group} 
             character={character}
-            trackedContext={trackedContext}
+            trackedContext={mostRecentContext}
             addonSettings={addonSettings}
           />
         ))
