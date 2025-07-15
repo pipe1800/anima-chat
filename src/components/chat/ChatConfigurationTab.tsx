@@ -82,6 +82,7 @@ export const ChatConfigurationTab = ({
     tempAddonSettings.locationTracking,
     tempAddonSettings.timeAndWeather,
     tempAddonSettings.relationshipStatus,
+    tempAddonSettings.characterPosition,
   ].filter(Boolean).length;
 
   const addonCategories = {
@@ -137,6 +138,13 @@ export const ChatConfigurationTab = ({
         cost: 5, 
         description: 'Track relationships',
         available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || activeStatefulAddons < 2,
+        dynamicCost: null
+      },
+      characterPosition: { 
+        name: 'Character Position', 
+        cost: 5, 
+        description: 'Track character\'s physical position and body language',
+        available: isTrueFanOrWhale || tempAddonSettings.characterPosition || activeStatefulAddons < 2,
         dynamicCost: null
       },
     },
