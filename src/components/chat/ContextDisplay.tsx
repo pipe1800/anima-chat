@@ -184,7 +184,7 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
           {contextItems.length > 0 ? (
             contextItems.map((item) => (
               <div key={item.key} className={`text-sm ${item.isHistorical ? 'text-muted-foreground' : 'text-foreground'}`}>
-                <span className="font-medium">{item.label}:</span> {item.value}.
+                <span className="font-medium">{item.label}:</span> {item.value}
               </div>
             ))
           ) : (

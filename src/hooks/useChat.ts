@@ -263,7 +263,8 @@ const invokeAIResponse = async (
       model: 'mistralai/mistral-7b-instruct', // This will be ignored in favor of tier-based selection
       user_message: userMessage,
       tracked_context: trackedContext,
-      addon_settings: addonSettings
+      addon_settings: addonSettings,
+      selected_persona_id: null // TODO: Pass from ChatInterface when persona selection is implemented
     };
     
     console.log('Frontend sending request:', JSON.stringify(requestPayload, null, 2));

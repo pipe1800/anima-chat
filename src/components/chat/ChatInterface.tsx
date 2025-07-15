@@ -187,13 +187,6 @@ const ChatInterface = ({
         onUpgrade={handleUpgrade}
       />
 
-      {/* Debug Panel */}
-      <AddonDebugPanel
-        addonSettings={currentAddonSettings}
-        characterId={character.id}
-        userId={user?.id || ''}
-        userPlan={'Guest Pass'} // This could be passed from props if needed
-      />
 
       {/* Messages Area */}
       <ChatMessages 

@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { model, user_message, chat_id, character_id, tracked_context, addon_settings } = requestBody;
+    const { model, user_message, chat_id, character_id, tracked_context, addon_settings, selected_persona_id } = requestBody;
 
     console.log('Full request body:', JSON.stringify(requestBody, null, 2));
     console.log('Field validation in edge function:', {
@@ -72,7 +72,8 @@ Deno.serve(async (req) => {
       model_value: model,
       user_message_length: user_message?.length,
       chat_id_value: chat_id,
-      character_id_value: character_id
+      character_id_value: character_id,
+      selected_persona_id: selected_persona_id
     });
 
     if (!model || !user_message || !chat_id || !character_id) {
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Fetch Character Definition
+    // Fetch Character Definition and Basic Info
     const { data: character, error: characterError } = await supabaseAdmin
       .from('character_definitions')
       .select('personality_summary, description, scenario, greeting')
@@ -121,7 +122,59 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('Character definition found');
+    // Fetch Character Basic Info (name)
+    const { data: characterInfo, error: characterInfoError } = await supabaseAdmin
+      .from('characters')
+      .select('name')
+      .eq('id', character_id)
+      .single();
+
+    if (characterInfoError) {
+      console.error('Character info error:', characterInfoError);
+      return new Response(JSON.stringify({ error: 'Character info not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Fetch User Profile for username fallback
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single();
+
+    // Fetch Selected Persona if provided
+    let selectedPersona = null;
+    if (selected_persona_id) {
+      const { data: persona, error: personaError } = await supabase
+        .from('personas')
+        .select('name, bio')
+        .eq('id', selected_persona_id)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!personaError) {
+        selectedPersona = persona;
+      }
+    }
+
+    console.log('Character definition found, persona:', selectedPersona ? selectedPersona.name : 'None');
+
+    // Template replacement function
+    const replaceTemplates = (content: string): string => {
+      if (!content) return content;
+      
+      // Replace {{user}} with persona name or username
+      const userName = selectedPersona?.name || userProfile?.username || 'User';
+      
+      // Replace {{char}} with character's first name
+      const charName = characterInfo?.name?.split(' ')[0] || 'Character';
+      
+      return content
+        .replace(/\{\{user\}\}/g, userName)
+        .replace(/\{\{char\}\}/g, charName);
+    };
 
     // Note: User message is already saved by the frontend hook to prevent duplication
     // We'll only save the AI response here
@@ -300,44 +353,42 @@ Deno.serve(async (req) => {
     if (isFirstMessage && hasEnabledAddons) {
       console.log('First message detected, extracting initial context from character card + greeting + user message...');
       
-      // Build character context for analysis including greeting
+      // Build character context for analysis including greeting (with template replacement)
       const characterContent = [
-        character.description ? `Description: ${character.description}` : '',
-        character.personality_summary ? `Personality: ${character.personality_summary}` : '',
-        character.scenario ? `Scenario: ${JSON.stringify(character.scenario)}` : '',
-        character.greeting ? `Character Greeting: ${character.greeting}` : ''
+        character.description ? `Description: ${replaceTemplates(character.description)}` : '',
+        character.personality_summary ? `Personality: ${replaceTemplates(character.personality_summary)}` : '',
+        character.scenario ? `Scenario: ${replaceTemplates(JSON.stringify(character.scenario))}` : '',
+        character.greeting ? `Character Greeting: ${replaceTemplates(character.greeting)}` : ''
       ].filter(Boolean).join('\n\n');
 
-      // Build extraction prompt for character card + greeting + user message
-      const characterExtractionPrompt = `You are analyzing a character card, the character's greeting, and the user's first message to extract initial context for enabled tracking addons. Extract relevant information ONLY for the enabled fields below.
+      // Build extraction prompt for character card + greeting + user message (more concise)
+      const characterExtractionPrompt = `Extract initial context from character card, greeting, and user message for enabled addons only.
 
 Rules:
-1. Extract information that is explicitly stated or strongly implied in the character card, greeting, or user message
-2. If no information is available for a field, return "No context"
-3. Be specific and descriptive when information is available
-4. Focus on the character's starting/default state as established by the card, greeting, and first interaction
-5. Return valid JSON only
+1. Extract only explicit/strongly implied information
+2. Return "No context" if no information available  
+3. Be concise - max 10 words per field
+4. Return valid JSON only
 
-Character Card Content:
+Character Card:
 ${characterContent}
 
-User's First Message:
-${user_message}
+User Message: "${user_message}"
 
-Enabled Fields to Extract:
+Extract for enabled fields:
 ${Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).map(key => {
   switch(key) {
-    case 'moodTracking': return '- moodTracking: Character\'s initial emotional state or typical mood';
-    case 'clothingInventory': return '- clothingInventory: Character\'s default clothing or outfit';
-    case 'locationTracking': return '- locationTracking: Character\'s starting location or typical environment';
-    case 'timeAndWeather': return '- timeAndWeather: Time period or weather conditions from the scenario';
-    case 'relationshipStatus': return '- relationshipStatus: Character\'s relationship situation or romantic status';
-    case 'characterPosition': return '- characterPosition: Character\'s default physical position, stance, or posture';
-    default: return `- ${key}: Extract relevant information for ${key}`;
+    case 'moodTracking': return '- moodTracking: Emotional state';
+    case 'clothingInventory': return '- clothingInventory: Clothing/outfit';
+    case 'locationTracking': return '- locationTracking: Location/environment';
+    case 'timeAndWeather': return '- timeAndWeather: Time/weather';
+    case 'relationshipStatus': return '- relationshipStatus: Relationship status';
+    case 'characterPosition': return '- characterPosition: Physical position';
+    default: return `- ${key}: ${key}`;
   }
 }).join('\n')}
 
-Return the extracted context in this exact JSON format:
+Return JSON:
 ${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[key]).reduce((acc, key) => {
   acc[key] = 'No context';
   return acc;
@@ -355,7 +406,7 @@ ${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[ke
         body: JSON.stringify({
           model: 'mistralai/mistral-7b-instruct', // Always use Mistral for character card analysis
           messages: [
-            { role: 'system', content: 'You are a precise character analysis bot. Extract only the information that is explicitly stated or strongly implied from the character card, greeting, and user message. Return valid JSON only.' },
+            { role: 'system', content: 'You are a precise character analysis bot. Extract concise context (max 10 words per field) from character card, greeting, and user message. Return valid JSON only.' },
             { role: 'user', content: characterExtractionPrompt }
           ],
           temperature: 0.1
@@ -437,22 +488,22 @@ ${JSON.stringify(Object.keys(addonSettingsObj).filter(key => addonSettingsObj[ke
     
     const contextPrompt = contextParts.length > 0 ? `[Current Context:\n${contextParts.join('\n')}]` : '';
 
-    // Construct the System Prompt with context injection
+    // Construct the System Prompt with context injection (with template replacement)
     const systemPrompt = `You are to roleplay as the character defined below. Stay in character and respond naturally.
 
 **Character Description:**
-${character.description || 'A helpful assistant'}
+${replaceTemplates(character.description) || 'A helpful assistant'}
 
 **Personality Summary:**
-${character.personality_summary || 'Friendly and helpful'}
+${replaceTemplates(character.personality_summary) || 'Friendly and helpful'}
 
 **Scenario:**
-${character.scenario || 'Casual conversation'}
+${replaceTemplates(character.scenario) || 'Casual conversation'}
 
 ${contextPrompt}
 
 **Roleplay Instructions:**
-- Text between *asterisks* represents actions, thoughts, or descriptions (e.g., *waves hand*, *thinks quietly*, *the room is dimly lit*)
+- Text between *asterisks* represents actions, thoughts, or descriptions
 - Respond to these actions naturally and incorporate them into your roleplay
 - You can also use *asterisks* for your own actions and descriptions
 - Pay attention to actions when updating context information
@@ -464,12 +515,12 @@ Respond naturally to the conversation, keeping the character's personality consi
       { role: 'system', content: systemPrompt }
     ];
 
-    // Add conversation history if available
+    // Add conversation history if available (with template replacement)
     if (messageHistory && messageHistory.length > 0) {
       for (const msg of messageHistory) {
         conversationMessages.push({
           role: msg.is_ai_message ? 'assistant' : 'user',
-          content: msg.content
+          content: replaceTemplates(msg.content)
         });
       }
     }
@@ -515,10 +566,10 @@ Respond naturally to the conversation, keeping the character's personality consi
       }
     }
 
-    // Add the current user message
+    // Add the current user message (with template replacement)
     conversationMessages.push({
       role: 'user',
-      content: user_message
+      content: replaceTemplates(user_message)
     });
 
     console.log('Calling OpenRouter API...');
@@ -643,28 +694,25 @@ Respond naturally to the conversation, keeping the character's personality consi
     console.log('Extraction fields to process:', Object.keys(extractionFields));
     console.log('Field instructions:', fieldInstructions);
 
-    const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided for the ENABLED fields.
-
-CRITICAL: You must process ALL enabled fields simultaneously. Do not skip any enabled field.
+    const extractionPrompt = `Extract context from this conversation turn for enabled fields only.
 
 Rules:
-1. Only update a field if new information is EXPLICITLY mentioned in the "User Message" or "Character Response"
-2. If a field is not mentioned or updated, you MUST return its previous value unchanged
-3. If the previous value was "No context" and there is still no new information, keep it as "No context"
-4. Pay special attention to text between *asterisks* as it contains actions and descriptions
-5. Your response MUST be a valid JSON object and nothing else
-6. Process ALL of these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
+1. Only update if new info is EXPLICITLY mentioned
+2. Keep previous value if no new info  
+3. Pay attention to *actions* and dialogue
+4. Return valid JSON only
+5. Be concise - max 10 words per field
 
-Field Instructions:${fieldInstructions}
+Fields:${fieldInstructions}
 
-Previous Context:
+Previous:
 ${JSON.stringify(currentContext, null, 2)}
 
-Conversation Turn:
-User Message: "${user_message}"
-Character Response: "${aiResponseContent}"
+Turn:
+User: "${replaceTemplates(user_message)}"
+Character: "${replaceTemplates(aiResponseContent)}"
 
-Extract the current state for ALL the following ENABLED fields and provide your response in JSON format:
+Extract for enabled fields:
 ${JSON.stringify(extractionFields, null, 2)}`;
 
     // Call extraction LLM
@@ -676,14 +724,14 @@ ${JSON.stringify(extractionFields, null, 2)}`;
         'HTTP-Referer': Deno.env.get('SITE_URL') || 'https://yourapp.com',
         'X-Title': 'AnimaChat-Context'
       },
-      body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct', // Always use Mistral for context extraction
-        messages: [
-          { role: 'system', content: 'You are a precise data extraction bot. You must extract information for ALL enabled fields, not just some of them. Return valid JSON only.' },
-          { role: 'user', content: extractionPrompt }
-        ],
-        temperature: 0.1
-      })
+        body: JSON.stringify({
+          model: 'mistralai/mistral-7b-instruct', // Always use Mistral for context extraction
+          messages: [
+            { role: 'system', content: 'You are a precise data extraction bot. Extract concise context (max 10 words per field) for ALL enabled fields. Return valid JSON only.' },
+            { role: 'user', content: extractionPrompt }
+          ],
+          temperature: 0.1
+        })
     });
 
     let updatedContext = currentContext;
