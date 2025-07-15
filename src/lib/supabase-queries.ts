@@ -522,6 +522,7 @@ export const getChatMessages = async (chatId: string, limit = 50, offset = 0) =>
 
 /**
  * Get recent messages for a chat (for quick loading)
+ * This function ALWAYS preserves historical context data regardless of current addon settings
  */
 export const getRecentChatMessages = async (chatId: string, limit = 20) => {
   const { data, error } = await supabase
@@ -541,21 +542,22 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
   
   const messages = data.reverse();
   
-  // Fetch context updates for these messages
+  // Fetch ALL context updates for these messages - NEVER filter based on current addon settings
+  // Historical context must be preserved regardless of current settings
   const messageIds = messages.map(msg => msg.id);
   const { data: contextData } = await supabase
     .from('message_context')
     .select('message_id, context_updates')
     .in('message_id', messageIds);
   
-  // Fetch current context state for the chat
+  // Fetch current context state for the chat (only for inheritance, not filtering)
   const { data: currentContextData } = await supabase
     .from('user_chat_context')
     .select('context_type, current_context')
     .eq('chat_id', chatId)
     .neq('current_context', 'No context');
   
-  // Build current context state
+  // Build current context state for inheritance
   const currentContext = {};
   currentContextData?.forEach(ctx => {
     const contextField = ctx.context_type === 'mood' ? 'moodTracking' :
@@ -568,17 +570,17 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
     }
   });
   
-  // Create a map of message ID to context updates
+  // Create a map of message ID to context updates - preserve ALL historical context
   const contextUpdatesMap = new Map();
   contextData?.forEach(ctx => {
     contextUpdatesMap.set(ctx.message_id, ctx.context_updates);
   });
   
-  // Attach context to messages
+  // Attach context to messages - ALL historical context is preserved
   const messagesWithContext = messages.map(msg => ({
     ...msg,
     message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
-    current_context: currentContext // Always include current context state
+    current_context: currentContext // Always include current context state for inheritance
   }));
   
   return { data: messagesWithContext, error: null };
@@ -586,6 +588,7 @@ export const getRecentChatMessages = async (chatId: string, limit = 20) => {
 
 /**
  * Get earlier messages for infinite scroll
+ * This function ALWAYS preserves historical context data regardless of current addon settings
  */
 export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: string, limit = 20) => {
   const { data, error } = await supabase
@@ -606,21 +609,22 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
   
   const messages = data.reverse();
   
-  // Fetch context updates for these messages
+  // Fetch ALL context updates for these messages - NEVER filter based on current addon settings
+  // Historical context must be preserved regardless of current settings
   const messageIds = messages.map(msg => msg.id);
   const { data: contextData } = await supabase
     .from('message_context')
     .select('message_id, context_updates')
     .in('message_id', messageIds);
   
-  // Fetch current context state for the chat
+  // Fetch current context state for the chat (only for inheritance, not filtering)
   const { data: currentContextData } = await supabase
     .from('user_chat_context')
     .select('context_type, current_context')
     .eq('chat_id', chatId)
     .neq('current_context', 'No context');
   
-  // Build current context state
+  // Build current context state for inheritance
   const currentContext = {};
   currentContextData?.forEach(ctx => {
     const contextField = ctx.context_type === 'mood' ? 'moodTracking' :
@@ -633,17 +637,17 @@ export const getEarlierChatMessages = async (chatId: string, beforeTimestamp: st
     }
   });
   
-  // Create a map of message ID to context updates
+  // Create a map of message ID to context updates - preserve ALL historical context
   const contextUpdatesMap = new Map();
   contextData?.forEach(ctx => {
     contextUpdatesMap.set(ctx.message_id, ctx.context_updates);
   });
   
-  // Attach context to messages
+  // Attach context to messages - ALL historical context is preserved
   const messagesWithContext = messages.map(msg => ({
     ...msg,
     message_context: contextUpdatesMap.has(msg.id) ? [{ context_updates: contextUpdatesMap.get(msg.id) }] : [],
-    current_context: currentContext // Always include current context state
+    current_context: currentContext // Always include current context state for inheritance
   }));
   
   return { data: messagesWithContext, error: null };

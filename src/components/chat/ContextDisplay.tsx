@@ -34,14 +34,14 @@ interface ContextDisplayProps {
 export const ContextDisplay = ({ context, contextUpdates, currentContext, addonSettings, className = '' }: ContextDisplayProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Handle context display with inheritance
-  let contextItems: { label: string; value: string; key: string; previous?: string; isUpdate?: boolean; isEnabled?: boolean }[] = [];
+  // Handle context display with inheritance - ALWAYS show historical context
+  let contextItems: { label: string; value: string; key: string; previous?: string; isUpdate?: boolean; isEnabled?: boolean; isHistorical?: boolean }[] = [];
   
-  // If we have contextUpdates, show them (these are actual changes)
+  // If we have contextUpdates, show them (these are actual changes from historical messages)
   if (contextUpdates && Object.keys(contextUpdates).length > 0) {
     contextItems = Object.entries(contextUpdates)
       .filter(([key, update]) => {
-        // Show ALL updates, but distinguish between enabled and disabled
+        // Show ALL updates, regardless of current addon state - this is historical data
         return update && update.current !== 'No context';
       })
       .map(([key, update]) => {
@@ -56,7 +56,8 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
           previous: update.previous,
           key: key,
           isUpdate: true,
-          isEnabled: isEnabled
+          isEnabled: isEnabled,
+          isHistorical: !isEnabled // Mark as historical if addon is now disabled
         };
       });
   } 
@@ -77,10 +78,10 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
                         item.key === 'weather' ? 'timeAndWeather' :
                         'relationshipStatus';
        const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
-       return { ...item, isEnabled };
+       return { ...item, isEnabled, isHistorical: false };
      });
   }
-  // Legacy format: show all non-empty context
+  // Legacy format: show all non-empty context - preserve historical data
   else if (context) {
     contextItems = [
       { label: 'Mood Tracking', value: context.moodTracking, key: 'mood' },
@@ -97,13 +98,12 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
                         item.key === 'weather' ? 'timeAndWeather' :
                         'relationshipStatus';
        const isEnabled = addonSettings ? addonSettings[addonKey as keyof typeof addonSettings] : true;
-       return { ...item, isEnabled };
+       return { ...item, isEnabled, isHistorical: !isEnabled };
      });
   }
 
   // Show debug info if no context
   if (contextItems.length === 0) {
-    console.log('ContextDisplay: No context items to show', { context, contextUpdates, currentContext });
     return (
       <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
         <div className="p-3">
@@ -147,19 +147,27 @@ export const ContextDisplay = ({ context, contextUpdates, currentContext, addonS
                 <div className={`text-xs font-medium uppercase tracking-wide ${item.isEnabled ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
                   {item.label}
                   {item.isUpdate && <span className="ml-2 text-primary">● Updated</span>}
-                  {item.isEnabled === false && <span className="ml-2 text-xs opacity-60">(historical)</span>}
+                  {item.isHistorical && <span className="ml-2 text-xs opacity-60 text-amber-500">(historical - addon now disabled)</span>}
+                  {item.isEnabled === false && !item.isHistorical && <span className="ml-2 text-xs opacity-60">(addon disabled)</span>}
                 </div>
                 {item.previous && item.previous !== 'No context' && (
                   <div className="text-xs text-muted-foreground bg-muted/30 rounded-md p-2">
                     Previous: {item.previous}
                   </div>
                 )}
-                <div className={`text-sm rounded-md p-2 ${
-                  item.isUpdate 
-                    ? (item.isEnabled ? 'text-foreground bg-primary/10 border border-primary/20' : 'text-foreground/50 bg-primary/5 border border-primary/10') 
-                    : (item.isEnabled ? 'text-foreground bg-muted/50' : 'text-foreground/50 bg-muted/30')
+                <div className={`text-sm rounded-md p-2 border ${
+                  item.isHistorical 
+                    ? 'text-foreground/70 bg-amber-50/50 border-amber-200/50 dark:bg-amber-900/20 dark:border-amber-800/30' 
+                    : item.isUpdate 
+                      ? (item.isEnabled ? 'text-foreground bg-primary/10 border-primary/20' : 'text-foreground/50 bg-primary/5 border-primary/10') 
+                      : (item.isEnabled ? 'text-foreground bg-muted/50 border-muted' : 'text-foreground/50 bg-muted/30 border-muted/50')
                 }`}>
                   {item.value}
+                  {item.isHistorical && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                      ℹ️ This context was active when the message was sent
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
