@@ -116,11 +116,15 @@ export const useSendMessage = () => {
     mutationFn: async ({ 
       chatId, 
       content, 
-      characterId 
+      characterId,
+      trackedContext,
+      addonSettings
     }: { 
       chatId: string; 
       content: string; 
       characterId: string;
+      trackedContext?: TrackedContext;
+      addonSettings?: any;
     }) => {
       if (!user) throw new Error('User not authenticated');
       
@@ -190,9 +194,9 @@ export const useSendMessage = () => {
         });
         
         // Invoke AI for response - now we need to return the updated context
-        const updatedContext = await invokeAIResponse(chatId, content, characterId, user.id);
+        const result = await invokeAIResponse(chatId, content, characterId, user.id, trackedContext, addonSettings);
         
-        return { chatId, content, optimisticId, updatedContext };
+        return { chatId, content, optimisticId, updatedContext: result };
         
       } catch (error) {
         // Update optimistic message to 'failed'
@@ -236,7 +240,8 @@ const invokeAIResponse = async (
   userMessage: string, 
   characterId: string, 
   userId: string,
-  trackedContext?: TrackedContext
+  trackedContext?: TrackedContext,
+  addonSettings?: any
 ) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -253,7 +258,8 @@ const invokeAIResponse = async (
         chat_id: chatId,
         model: 'openai/gpt-4o-mini',
         user_message: userMessage,
-        tracked_context: trackedContext
+        tracked_context: trackedContext,
+        addon_settings: addonSettings
       }),
     });
     

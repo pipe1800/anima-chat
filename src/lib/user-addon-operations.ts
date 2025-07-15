@@ -6,7 +6,7 @@ export interface AddonSettings {
   moodTracking: boolean;
   clothingInventory: boolean;
   locationTracking: boolean;
-  timeWeather: boolean;
+  timeAndWeather: boolean;
   relationshipStatus: boolean;
   chainOfThought: boolean;
   fewShotExamples: boolean;
@@ -18,7 +18,7 @@ export const defaultAddonSettings: AddonSettings = {
   moodTracking: false,
   clothingInventory: false,
   locationTracking: false,
-  timeWeather: false,
+  timeAndWeather: false,
   relationshipStatus: false,
   chainOfThought: false,
   fewShotExamples: false,
@@ -99,7 +99,7 @@ export const calculateAddonCreditCost = (settings: AddonSettings): number => {
   if (settings.moodTracking) total += 5;
   if (settings.clothingInventory) total += 5;
   if (settings.locationTracking) total += 5;
-  if (settings.timeWeather) total += 5;
+  if (settings.timeAndWeather) total += 5;
   if (settings.relationshipStatus) total += 5;
   if (settings.chainOfThought) total += 30;
   if (settings.fewShotExamples) total += 7;
@@ -140,7 +140,7 @@ export const validateAddonSettings = (
       settings.moodTracking,
       settings.clothingInventory,
       settings.locationTracking,
-      settings.timeWeather,
+      settings.timeAndWeather,
       settings.relationshipStatus,
     ].filter(Boolean).length;
 
@@ -166,7 +166,7 @@ export const getAddonStats = (settings: AddonSettings) => {
     settings.moodTracking,
     settings.clothingInventory,
     settings.locationTracking,
-    settings.timeWeather,
+    settings.timeAndWeather,
     settings.relationshipStatus,
   ].filter(Boolean).length;
 

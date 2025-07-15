@@ -129,12 +129,12 @@ export const UserAddonSettingsSection: React.FC<UserAddonSettingsSectionProps> =
   };
 
   const getSelectedTrackingCount = () => {
-    const trackingAddons = ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'];
+    const trackingAddons = ['moodTracking', 'clothingInventory', 'locationTracking', 'timeAndWeather', 'relationshipStatus'];
     return trackingAddons.filter(addon => settings[addon as keyof AddonData]).length;
   };
 
   const isTrackingAddon = (key: keyof AddonData) => {
-    return ['moodTracking', 'clothingInventory', 'locationTracking', 'timeWeather', 'relationshipStatus'].includes(key);
+    return ['moodTracking', 'clothingInventory', 'locationTracking', 'timeAndWeather', 'relationshipStatus'].includes(key);
   };
 
   const saveSettings = async (newSettings: AddonData) => {
@@ -337,9 +337,9 @@ export const UserAddonSettingsSection: React.FC<UserAddonSettingsSectionProps> =
                 title="Time & Weather"
                 description="Awareness of in-story time and weather conditions."
                 creditCost="+5% credit cost"
-                enabled={settings.timeWeather}
-                onToggle={(enabled) => handleToggle('timeWeather', enabled)}
-                disabled={isSaving || (userPlan === 'Guest Pass' && !settings.timeWeather && getSelectedTrackingCount() >= 2)}
+                enabled={settings.timeAndWeather}
+                onToggle={(enabled) => handleToggle('timeAndWeather', enabled)}
+                disabled={isSaving || (userPlan === 'Guest Pass' && !settings.timeAndWeather && getSelectedTrackingCount() >= 2)}
               />
               <AddonItem
                 icon={Heart}

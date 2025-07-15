@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse the incoming request body
-    const { model, user_message, chat_id, character_id, tracked_context } = await req.json();
+    const { model, user_message, chat_id, character_id, tracked_context, addon_settings } = await req.json();
 
     if (!model || !user_message || !chat_id || !character_id) {
       console.error('Missing required fields');
@@ -59,6 +59,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+    
+    console.log('Received addon_settings:', addon_settings);
 
     console.log(`Processing chat request for chat: ${chat_id}, character: ${character_id}`);
 
@@ -320,16 +322,53 @@ Respond naturally to the conversation, keeping the character's personality consi
 
     console.log('AI response generated successfully, length:', aiResponseContent.length);
 
+    // Check if any addons are enabled before extracting context
+    const addonSettingsObj = addon_settings || {};
+    const hasEnabledAddons = addonSettingsObj.moodTracking || 
+                           addonSettingsObj.clothingInventory || 
+                           addonSettingsObj.locationTracking || 
+                           addonSettingsObj.timeAndWeather || 
+                           addonSettingsObj.relationshipStatus;
+
+    console.log('Checking enabled addons:', {
+      moodTracking: addonSettingsObj.moodTracking,
+      clothingInventory: addonSettingsObj.clothingInventory,
+      locationTracking: addonSettingsObj.locationTracking,
+      timeAndWeather: addonSettingsObj.timeAndWeather,
+      relationshipStatus: addonSettingsObj.relationshipStatus,
+      hasEnabledAddons
+    });
+
+    if (!hasEnabledAddons) {
+      console.log('No addons enabled, skipping context extraction');
+      return new Response(JSON.stringify({ 
+        success: true, 
+        content: aiResponseContent,
+        updatedContext: currentContext 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Now extract context using a cheaper model
-    console.log('Extracting context from conversation...');
+    console.log('Extracting context from conversation... Enabled addons:', addonSettingsObj);
     
-    const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided.
+    // Build extraction fields based on enabled addons
+    const extractionFields = {};
+    if (addonSettingsObj.moodTracking) extractionFields['moodTracking'] = '...';
+    if (addonSettingsObj.clothingInventory) extractionFields['clothingInventory'] = '...';
+    if (addonSettingsObj.locationTracking) extractionFields['locationTracking'] = '...';
+    if (addonSettingsObj.timeAndWeather) extractionFields['timeAndWeather'] = '...';
+    if (addonSettingsObj.relationshipStatus) extractionFields['relationshipStatus'] = '...';
+
+    const extractionPrompt = `You are a data extraction bot. Analyze this conversation turn and update context state based ONLY on the new information provided for the ENABLED fields.
 
 Rules:
 1. Only update a field if new information is EXPLICITLY mentioned in the "User Message" or "Character Response"
 2. If a field is not mentioned or updated, you MUST return its "Previous Value"
 3. If the previous value was "No context" and there is still no new information, keep it as "No context"
 4. Your response MUST be a valid JSON object and nothing else
+5. Only extract information for these enabled addon fields: ${Object.keys(extractionFields).join(', ')}
 
 Previous Context:
 ${JSON.stringify(currentContext, null, 2)}
@@ -338,14 +377,8 @@ Conversation Turn:
 User Message: "${user_message}"
 Character Response: "${aiResponseContent}"
 
-Extract the current state for the following fields and provide your response in JSON format:
-{
-  "moodTracking": "...",
-  "clothingInventory": "...",
-  "locationTracking": "...",
-  "timeAndWeather": "...",
-  "relationshipStatus": "..."
-}`;
+Extract the current state for the following ENABLED fields and provide your response in JSON format:
+${JSON.stringify(extractionFields, null, 2)}`;
 
     // Call extraction LLM
     const extractionResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -375,11 +408,11 @@ Extract the current state for the following fields and provide your response in 
         // Try to parse the JSON response
         const extractedContext = JSON.parse(extractedContextStr);
         updatedContext = {
-          moodTracking: extractedContext.moodTracking || currentContext.moodTracking,
-          clothingInventory: extractedContext.clothingInventory || currentContext.clothingInventory,
-          locationTracking: extractedContext.locationTracking || currentContext.locationTracking,
-          timeAndWeather: extractedContext.timeAndWeather || currentContext.timeAndWeather,
-          relationshipStatus: extractedContext.relationshipStatus || currentContext.relationshipStatus
+          moodTracking: addonSettingsObj.moodTracking ? (extractedContext.moodTracking || currentContext.moodTracking) : currentContext.moodTracking,
+          clothingInventory: addonSettingsObj.clothingInventory ? (extractedContext.clothingInventory || currentContext.clothingInventory) : currentContext.clothingInventory,
+          locationTracking: addonSettingsObj.locationTracking ? (extractedContext.locationTracking || currentContext.locationTracking) : currentContext.locationTracking,
+          timeAndWeather: addonSettingsObj.timeAndWeather ? (extractedContext.timeAndWeather || currentContext.timeAndWeather) : currentContext.timeAndWeather,
+          relationshipStatus: addonSettingsObj.relationshipStatus ? (extractedContext.relationshipStatus || currentContext.relationshipStatus) : currentContext.relationshipStatus
         };
         
         console.log('Context extracted successfully:', updatedContext);
@@ -394,8 +427,16 @@ Extract the current state for the following fields and provide your response in 
         ];
 
         for (const mapping of contextMappings) {
-          // Only save if context changed and is not "No context"
-          if (mapping.value !== 'No context' && mapping.value !== currentContext[mapping.type === 'mood' ? 'moodTracking' : mapping.type === 'clothing' ? 'clothingInventory' : mapping.type === 'location' ? 'locationTracking' : mapping.type === 'time_weather' ? 'timeAndWeather' : 'relationshipStatus']) {
+          const contextField = mapping.type === 'mood' ? 'moodTracking' : 
+                              mapping.type === 'clothing' ? 'clothingInventory' : 
+                              mapping.type === 'location' ? 'locationTracking' : 
+                              mapping.type === 'time_weather' ? 'timeAndWeather' : 
+                              'relationshipStatus';
+          
+          // Only save if addon is enabled, context changed, and is not "No context"
+          const isAddonEnabled = addonSettingsObj[contextField];
+          if (isAddonEnabled && mapping.value !== 'No context' && mapping.value !== currentContext[contextField]) {
+            console.log(`Saving context for ${mapping.type}:`, mapping.value);
             await supabase
               .from('user_chat_context')
               .upsert({

@@ -48,7 +48,7 @@ const ChatInterface = ({
     moodTracking: false,
     clothingInventory: false,
     locationTracking: false,
-    timeWeather: false,
+    timeAndWeather: false,
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
@@ -94,6 +94,7 @@ const ChatInterface = ({
       if (user && character.id) {
         try {
           const settings = await getUserCharacterAddonSettings(user.id, character.id);
+          console.log('Loaded addon settings:', settings);
           setAddonSettings(settings);
         } catch (error) {
           console.error('Error loading addon settings:', error);
@@ -135,7 +136,9 @@ const ChatInterface = ({
       const result = await sendMessageMutation.mutateAsync({
         chatId: currentChatId,
         content: messageContent,
-        characterId: character.id
+        characterId: character.id,
+        trackedContext: trackedContext,
+        addonSettings: addonSettings
       });
 
       // Update tracked context if returned

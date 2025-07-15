@@ -29,9 +29,18 @@ export const ContextDisplay = ({ context, className = '' }: ContextDisplayProps)
     { label: 'Relationship Status', value: context.relationshipStatus, key: 'relationship' },
   ].filter(item => item.value && item.value !== 'No context');
 
-  // Don't render if no context to show
+  // Show debug info if no context
   if (contextItems.length === 0) {
-    return null;
+    console.log('ContextDisplay: No context items to show', context);
+    return (
+      <Card className={`bg-background/50 border-border/50 backdrop-blur-sm ${className}`}>
+        <div className="p-3">
+          <div className="text-xs text-muted-foreground">
+            No context tracked yet. Enable addons to start tracking context.
+          </div>
+        </div>
+      </Card>
+    );
   }
 
   return (

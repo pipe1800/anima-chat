@@ -25,7 +25,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     moodTracking: false,
     clothingInventory: false,
     locationTracking: false,
-    timeWeather: false,
+    timeAndWeather: false,
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
@@ -36,7 +36,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     moodTracking: false,
     clothingInventory: false,
     locationTracking: false,
-    timeWeather: false,
+    timeAndWeather: false,
     relationshipStatus: false,
     chainOfThought: false,
     fewShotExamples: false,
@@ -55,7 +55,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     tempAddonSettings.moodTracking,
     tempAddonSettings.clothingInventory,
     tempAddonSettings.locationTracking,
-    tempAddonSettings.timeWeather,
+    tempAddonSettings.timeAndWeather,
     tempAddonSettings.relationshipStatus,
   ].filter(Boolean).length;
 
@@ -104,7 +104,7 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isTrueFanOrWhale || tempAddonSettings.timeWeather || activeStatefulAddons < 2,
+        available: isTrueFanOrWhale || tempAddonSettings.timeAndWeather || activeStatefulAddons < 2,
         dynamicCost: null
       },
       relationshipStatus: { 
