@@ -139,21 +139,21 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
-      <div className="max-w-4xl mx-auto p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+        <div className="mb-6 md:mb-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 md:mb-4">
             Craft Their Soul
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto">
             Define what makes your character unique. Their personality will shape every conversation.
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
           {/* Description Text Area */}
           <div className="space-y-4">
-            <Label htmlFor="core-personality" className="text-white text-xl font-medium block">
+            <Label htmlFor="core-personality" className="text-white text-lg md:text-xl font-medium block">
               Description *
             </Label>
             <div className="relative">
@@ -162,33 +162,33 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                 placeholder="Describe the physical and mental details of your character. What do they look like? How do they think and behave? What are their motivations, fears, and quirks?"
                 value={corePersonality}
                 onChange={(e) => setCorePersonality(e.target.value)}
-                rows={8}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-6"
+                rows={6}
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-sm md:text-base leading-relaxed p-4 md:p-6"
               />
-              <div className={`absolute bottom-4 right-4 text-sm font-medium ${
+              <div className={`absolute bottom-3 md:bottom-4 right-3 md:right-4 text-xs md:text-sm font-medium ${
                 corePersonality.length >= 50 ? 'text-green-500' : 'text-red-500'
               }`}>
                 {corePersonality.length}/50
               </div>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs md:text-sm text-gray-500">
               Describe the physical and mental details of your character
             </p>
           </div>
 
           {/* Quick Tags System */}
           <div className="space-y-4">
-            <Label className="text-white text-xl font-medium block">
+            <Label className="text-white text-lg md:text-xl font-medium block">
               Quick Tags
             </Label>
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-400 text-sm md:text-base mb-4">
               Add personality tags for quick reference. These help define key traits at a glance.
             </p>
             
             {/* Tag Dropdown */}
             <div className="space-y-4">
               <Select onValueChange={handleAddTag} disabled={isLoading}>
-                <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg">
+                <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white rounded-lg h-10 md:h-11">
                   <SelectValue placeholder={isLoading ? 'Loading tags...' : `Select a tag to add... (${availableTags.length} available)`} />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-600 z-50">
@@ -216,14 +216,14 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                   {selectedTags.map((tag) => (
                     <Badge 
                       key={tag.id} 
-                      className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30 px-3 py-2 text-sm font-medium hover:bg-[#FF7A00]/30 transition-colors"
+                      className="bg-[#FF7A00]/20 text-[#FF7A00] border border-[#FF7A00]/30 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm font-medium hover:bg-[#FF7A00]/30 transition-colors"
                     >
                       {tag.name}
                       <button
                         onClick={() => handleRemoveTag(tag.id)}
-                        className="ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"
+                        className="ml-1.5 md:ml-2 hover:bg-[#FF7A00]/20 rounded-full p-0.5 transition-colors"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
                       </button>
                     </Badge>
                   ))}
@@ -235,20 +235,20 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
           {/* Advanced Section */}
           <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
             <CollapsibleTrigger className="flex items-center gap-2 w-full text-left">
-              <div className="flex items-center gap-2 text-white text-xl font-medium hover:text-[#FF7A00] transition-colors">
+              <div className="flex items-center gap-2 text-white text-lg md:text-xl font-medium hover:text-[#FF7A00] transition-colors">
                 {isAdvancedOpen ? (
-                  <ChevronDown className="w-5 h-5" />
+                  <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
                 ) : (
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                 )}
                 Advanced
               </div>
             </CollapsibleTrigger>
             
-            <CollapsibleContent className="space-y-6 mt-4">
+            <CollapsibleContent className="space-y-4 md:space-y-6 mt-4">
               {/* Personality Summary */}
               <div className="space-y-4">
-                <Label htmlFor="knowledge-base" className="text-white text-lg font-medium block">
+                <Label htmlFor="knowledge-base" className="text-white text-base md:text-lg font-medium block">
                   Personality summary
                 </Label>
                 <Textarea
@@ -256,17 +256,17 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                   placeholder="A short summary of the personality"
                   value={knowledgeBase}
                   onChange={(e) => setKnowledgeBase(e.target.value)}
-                  rows={5}
-                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
+                  rows={4}
+                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-sm md:text-base leading-relaxed p-3 md:p-4"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-gray-500">
                   A short summary of the personality.
                 </p>
               </div>
 
               {/* Scenario */}
               <div className="space-y-4">
-                <Label htmlFor="scenario-definition" className="text-white text-lg font-medium block">
+                <Label htmlFor="scenario-definition" className="text-white text-base md:text-lg font-medium block">
                   Scenario
                 </Label>
                 <Textarea
@@ -274,10 +274,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                   placeholder="Share context of the scenario or the interaction taking place in the chat"
                   value={scenarioDefinition}
                   onChange={(e) => setScenarioDefinition(e.target.value)}
-                  rows={5}
-                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-base leading-relaxed p-4"
+                  rows={4}
+                  className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-xl resize-none text-sm md:text-base leading-relaxed p-3 md:p-4"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-gray-500">
                   Share context of the scenario or the interaction taking place in the chat.
                 </p>
               </div>
@@ -285,9 +285,9 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
           </Collapsible>
 
           {/* Helpful Examples */}
-          <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
-            <h4 className="text-white font-medium mb-3">💡 Examples to inspire you:</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+          <div className="bg-gray-800/30 rounded-xl p-4 md:p-6 border border-gray-700/50">
+            <h4 className="text-white font-medium mb-3 text-sm md:text-base">💡 Examples to inspire you:</h4>
+            <div className="grid grid-cols-1 gap-3 md:gap-4 text-xs md:text-sm text-gray-300">
               <div>
                 <strong className="text-[#FF7A00]">Trait-based:</strong>
                 <p>"Sarcastic but loyal. Loves coffee and hates small talk. Quick wit covers deep insecurities."</p>
@@ -301,11 +301,11 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between mt-12 pt-6 border-t border-gray-700/50">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8 md:mt-12 pt-4 md:pt-6 border-t border-gray-700/50">
           <Button
             onClick={onPrevious}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-800/50 px-8 py-3 rounded-xl"
+            className="border-gray-600 text-gray-300 hover:bg-gray-800/50 px-6 md:px-8 py-2.5 md:py-3 rounded-xl text-sm md:text-base order-2 sm:order-1"
           >
             ← Previous
           </Button>
@@ -313,9 +313,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
           <Button
             onClick={handleNext}
             disabled={!isValid}
-            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 md:px-8 py-2.5 md:py-3 text-base md:text-lg font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
           >
-            Next: Dialogue →
+            <span className="hidden sm:inline">Next: Dialogue →</span>
+            <span className="sm:hidden">Next →</span>
           </Button>
         </div>
       </div>

@@ -145,19 +145,20 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
 
   return (
     <div className="flex-1 overflow-auto bg-[#121212]">
-      <div className="max-w-6xl mx-auto p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[calc(100vh-200px)]">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
+        {/* Mobile: Stack vertically, Desktop: Side by side */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-12 min-h-[calc(100vh-200px)]">
           
-          {/* Left Column - Avatar Upload */}
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">Avatar</h2>
-              <p className="text-gray-400">Give your character a face</p>
+          {/* Avatar Upload Section */}
+          <div className="flex flex-col items-center justify-center space-y-4 md:space-y-6 order-1 lg:order-none">
+            <div className="text-center mb-4 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Avatar</h2>
+              <p className="text-gray-400 text-sm md:text-base">Give your character a face</p>
             </div>
 
-            {/* Large Avatar Display */}
+            {/* Avatar Display - Smaller on mobile */}
             <div className="relative group">
-              <div className="w-48 h-48 lg:w-56 lg:h-56 rounded-full border-4 border-[#FF7A00]/30 bg-gradient-to-br from-[#FF7A00]/20 to-transparent backdrop-blur-sm flex items-center justify-center overflow-hidden">
+              <div className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full border-4 border-[#FF7A00]/30 bg-gradient-to-br from-[#FF7A00]/20 to-transparent backdrop-blur-sm flex items-center justify-center overflow-hidden">
                 {formData.avatar ? (
                   <img 
                     src={formData.avatar} 
@@ -166,7 +167,7 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-[#FF7A00]/60">
-                    <User className="w-16 h-16 mb-2" />
+                    <User className="w-12 h-12 md:w-16 md:h-16 mb-2" />
                   </div>
                 )}
               </div>
@@ -181,24 +182,25 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
               className="hidden"
             />
 
-            {/* Upload Buttons */}
+            {/* Upload Buttons - Responsive width */}
             <div className="flex flex-col space-y-3 w-full max-w-xs">
               <Button 
-                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-semibold py-3 px-6 rounded-xl shadow-lg"
+                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-semibold py-2.5 md:py-3 px-4 md:px-6 rounded-xl shadow-lg text-sm md:text-base"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
               >
                 {isUploading ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-2 animate-spin" />
                 ) : (
-                  <Upload className="w-5 h-5 mr-2" />
+                  <Upload className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 )}
-                {isUploading ? 'Processing...' : 'Upload & Crop Image'}
+                <span className="hidden sm:inline">{isUploading ? 'Processing...' : 'Upload & Crop Image'}</span>
+                <span className="sm:hidden">{isUploading ? 'Processing...' : 'Upload Image'}</span>
               </Button>
               
               {/* PNG Character Card Upload */}
-              <div className="space-y-3">
-                <Label className="text-gray-300 text-sm font-medium">
+              <div className="space-y-2 md:space-y-3">
+                <Label className="text-gray-300 text-xs md:text-sm font-medium">
                   Upload PNG Character Card
                 </Label>
                 
@@ -230,9 +232,9 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                     if (input) input.click();
                   }}
                   disabled={isParsingCard}
-                  className="border-primary/50 text-primary hover:bg-primary/10 w-full"
+                  className="border-primary/50 text-primary hover:bg-primary/10 w-full text-xs md:text-sm py-2"
                 >
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   Choose PNG File
                 </Button>
                 
@@ -246,16 +248,16 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
             </div>
           </div>
 
-          {/* Right Column - Core Details */}
-          <div className="flex flex-col justify-center space-y-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Core Details</h2>
-              <p className="text-gray-400">Define your character's identity</p>
+          {/* Core Details Section - Order first on mobile */}
+          <div className="flex flex-col justify-center space-y-4 md:space-y-6 order-0 lg:order-none">
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Core Details</h2>
+              <p className="text-gray-400 text-sm md:text-base">Define your character's identity</p>
             </div>
 
             {/* Character Name */}
             <div className="space-y-2">
-              <Label htmlFor="character-name" className="text-white font-medium">
+              <Label htmlFor="character-name" className="text-white font-medium text-sm md:text-base">
                 Name *
               </Label>
               <Input
@@ -263,28 +265,28 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                 placeholder="Character's Handle"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-12 text-lg font-medium"
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-10 md:h-12 text-base md:text-lg font-medium"
               />
             </div>
 
             {/* Title/Tagline */}
             <div className="space-y-2">
-              <Label htmlFor="character-title" className="text-white font-medium">
+              <Label htmlFor="character-title" className="text-white font-medium text-sm md:text-base">
                 Title/Tagline
               </Label>
               <Input
                 id="character-title"
-                placeholder="e.g., Rogue Netrunner with a heart of gold"
+                placeholder="e.g., Rogue Netrunner..."
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-11"
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg h-10 md:h-11 text-sm md:text-base"
               />
             </div>
 
             {/* Short Description */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label htmlFor="character-description" className="text-white font-medium">
+                <Label htmlFor="character-description" className="text-white font-medium text-sm md:text-base">
                   Short Description *
                 </Label>
                 <span className="text-xs text-gray-400">
@@ -300,8 +302,8 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
                     handleInputChange('description', e.target.value);
                   }
                 }}
-                rows={4}
-                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none"
+                rows={3}
+                className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 rounded-lg resize-none text-sm md:text-base"
               />
               <p className="text-xs text-gray-500">
                 This is what other users will see at a glance in the discovery page.
@@ -310,14 +312,15 @@ const FoundationStep = ({ data, onUpdate, onNext, onFileChange, isParsingCard = 
           </div>
         </div>
 
-        {/* Navigation - Bottom Right */}
-        <div className="flex justify-end mt-8 pt-6 border-t border-gray-700/50">
+        {/* Navigation - Responsive positioning */}
+        <div className="flex justify-end mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-700/50">
           <Button
             onClick={handleNext}
             disabled={!isValid}
-            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 md:px-8 py-2.5 md:py-3 text-base md:text-lg font-semibold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
-            Next: Personality →
+            <span className="hidden sm:inline">Next: Personality →</span>
+            <span className="sm:hidden">Next →</span>
           </Button>
         </div>
       </div>
