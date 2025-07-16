@@ -192,35 +192,35 @@ const ChatInterface = ({
           const chunk = decoder.decode(value);
           const lines = chunk.split('\n');
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.choices?.[0]?.delta?.content) {
-                  accumulatedMessage += parsed.choices[0].delta.content;
-                  setStreamingMessage(accumulatedMessage);
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') break;
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    
+                    // Handle final message from backend
+                    if (parsed.type === 'final_message') {
+                      accumulatedMessage = parsed.content;
+                      setStreamingMessage(accumulatedMessage);
+                      break;
+                    }
+                    
+                    // Handle streaming chunks
+                    if (parsed.choices?.[0]?.delta?.content) {
+                      accumulatedMessage += parsed.choices[0].delta.content;
+                      setStreamingMessage(accumulatedMessage);
+                    }
+                  } catch (e) {
+                    // Ignore parsing errors for incomplete chunks
+                  }
                 }
-              } catch (e) {
-                // Ignore parsing errors for incomplete chunks
               }
-            }
-          }
         }
       }
 
-      // Save the complete AI response
-      await supabase
-        .from('messages')
-        .insert({
-          chat_id: currentChatId,
-          content: accumulatedMessage,
-          author_id: user.id,
-          is_ai_message: true,
-          created_at: new Date().toISOString()
-        });
+      // Message is already saved by the edge function, no need to save again
 
       // Update metrics
       const endTime = Date.now();
@@ -279,28 +279,10 @@ const ChatInterface = ({
         chatId={currentChatId} 
         character={character}
         trackedContext={trackedContext}
+        streamingMessage={streamingMessage}
+        isStreaming={isStreaming}
       />
 
-      {/* Streaming Message Display */}
-      {isStreaming && streamingMessage && (
-        <div className="px-6 pb-2">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {character.fallback}
-              </span>
-            </div>
-            <div className="flex-1 bg-gray-800 rounded-lg p-3">
-              <div className="text-white">{streamingMessage}</div>
-              <div className="flex items-center space-x-1 mt-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Typing Indicator */}
       {isTyping && !isStreaming && (

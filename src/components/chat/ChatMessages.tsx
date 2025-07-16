@@ -21,9 +21,11 @@ interface ChatMessagesProps {
   chatId: string | null;
   character: Character;
   trackedContext?: TrackedContext;
+  streamingMessage?: string;
+  isStreaming?: boolean;
 }
 
-const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) => {
+const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isStreaming }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [backgroundImage, setBackgroundImage] = React.useState<string | null>(null);
@@ -101,6 +103,13 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [allMessages.length]);
+
+  // Auto scroll to bottom during streaming
+  useEffect(() => {
+    if (isStreaming && streamingMessage) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isStreaming, streamingMessage]);
 
   // Scroll to bottom on initial load
   useEffect(() => {
@@ -214,6 +223,31 @@ const ChatMessages = ({ chatId, character, trackedContext }: ChatMessagesProps) 
           </div>
         </div>
       )}
+
+      {/* Streaming Message Display - Appears in correct position */}
+      {isStreaming && streamingMessage && (
+        <div className="animate-fade-in">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-medium">
+                {character.fallback}
+              </span>
+            </div>
+            <div className="flex-1 bg-muted/10 backdrop-blur-sm rounded-lg p-4 border border-border/50">
+              <div className="text-foreground whitespace-pre-wrap">
+                {streamingMessage}
+                <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1"></span>
+              </div>
+              <div className="flex items-center space-x-1 mt-2">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div ref={messagesEndRef} />
       </div>
     </div>

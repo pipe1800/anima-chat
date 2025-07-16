@@ -333,13 +333,30 @@ Return only the JSON object with no additional text.`;
                     // Clean message is guaranteed to be clean since it came from separate API call
                     const finalCleanMessage = fullResponse.trim();
                     
-                    // Apply template replacement to the final AI response
-                    const processedMessage = replaceTemplates(finalCleanMessage);
-                    
-                    console.log('✅ GUARANTEED clean message content:', processedMessage.substring(0, 100) + '...');
+                      // Apply template replacement to the final AI response
+                      const processedMessage = replaceTemplates(finalCleanMessage);
+                      
+                      console.log('✅ GUARANTEED clean message content:', processedMessage.substring(0, 100) + '...');
 
-                    // Send clean message content to frontend for final display
-                    controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${processedMessage.replace(/"/g, '\\"')}"}\n\n`));
+                      // Save the final message to database first
+                      const { error: messageError } = await supabase
+                        .from('messages')
+                        .insert({
+                          chat_id: chatId,
+                          content: processedMessage,
+                          author_id: user.id,
+                          is_ai_message: true,
+                          created_at: new Date().toISOString()
+                        });
+
+                      if (messageError) {
+                        console.error('Error saving AI message:', messageError);
+                      } else {
+                        console.log('✅ AI message saved to database');
+                      }
+
+                      // Send final message notification
+                      controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${processedMessage.replace(/"/g, '\\"')}"}\n\n`));
 
                     // Wait for context extraction to complete and save to database
                     try {
