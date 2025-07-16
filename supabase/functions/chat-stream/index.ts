@@ -321,8 +321,35 @@ Stay in character and engage in natural dialogue with the user.`;
       })
     });
 
+    // Enhanced error handling with detailed logging
     if (!cleanMessageResponse.ok) {
-      throw new Error('Failed to get AI response');
+      console.error('❌ OpenRouter API Error Status:', cleanMessageResponse.status);
+      console.error('❌ OpenRouter API Error Headers:', Object.fromEntries(cleanMessageResponse.headers.entries()));
+      
+      let errorBody = '';
+      try {
+        errorBody = await cleanMessageResponse.text();
+        console.error('❌ OpenRouter API Error Body:', errorBody);
+      } catch (e) {
+        console.error('❌ Could not read error response body:', e);
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: 'OpenRouter API failed',
+        status: cleanMessageResponse.status,
+        statusText: cleanMessageResponse.statusText,
+        details: errorBody,
+        model: selectedModel,
+        debugInfo: {
+          userPlan: userPlan,
+          selectedModel: selectedModel,
+          messageCount: messages.length,
+          timestamp: new Date().toISOString()
+        }
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Start context extraction in background (separate API call)
