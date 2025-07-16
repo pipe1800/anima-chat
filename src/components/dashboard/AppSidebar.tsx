@@ -58,7 +58,7 @@ const AppSidebar = () => {
 
   // Create main items with dynamic subscription icon
   const mainItems = useMemo(() => {
-    const hasActiveSubscription = userSubscription?.status === 'active';
+    const hasActiveSubscription = userSubscription?.status === 'active' && userSubscription?.plans?.price_monthly > 0;
     return [
       ...baseMainItems,
       { 

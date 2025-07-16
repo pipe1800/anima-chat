@@ -357,12 +357,12 @@ const Subscription = () => {
                   const canUpgrade = currentPlan === 'True Fan' && plan.name === 'The Whale';
                   
                   return (
-                    <Card 
-                      key={plan.id} 
-                      className={`${getCardClasses()} bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden h-full flex flex-col ${
-                        isPopular ? 'ring-2 ring-[#FF7A00]' : ''
-                      } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
-                  >
+                     <Card 
+                       key={plan.id} 
+                       className={`${getCardClasses()} bg-[#1a1a2e] border-gray-700/50 relative overflow-hidden min-h-[600px] flex flex-col ${
+                         isPopular ? 'ring-2 ring-[#FF7A00]' : ''
+                       } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                   >
                     {isPopular && !isCurrentPlan && (
                       <div className="absolute top-4 right-4">
                         <div className="bg-[#FF7A00] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
