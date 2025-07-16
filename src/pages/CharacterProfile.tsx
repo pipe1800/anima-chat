@@ -228,7 +228,7 @@ export default function CharacterProfile() {
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-screen">
         {/* Left Side - Character Image */}
-        <div className="relative w-1/2 overflow-hidden p-4">
+        <div className="relative w-1/3 h-[50vh] overflow-hidden p-4">
           <div className="relative h-full overflow-hidden rounded-lg">
             <img 
               src={character.avatar_url || "/placeholder.svg"} 
@@ -269,7 +269,7 @@ export default function CharacterProfile() {
         </div>
 
         {/* Right Side - Character Info */}
-        <div className="w-1/2 flex flex-col">
+        <div className="w-2/3 flex flex-col">
           {/* Header Section */}
           <div className="p-4 pb-3">
             <h1 className="text-3xl font-bold text-foreground mb-2">
