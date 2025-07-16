@@ -79,6 +79,9 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     tempAddonSettings.characterPosition,
   ].filter(Boolean).length;
 
+  // The Whale gets unlimited access to everything
+  const isWhale = userPlan === 'The Whale';
+
   const addonCategories = {
     'Core Enhancements': {
       dynamicWorldInfo: { 
@@ -103,42 +106,42 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Mood Tracking', 
         cost: 5, 
         description: 'Track character emotions',
-        available: isTrueFanOrWhale || tempAddonSettings.moodTracking || (!tempAddonSettings.moodTracking && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.moodTracking || (!tempAddonSettings.moodTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       clothingInventory: { 
         name: 'Clothing Inventory', 
         cost: 5, 
         description: 'Track character outfits',
-        available: isTrueFanOrWhale || tempAddonSettings.clothingInventory || (!tempAddonSettings.clothingInventory && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.clothingInventory || (!tempAddonSettings.clothingInventory && activeStatefulAddons < 2),
         dynamicCost: null
       },
       locationTracking: { 
         name: 'Location Tracking', 
         cost: 5, 
         description: 'Track current location',
-        available: isTrueFanOrWhale || tempAddonSettings.locationTracking || (!tempAddonSettings.locationTracking && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.locationTracking || (!tempAddonSettings.locationTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       timeAndWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isTrueFanOrWhale || tempAddonSettings.timeAndWeather || (!tempAddonSettings.timeAndWeather && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.timeAndWeather || (!tempAddonSettings.timeAndWeather && activeStatefulAddons < 2),
         dynamicCost: null
       },
       relationshipStatus: { 
         name: 'Relationship Status', 
         cost: 5, 
         description: 'Track relationships',
-        available: isTrueFanOrWhale || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
         dynamicCost: null
       },
       characterPosition: { 
         name: 'Character Position', 
         cost: 5, 
         description: 'Track character\'s physical position and body language',
-        available: isTrueFanOrWhale || tempAddonSettings.characterPosition || (!tempAddonSettings.characterPosition && activeStatefulAddons < 2),
+        available: isWhale || isTrueFanOrWhale || tempAddonSettings.characterPosition || (!tempAddonSettings.characterPosition && activeStatefulAddons < 2),
         dynamicCost: null
       },
     },

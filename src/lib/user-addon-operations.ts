@@ -125,24 +125,34 @@ export const validateAddonSettings = (
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   const isGuestPass = userPlan === 'Guest Pass';
-  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'The Whale';
+  const isTrueFan = userPlan === 'True Fan';
+  const isWhale = userPlan === 'The Whale';
+  const isTrueFanOrWhale = isTrueFan || isWhale;
 
   // Debug validation in development
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 Validation Debug:', {
       userPlan,
       isGuestPass,
+      isTrueFan,
+      isWhale,
       isTrueFanOrWhale,
       settings
     });
   }
 
-  // Enhanced Memory validation
+  // The Whale gets unlimited access to everything - skip all restrictions
+  if (isWhale) {
+    console.log('🐋 Whale user detected - all addons available');
+    return { valid: true, errors: [] };
+  }
+
+  // Enhanced Memory validation (True Fan and Whale only)
   if (settings.enhancedMemory && !isTrueFanOrWhale) {
     errors.push('Enhanced Memory requires True Fan or Whale subscription');
   }
 
-  // Chain of Thought validation
+  // Chain of Thought validation (True Fan and Whale only)
   if (settings.chainOfThought && !isTrueFanOrWhale) {
     errors.push('Chain of Thought requires True Fan or Whale subscription');
   }
