@@ -8,8 +8,6 @@ import {
   Heart,
   ArrowLeft,
   Loader2,
-  Calendar,
-  User,
   Star
 } from 'lucide-react';
 import { useCharacterProfile, useCharacterLikeStatus, useToggleCharacterLike } from '@/hooks/useCharacterProfile';
@@ -273,41 +271,20 @@ export default function CharacterProfile() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-primary text-primary-foreground border-primary hover:bg-primary/90 text-xs"
-              >
-                Follow
-              </Button>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Published At</div>
-                <div className="text-xs font-medium text-foreground">
-                  {new Date(character.created_at).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Description */}
         <div className="px-3 py-3">
-          <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300`}>
+          <div className={`${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300 overflow-hidden`}>
             <p 
               ref={descriptionRef}
-              className={`text-sm text-foreground leading-[1.125rem] ${
-                !isDescriptionExpanded ? 'overflow-hidden' : ''
-              }`}
+              className="text-sm text-foreground leading-[1.125rem]"
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: isDescriptionExpanded ? 'none' : 4,
                 WebkitBoxOrient: 'vertical',
-                overflow: isDescriptionExpanded ? 'visible' : 'hidden'
+                overflow: 'hidden'
               }}
             >
               {description}
@@ -316,14 +293,14 @@ export default function CharacterProfile() {
           {isTextTruncated && (
             <button
               onClick={toggleDescription}
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary hover:underline mb-2 block"
             >
               {isDescriptionExpanded ? 'Show less' : 'Show more'}
             </button>
           )}
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-3">
             {character.tags?.map((tag) => (
               <Badge 
                 key={tag.id} 
@@ -341,7 +318,6 @@ export default function CharacterProfile() {
               onClick={handleStartChat}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm"
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
               Start Conversation
             </Button>
             <div className="flex space-x-2">
@@ -437,70 +413,41 @@ export default function CharacterProfile() {
                 </span>
               </div>
               <div className="flex items-center space-x-1 bg-secondary/50 px-2 py-1 rounded-full">
-                <User className="w-4 h-4 text-muted-foreground" />
+                <Heart className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">
                   {(character.likes_count || 0) >= 1000 
                     ? `${((character.likes_count || 0) / 1000).toFixed(1)}K` 
                     : character.likes_count || 0}
                 </span>
               </div>
-              <div className="flex items-center space-x-1 bg-secondary/50 px-2 py-1 rounded-full">
-                <Heart className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-semibold text-foreground">11</span>
-              </div>
             </div>
 
             {/* Creator Info */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={character.creator?.avatar_url || "/placeholder.svg"} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {character.creator?.username?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="text-xs text-muted-foreground">Creator</div>
-                  <div className="text-sm font-semibold text-foreground">@{character.creator?.username || 'Unknown'}</div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="ml-2 bg-primary text-primary-foreground border-primary hover:bg-primary/90 text-xs"
-                >
-                  Follow
-                </Button>
-              </div>
-              
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Published At</div>
-                <div className="text-xs font-medium text-foreground mb-1">
-                  {new Date(character.created_at).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </div>
-                <div className="text-xs text-muted-foreground">Last Updated</div>
-                <div className="text-xs font-medium text-foreground">
-                  a year ago
-                </div>
+            <div className="flex items-center mb-4">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={character.creator?.avatar_url || "/placeholder.svg"} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {character.creator?.username?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="ml-2">
+                <div className="text-xs text-muted-foreground">Creator</div>
+                <div className="text-sm font-semibold text-foreground">@{character.creator?.username || 'Unknown'}</div>
               </div>
             </div>
           </div>
 
           {/* Description */}
           <div className="px-4 flex-1">
-            <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300`}>
+            <div className={`${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300 overflow-hidden`}>
               <p 
-                className={`text-foreground leading-[1.125rem] text-sm ${
-                  !isDescriptionExpanded ? 'overflow-hidden' : ''
-                }`}
+                ref={descriptionRef}
+                className="text-foreground leading-[1.125rem] text-sm"
                 style={{
                   display: '-webkit-box',
                   WebkitLineClamp: isDescriptionExpanded ? 'none' : 4,
                   WebkitBoxOrient: 'vertical',
-                  overflow: isDescriptionExpanded ? 'visible' : 'hidden'
+                  overflow: 'hidden'
                 }}
               >
                 {description}
@@ -509,14 +456,14 @@ export default function CharacterProfile() {
             {isTextTruncated && (
               <button
                 onClick={toggleDescription}
-                className="text-xs text-primary hover:underline mb-4"
+                className="text-xs text-primary hover:underline mb-2 block"
               >
                 {isDescriptionExpanded ? 'Show less' : 'Show more'}
               </button>
             )}
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               {character.tags?.map((tag) => (
                 <Badge 
                   key={tag.id} 
@@ -530,13 +477,13 @@ export default function CharacterProfile() {
           </div>
 
           {/* Action Buttons */}
-          <div className="p-4 pt-0">
+          <div className="px-4 pb-4">
             <div className="flex space-x-2">
               <Button
                 onClick={handleStartChat}
                 className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm"
               >
-                Start New Chat ✨
+                Start New Chat
               </Button>
               <Button
                 onClick={handleFavorite}
