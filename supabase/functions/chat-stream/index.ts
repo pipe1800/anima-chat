@@ -457,6 +457,9 @@ Return only the JSON object with no additional text.`;
                       
                       // Stream clean content directly (no context stripping needed since it's already clean)
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                      
+                      // 🧪 TEMPORARY: Add artificial delay to verify streaming UI works
+                      await new Promise(resolve => setTimeout(resolve, 150)); // 150ms delay for testing
                     } else {
                       // Pass through non-content chunks
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
