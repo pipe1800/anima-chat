@@ -145,6 +145,85 @@ Deno.serve(async (req) => {
 
     console.log('Selected model for user tier:', selectedModel);
 
+    // Define base model costs per plan
+    const PLAN_MODEL_COSTS = {
+      'Guest Pass': { model: 'google/gemma-7b-it', cost: 10 },
+      'True Fan': { model: 'gryphe/mythomax-l2-13b', cost: 4 },
+      'The Whale': { model: 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo', cost: 7 }
+    };
+
+    // Get user's current plan and calculate credit costs
+    let userPlan = 'Guest Pass'; // Default
+    if (userSubscription) {
+      const { data: planData, error: planError } = await supabaseAdmin
+        .from('plans')
+        .select('name')
+        .eq('id', userSubscription.plan_id)
+        .single();
+      
+      if (planData) {
+        userPlan = planData.name;
+      }
+    }
+
+    // Calculate base model cost
+    const planCostInfo = PLAN_MODEL_COSTS[userPlan as keyof typeof PLAN_MODEL_COSTS];
+    if (!planCostInfo) {
+      return new Response(JSON.stringify({ error: 'Invalid plan configuration' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const baseCost = planCostInfo.cost;
+
+    // Calculate addon costs
+    let addonCost = 0;
+    if (addonSettings) {
+      // Calculate addon costs using same logic as frontend
+      if (addonSettings.dynamicWorldInfo) addonCost += 10;
+      if (addonSettings.moodTracking) addonCost += 5;
+      if (addonSettings.clothingInventory) addonCost += 5;
+      if (addonSettings.locationTracking) addonCost += 5;
+      if (addonSettings.timeAndWeather) addonCost += 5;
+      if (addonSettings.relationshipStatus) addonCost += 5;
+      if (addonSettings.characterPosition) addonCost += 5;
+      if (addonSettings.chainOfThought) addonCost += 30;
+      if (addonSettings.fewShotExamples) addonCost += 7;
+    }
+
+    const totalCost = baseCost + addonCost;
+    console.log(`💰 Credit calculation: Base(${baseCost}) + Addons(${addonCost}) = Total(${totalCost})`);
+
+    // Check and consume credits before proceeding
+    const { data: creditCheckResult, error: creditError } = await supabaseAdmin
+      .rpc('consume_credits', { 
+        user_id_param: user.id,
+        credits_to_consume: totalCost 
+      });
+
+    if (creditError) {
+      console.error('Credit consumption error:', creditError);
+      return new Response(JSON.stringify({ error: 'Failed to process credits' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!creditCheckResult) {
+      console.log('❌ Insufficient credits for user:', user.id);
+      return new Response(JSON.stringify({ 
+        error: 'Insufficient credits',
+        required: totalCost,
+        details: `This conversation requires ${totalCost} credits (${baseCost} base + ${addonCost} addons)`
+      }), {
+        status: 402, // Payment Required
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`✅ Credits consumed successfully: ${totalCost} credits deducted`);
+
     // Fetch persona data if provided
     let selectedPersona = null;
     if (selectedPersonaId) {
