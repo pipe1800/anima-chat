@@ -41,6 +41,29 @@ serve(async (req) => {
 
     console.log('Creating chat for user:', user.id, 'character:', character_id);
 
+    // Fetch user profile and default persona for template replacement
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+    }
+
+    // Get user's default persona (if available)
+    const { data: defaultPersona, error: personaError } = await supabase
+      .from('personas')
+      .select('name')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single();
+
+    if (personaError && personaError.code !== 'PGRST116') {
+      console.error('Error fetching default persona:', personaError);
+    }
+
     // Create the chat
     const { data: chat, error: chatError } = await supabase
       .from('chats')
@@ -76,16 +99,39 @@ serve(async (req) => {
       throw new Error('Failed to fetch character details');
     }
 
-    // Create greeting message
-    const greeting = characterDetails.character_definitions?.greeting || 
-                    `Hello! I'm ${character_name}. It's great to meet you. What would you like to talk about?`;
+    // Template replacement function (same logic as chat-stream)
+    const replaceTemplates = (content: string): string => {
+      if (!content) return content;
+      
+      const userName = defaultPersona?.name || userProfile?.username || 'User';
+      const charName = character_name || 'Character';
+      
+      console.log('🔧 Template replacement - userName:', userName, 'charName:', charName);
+      
+      const replaced = content
+        .replace(/\{\{user\}\}/g, userName)
+        .replace(/\{\{char\}\}/g, charName);
+        
+      if (content !== replaced) {
+        console.log('🔄 Template replaced in greeting:', content, '->', replaced);
+      }
+      
+      return replaced;
+    };
+
+    // Get raw greeting and apply template replacement
+    const rawGreeting = characterDetails.character_definitions?.greeting || 
+                       `Hello! I'm ${character_name}. It's great to meet you. What would you like to talk about?`;
+    
+    const processedGreeting = replaceTemplates(rawGreeting);
+    console.log('✅ Processed greeting:', processedGreeting);
 
     const { error: messageError } = await supabase
       .from('messages')
       .insert({
         chat_id: chat.id,
         author_id: user.id,
-        content: greeting,
+        content: processedGreeting,
         is_ai_message: true,
         created_at: new Date().toISOString()
       });
