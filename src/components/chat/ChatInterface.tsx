@@ -195,25 +195,23 @@ const ChatInterface = ({
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
-                  if (data === '[DONE]') break;
+                  if (data === '[DONE]') {
+                    console.log('🏁 Stream completed, final message length:', accumulatedMessage.length);
+                    break;
+                  }
                   
                   try {
                     const parsed = JSON.parse(data);
                     
-                    // Handle final message from backend
-                    if (parsed.type === 'final_message') {
-                      accumulatedMessage = parsed.content;
-                      setStreamingMessage(accumulatedMessage);
-                      break;
-                    }
-                    
                     // Handle streaming chunks
                     if (parsed.choices?.[0]?.delta?.content) {
-                      accumulatedMessage += parsed.choices[0].delta.content;
+                      const deltaContent = parsed.choices[0].delta.content;
+                      accumulatedMessage += deltaContent;
                       setStreamingMessage(accumulatedMessage);
+                      console.log('📝 Streaming chunk received, total length:', accumulatedMessage.length, 'chunk:', deltaContent);
                     }
                   } catch (e) {
-                    // Ignore parsing errors for incomplete chunks
+                    console.log('⚠️ Failed to parse streaming data:', data, e);
                   }
                 }
               }

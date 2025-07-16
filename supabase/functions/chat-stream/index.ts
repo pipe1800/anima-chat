@@ -330,33 +330,31 @@ Return only the JSON object with no additional text.`;
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    // Clean message is guaranteed to be clean since it came from separate API call
+                    // Stream is done, save final message to database
                     const finalCleanMessage = fullResponse.trim();
+                    const processedMessage = replaceTemplates(finalCleanMessage);
                     
-                      // Apply template replacement to the final AI response
-                      const processedMessage = replaceTemplates(finalCleanMessage);
-                      
-                      console.log('✅ GUARANTEED clean message content:', processedMessage.substring(0, 100) + '...');
+                    console.log('✅ Final message content:', processedMessage.substring(0, 100) + '...');
 
-                      // Save the final message to database first
-                      const { error: messageError } = await supabase
-                        .from('messages')
-                        .insert({
-                          chat_id: chatId,
-                          content: processedMessage,
-                          author_id: user.id,
-                          is_ai_message: true,
-                          created_at: new Date().toISOString()
-                        });
+                    // Save the final message to database
+                    const { error: messageError } = await supabase
+                      .from('messages')
+                      .insert({
+                        chat_id: chatId,
+                        content: processedMessage,
+                        author_id: user.id,
+                        is_ai_message: true,
+                        created_at: new Date().toISOString()
+                      });
 
-                      if (messageError) {
-                        console.error('Error saving AI message:', messageError);
-                      } else {
-                        console.log('✅ AI message saved to database');
-                      }
+                    if (messageError) {
+                      console.error('Error saving AI message:', messageError);
+                    } else {
+                      console.log('✅ AI message saved to database');
+                    }
 
-                      // Send final message notification
-                      controller.enqueue(new TextEncoder().encode(`data: {"type":"final_message","content":"${processedMessage.replace(/"/g, '\\"')}"}\n\n`));
+                    // Send stream completion signal
+                    controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
 
                     // Wait for context extraction to complete and save to database
                     try {
