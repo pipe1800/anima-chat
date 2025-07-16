@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 export default function CharacterProfile() {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
   
   // Use React Query hooks for optimized data fetching
   const { 
@@ -59,6 +60,12 @@ export default function CharacterProfile() {
       characterId: character.id,
       isLiked: isLiked
     });
+  };
+
+  const description = character?.short_description || character?.character_definitions?.description || "No description available";
+
+  const toggleDescription = () => {
+    setIsDescriptionExpanded(!isDescriptionExpanded);
   };
 
   if (loading) {
@@ -183,9 +190,21 @@ export default function CharacterProfile() {
 
         {/* Description */}
         <div className="px-3 py-3">
-          <p className="text-sm text-foreground leading-relaxed mb-3">
-            {character.short_description || character.character_definitions?.description || "No description available"}
-          </p>
+          <div className="mb-3">
+            <p className={`text-sm text-foreground leading-relaxed ${
+              !isDescriptionExpanded ? 'line-clamp-4' : ''
+            }`}>
+              {description}
+            </p>
+            {description.length > 200 && (
+              <button
+                onClick={toggleDescription}
+                className="text-xs text-primary hover:underline mt-1"
+              >
+                {isDescriptionExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mb-4">
@@ -341,9 +360,21 @@ export default function CharacterProfile() {
 
           {/* Description */}
           <div className="px-4 flex-1">
-            <p className="text-foreground leading-relaxed mb-4 text-sm">
-              {character.short_description || character.character_definitions?.description || "No description available"}
-            </p>
+            <div className="mb-4">
+              <p className={`text-foreground leading-relaxed text-sm ${
+                !isDescriptionExpanded ? 'line-clamp-4' : ''
+              }`}>
+                {description}
+              </p>
+              {description.length > 200 && (
+                <button
+                  onClick={toggleDescription}
+                  className="text-xs text-primary hover:underline mt-1"
+                >
+                  {isDescriptionExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-6">
