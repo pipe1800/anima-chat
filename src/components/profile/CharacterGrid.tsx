@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatCreation } from '@/hooks/useChatCreation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ interface CharacterGridProps {
 export const CharacterGrid = ({ type }: CharacterGridProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startChat, isCreating } = useChatCreation();
 
   const { data: characters = [], isLoading } = useQuery({
     queryKey: ['user-characters', user?.id, type],
@@ -32,9 +34,7 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
     enabled: !!user?.id,
   });
 
-  const handleStartChat = (character: any) => {
-    navigate('/chat', { state: { selectedCharacter: character } });
-  };
+  // ... keep existing code (profile character grid queries)
 
   const handleEditCharacter = (character: any) => {
     navigate('/character-creator', { 
@@ -125,12 +125,13 @@ export const CharacterGrid = ({ type }: CharacterGridProps) => {
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
               <div className="flex gap-2">
                 <Button
-                  onClick={() => handleStartChat(character)}
-                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium"
+                  onClick={() => startChat(character)}
+                  disabled={isCreating}
+                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium disabled:opacity-50"
                   size="sm"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat
+                  {isCreating ? 'Creating...' : 'Chat'}
                 </Button>
                 {type === 'created' && (
                   <Button

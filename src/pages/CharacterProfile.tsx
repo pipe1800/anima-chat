@@ -19,14 +19,18 @@ import { CharacterStatsSection } from '@/components/character-profile/CharacterS
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useChatCreation } from '@/hooks/useChatCreation';
 
 export default function CharacterProfile() {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { startChat, isCreating } = useChatCreation();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
   const descriptionRef = React.useRef<HTMLParagraphElement>(null);
   const [isTextTruncated, setIsTextTruncated] = React.useState(false);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Use React Query hooks for optimized data fetching
@@ -107,11 +111,7 @@ export default function CharacterProfile() {
 
   const error = characterError?.message || null;
 
-  const handleStartChat = () => {
-    if (character) {
-      navigate('/chat', { state: { selectedCharacter: character } });
-    }
-  };
+  // ... keep existing code (character profile queries)
 
   const handleLike = async () => {
     if (!character) return;
@@ -315,10 +315,11 @@ export default function CharacterProfile() {
           {/* Action Buttons */}
           <div className="flex flex-col space-y-2">
             <Button
-              onClick={handleStartChat}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm"
+              onClick={() => character && startChat(character)}
+              disabled={isCreating || !character}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm disabled:opacity-50"
             >
-              Start Conversation
+              {isCreating ? 'Creating Chat...' : 'Start Conversation'}
             </Button>
             <div className="flex space-x-2">
               <Button
@@ -480,10 +481,11 @@ export default function CharacterProfile() {
           <div className="px-4 pb-4">
             <div className="flex space-x-2">
               <Button
-                onClick={handleStartChat}
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm"
+                onClick={() => character && startChat(character)}
+                disabled={isCreating || !character}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 text-sm disabled:opacity-50"
               >
-                Start New Chat
+                {isCreating ? 'Creating...' : 'Start New Chat'}
               </Button>
               <Button
                 onClick={handleFavorite}

@@ -10,6 +10,7 @@ import { MobileNavMenu } from '@/components/layout/MobileNavMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '@/hooks/useDashboard';
+import { useChatCreation } from '@/hooks/useChatCreation';
 import { 
   MessageCircle, 
   Trophy, 
@@ -25,12 +26,14 @@ import {
   CreditCard,
   CheckCircle,
   Crown,
-  Heart
+  Heart,
+  Loader2
 } from 'lucide-react';
 
 export function DashboardContent() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { startChat, isCreating } = useChatCreation();
   
   // Use React Query hook for dashboard data
   const { 
@@ -48,48 +51,7 @@ export function DashboardContent() {
   const creditsUsed = dashboardData?.creditsUsed || 0;
   const monthlyAllowance = subscription?.plan?.monthly_credits_allowance || 1000;
 
-  const handleStartChat = async (character: any) => {
-    try {
-      // Get auth token
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
-      // Create chat immediately with greeting
-      const response = await fetch(`https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/create-chat-with-greeting`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          character_id: character.id,
-          character_name: character.name
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create chat');
-      }
-
-      const { chat_id } = await response.json();
-
-      // Navigate to chat with the created chat ID
-      navigate('/chat', { 
-        state: { 
-          selectedCharacter: character,
-          existingChatId: chat_id
-        } 
-      });
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      // Fallback to old behavior
-      navigate('/chat', { state: { selectedCharacter: character } });
-    }
-  };
+  // ... keep existing code (DashboardContent hook setup)
 
   const handleContinueChat = (chat: any) => {
     navigate('/chat', { 
@@ -390,11 +352,12 @@ export function DashboardContent() {
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                  onClick={() => handleStartChat(character.originalCharacter)}
+                                  disabled={isCreating}
+                                  className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white disabled:opacity-50"
+                                  onClick={() => startChat(character.originalCharacter)}
                                 >
                                   <MessageCircle className="w-3 h-3 mr-1" />
-                                  New Chat
+                                  {isCreating ? 'Creating...' : 'New Chat'}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -465,11 +428,12 @@ export function DashboardContent() {
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               <Button
                                 size="sm"
-                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white"
-                                onClick={() => handleStartChat(character.originalCharacter)}
+                                disabled={isCreating}
+                                className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white disabled:opacity-50"
+                                onClick={() => startChat(character.originalCharacter)}
                               >
                                 <MessageCircle className="w-3 h-3 mr-1" />
-                                New Chat
+                                {isCreating ? 'Creating...' : 'New Chat'}
                               </Button>
                             </div>
                             

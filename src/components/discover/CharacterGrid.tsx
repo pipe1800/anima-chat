@@ -12,6 +12,7 @@ import {
   Eye
 } from 'lucide-react';
 import { usePublicCharacters } from '@/hooks/useCharacters';
+import { useChatCreation } from '@/hooks/useChatCreation';
 
 interface CharacterGridProps {
   searchQuery: string;
@@ -49,41 +50,7 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy, advancedFilters }
     error 
   } = usePublicCharacters(50, 0);
 
-  const handleStartChat = async (character: PublicCharacter) => {
-    try {
-      // Get auth token
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
-      // Use supabase.functions.invoke instead of direct fetch
-      const { data, error } = await supabase.functions.invoke('create-chat-with-greeting', {
-        body: {
-          character_id: character.id,
-          character_name: character.name
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      // Navigate to chat with the created chat ID
-      navigate('/chat', { 
-        state: { 
-          selectedCharacter: character,
-          existingChatId: data.chat_id
-        } 
-      });
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      // Fallback to old behavior
-      navigate('/chat', { state: { selectedCharacter: character } });
-    }
-  };
+  const { startChat, isCreating } = useChatCreation();
 
   const handleViewCharacter = (character: PublicCharacter) => {
     navigate(`/character/${character.id}`);
@@ -241,13 +208,18 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy, advancedFilters }
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleStartChat(character);
+                      startChat(character);
                     }}
-                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium text-sm"
+                    disabled={isCreating}
+                    className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium text-sm disabled:opacity-50"
                     size="sm"
                   >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Start Chat
+                    {isCreating ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                    )}
+                    {isCreating ? 'Creating...' : 'Start Chat'}
                   </Button>
                 </div>
               </div>
