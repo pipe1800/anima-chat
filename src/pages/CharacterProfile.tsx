@@ -87,137 +87,158 @@ export default function CharacterProfile() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="h-16 border-b border-border bg-background flex items-center justify-between px-6">
-        <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-background">
+      {/* Hero Image Section */}
+      <div className="relative h-[60vh] overflow-hidden">
+        <img 
+          src={character.avatar_url || "/placeholder.svg"} 
+          alt={character.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        
+        {/* Back Button - Mobile */}
+        <div className="absolute top-4 left-4 md:hidden">
           <Button
             onClick={() => navigate('/discover')}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            className="bg-black/40 text-white hover:bg-black/60"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Discover
+            <ArrowLeft className="w-5 h-5" />
           </Button>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
-          {/* Character Hero Section */}
-          <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-xl border border-border overflow-hidden">
-            <div className="relative p-8">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8 space-y-6 lg:space-y-0">
-                {/* Avatar */}
-                <div className="flex justify-center lg:justify-start">
-                  <Avatar className="w-32 h-32 ring-4 ring-primary/50">
-                    <AvatarImage src={character.avatar_url || "/placeholder.svg"} alt={character.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold text-4xl">
-                      {character.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+        {/* Character Name Overlay */}
+        <div className="absolute bottom-6 left-6 right-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+            {character.name}
+          </h1>
+        </div>
+      </div>
 
-                {/* Character Info */}
-                <div className="flex-1 text-center lg:text-left">
-                  <h1 className="text-4xl font-bold text-foreground mb-2">{character.name}</h1>
-                  
-                  {character.short_description && (
-                    <p className="text-muted-foreground text-lg mb-4 leading-relaxed">
-                      {character.short_description}
-                    </p>
-                  )}
+      {/* Stats Section */}
+      <div className="px-6 py-4 bg-background border-b border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <MessageCircle className="w-5 h-5 text-muted-foreground" />
+              <span className="text-2xl font-bold text-foreground">
+                {(character.actual_chat_count || 0) >= 1000 
+                  ? `${((character.actual_chat_count || 0) / 1000).toFixed(1)}K` 
+                  : character.actual_chat_count || 0}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Heart className={`w-5 h-5 ${isLiked ? 'text-red-500 fill-current' : 'text-muted-foreground'}`} />
+              <span className="text-2xl font-bold text-foreground">
+                {(character.likes_count || 0) >= 1000 
+                  ? `${((character.likes_count || 0) / 1000).toFixed(1)}K` 
+                  : character.likes_count || 0}
+              </span>
+            </div>
+          </div>
+          
+          {/* Warning/Alert Icon */}
+          <Button variant="ghost" size="icon" className="text-muted-foreground">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Button>
+        </div>
+      </div>
 
-                  {/* Stats */}
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-6 mb-6">
-                    <div className="flex items-center space-x-2 text-muted-foreground">
-                      <MessageCircle className="w-5 h-5 text-primary" />
-                      <span className="font-semibold">{character.actual_chat_count?.toLocaleString() || 0}</span>
-                      <span className="text-sm">conversations</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-muted-foreground">
-                      <Heart className={`w-5 h-5 ${isLiked ? 'text-red-500 fill-current' : 'text-primary'}`} />
-                      <span className="font-semibold">{character.likes_count?.toLocaleString() || 0}</span>
-                      <span className="text-sm">likes</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-muted-foreground">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      <span className="text-sm">Created {new Date(character.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {/* Creator */}
-                  <div className="flex items-center justify-center lg:justify-start space-x-3 mb-6">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Created by</span>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={character.creator?.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          {character.creator?.username?.charAt(0).toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-primary font-medium">@{character.creator?.username || 'Unknown'}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <Button
-                      onClick={handleStartChat}
-                      className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold px-8 py-3"
-                    >
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      Start Conversation
-                    </Button>
-                    <Button
-                      onClick={handleLike}
-                      variant="outline"
-                      className={`border-primary/50 hover:border-primary px-8 py-3 ${
-                        isLiked 
-                          ? 'bg-red-500/20 text-red-400 border-red-500/50' 
-                          : 'text-primary hover:bg-primary/10 bg-transparent'
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-                      {isLiked ? 'Liked' : 'Like'}
-                    </Button>
-                  </div>
-                </div>
+      {/* Creator Info */}
+      <div className="px-6 py-4 bg-background border-b border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={character.creator?.avatar_url || "/placeholder.svg"} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {character.creator?.username?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="text-sm text-muted-foreground">Creator</div>
+              <div className="font-semibold text-foreground">@{character.creator?.username || 'Unknown'}</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              className="bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+            >
+              Follow
+            </Button>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">Published At</div>
+              <div className="text-sm font-medium text-foreground">
+                {new Date(character.created_at).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
               </div>
             </div>
           </div>
-
-          {/* Character Details Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Foundation Section */}
-              <CharacterFoundationSection character={character} />
-
-              {/* Personality Section */}
-              <CharacterPersonalitySection 
-                character={character}
-                tags={character.tags || []}
-              />
-
-              {/* Dialogue Section */}
-              <CharacterDialogueSection 
-                character={character}
-                exampleDialogues={[]} // TODO: Add example dialogues to character data
-              />
-
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Stats */}
-              <CharacterStatsSection character={character} />
-            </div>
-          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Description */}
+      <div className="px-6 py-6">
+        <p className="text-foreground leading-relaxed mb-6">
+          {character.short_description || character.character_definitions?.description || "No description available"}
+        </p>
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          {character.tags?.map((tag) => (
+            <Badge 
+              key={tag.id} 
+              variant="secondary" 
+              className="bg-secondary/50 text-secondary-foreground border border-border"
+            >
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col space-y-3">
+          <Button
+            onClick={handleStartChat}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-lg"
+          >
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Start Conversation
+          </Button>
+          <Button
+            onClick={handleLike}
+            variant="outline"
+            className={`w-full py-4 text-lg ${
+              isLiked 
+                ? 'bg-red-500/20 text-red-400 border-red-500/50' 
+                : 'text-foreground hover:bg-secondary border-border'
+            }`}
+          >
+            <Heart className={`w-5 h-5 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            {isLiked ? 'Liked' : 'Like'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Back Button - Desktop */}
+      <div className="hidden md:block fixed top-6 left-6">
+        <Button
+          onClick={() => navigate('/discover')}
+          variant="ghost"
+          className="bg-black/40 text-white hover:bg-black/60"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Discover
+        </Button>
+      </div>
     </div>
   );
 }

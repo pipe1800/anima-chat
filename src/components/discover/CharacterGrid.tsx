@@ -202,10 +202,11 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy, advancedFilters }
         {sortedCharacters.map((character, index) => (
           <Card
             key={character.id}
-            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group"
+            className="bg-[#121212] border-gray-700/50 hover:border-[#FF7A00]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#FF7A00]/20 relative overflow-hidden h-64 sm:h-80 group cursor-pointer"
             style={{
               animation: `fade-in 0.6s ease-out ${index * 0.1}s both`
             }}
+            onClick={() => window.innerWidth < 768 ? handleViewCharacter(character) : undefined}
           >
             <CardContent className="p-0 relative h-full">
               <img 
@@ -222,27 +223,31 @@ export function CharacterGrid({ searchQuery, sortBy, filterBy, advancedFilters }
                 </h3>
               </div>
 
-              {/* Action Buttons - Center */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="flex flex-col sm:flex-col gap-2 w-full px-3 sm:px-0 sm:w-auto">
+              {/* Action Buttons - Center - Hidden on mobile */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hidden sm:flex">
+                <div className="flex flex-col gap-2">
                   <Button
-                    onClick={() => handleViewCharacter(character)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewCharacter(character);
+                    }}
                     variant="outline"
                     className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 bg-black/40 text-sm"
                     size="sm"
                   >
-                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">View Character</span>
-                    <span className="sm:hidden">View</span>
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Character
                   </Button>
                   <Button
-                    onClick={() => handleStartChat(character)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartChat(character);
+                    }}
                     className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white font-medium text-sm"
                     size="sm"
                   >
-                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Start Chat</span>
-                    <span className="sm:hidden">Chat</span>
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Start Chat
                   </Button>
                 </div>
               </div>
