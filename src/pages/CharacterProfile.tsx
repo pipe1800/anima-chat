@@ -23,6 +23,8 @@ export default function CharacterProfile() {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
+  const descriptionRef = React.useRef<HTMLParagraphElement>(null);
+  const [isTextTruncated, setIsTextTruncated] = React.useState(false);
   
   // Use React Query hooks for optimized data fetching
   const { 
@@ -63,6 +65,17 @@ export default function CharacterProfile() {
   };
 
   const description = character?.short_description || character?.character_definitions?.description || "No description available";
+
+  // Check if text needs truncation based on actual DOM measurement
+  React.useEffect(() => {
+    if (descriptionRef.current && description) {
+      const element = descriptionRef.current;
+      const lineHeight = parseInt(window.getComputedStyle(element).lineHeight);
+      const maxHeight = lineHeight * 4; // 4 lines
+      const actualHeight = element.scrollHeight;
+      setIsTextTruncated(actualHeight > maxHeight);
+    }
+  }, [description, character]);
 
   const toggleDescription = () => {
     setIsDescriptionExpanded(!isDescriptionExpanded);
@@ -190,21 +203,22 @@ export default function CharacterProfile() {
 
         {/* Description */}
         <div className="px-3 py-3">
-          <div className="mb-3">
-            <p className={`text-sm text-foreground leading-relaxed ${
-              !isDescriptionExpanded ? 'line-clamp-4' : ''
-            }`}>
+          <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[5.25rem] overflow-hidden' : ''}`}>
+            <p 
+              ref={descriptionRef}
+              className="text-sm text-foreground leading-relaxed"
+            >
               {description}
             </p>
-            {description.length > 200 && (
-              <button
-                onClick={toggleDescription}
-                className="text-xs text-primary hover:underline mt-1"
-              >
-                {isDescriptionExpanded ? 'Show less' : 'Show more'}
-              </button>
-            )}
           </div>
+          {isTextTruncated && (
+            <button
+              onClick={toggleDescription}
+              className="text-xs text-primary hover:underline"
+            >
+              {isDescriptionExpanded ? 'Show less' : 'Show more'}
+            </button>
+          )}
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mb-4">
@@ -360,21 +374,19 @@ export default function CharacterProfile() {
 
           {/* Description */}
           <div className="px-4 flex-1">
-            <div className="mb-4">
-              <p className={`text-foreground leading-relaxed text-sm ${
-                !isDescriptionExpanded ? 'line-clamp-4' : ''
-              }`}>
+            <div className={`mb-4 ${!isDescriptionExpanded ? 'h-[5.25rem] overflow-hidden' : ''}`}>
+              <p className="text-foreground leading-relaxed text-sm">
                 {description}
               </p>
-              {description.length > 200 && (
-                <button
-                  onClick={toggleDescription}
-                  className="text-xs text-primary hover:underline mt-1"
-                >
-                  {isDescriptionExpanded ? 'Show less' : 'Show more'}
-                </button>
-              )}
             </div>
+            {isTextTruncated && (
+              <button
+                onClick={toggleDescription}
+                className="text-xs text-primary hover:underline mb-4"
+              >
+                {isDescriptionExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-6">
