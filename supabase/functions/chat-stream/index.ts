@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     }
 
     // Determine user's model tier - Default to Guest Pass if no active subscription
-    let selectedModel = 'google/gemma-7b-it'; // Guest Pass - Fast & Fun
+    let selectedModel = 'openai/gpt-4o-mini'; // Guest Pass - Fast & Fun
     
     if (userSubscription) {
       // Get plan details
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
             selectedModel = 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo'; // Genius
             break;
           default:
-            selectedModel = 'google/gemma-7b-it'; // Guest Pass - Fast & Fun
+            selectedModel = 'openai/gpt-4o-mini'; // Guest Pass - Fast & Fun
         }
       }
     }
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
 
     // Define base model costs per plan
     const PLAN_MODEL_COSTS = {
-      'Guest Pass': { model: 'google/gemma-7b-it', cost: 10 },
+      'Guest Pass': { model: 'openai/gpt-4o-mini', cost: 10 },
       'True Fan': { model: 'gryphe/mythomax-l2-13b', cost: 4 },
       'The Whale': { model: 'nousresearch/nous-hermes-2-mixtral-8x7b-dpo', cost: 7 }
     };
