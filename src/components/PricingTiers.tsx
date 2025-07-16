@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserSubscription } from "@/lib/supabase-queries";
+import { getUserActiveSubscription } from "@/lib/supabase-queries";
 import { useState, useEffect } from "react";
 
 interface PricingTiersProps {
@@ -25,7 +25,7 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
       }
 
       try {
-        const { data: subscription } = await getUserSubscription(user.id);
+        const { data: subscription } = await getUserActiveSubscription(user.id);
         if (subscription?.plan) {
           setCurrentPlan(subscription.plan.name);
         } else {
@@ -55,8 +55,9 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
       return { text: "Current Plan", variant: "outline" as const, disabled: true };
     }
 
-    // Define plan hierarchy for comparison
+    // Define plan hierarchy for comparison - Guest Pass should be treated as upgradeable
     const planHierarchy = {
+      'Guest Pass': 0,
       'The Guest Pass': 0,
       'True Fan': 1,
       'The Whale': 2
@@ -65,7 +66,10 @@ const PricingTiers = ({ isYearly = false }: PricingTiersProps) => {
     const currentPlanLevel = planHierarchy[currentPlan as keyof typeof planHierarchy] ?? 0;
     const targetPlanLevel = planHierarchy[planName as keyof typeof planHierarchy] ?? 0;
 
-    if (targetPlanLevel > currentPlanLevel) {
+    // Guest Pass users can upgrade to paid plans
+    if (currentPlan === 'Guest Pass' && targetPlanLevel > 0) {
+      return { text: "Subscribe", variant: "default" as const, disabled: false };
+    } else if (targetPlanLevel > currentPlanLevel) {
       return { text: "Upgrade", variant: "default" as const, disabled: false };
     } else if (targetPlanLevel < currentPlanLevel) {
       return { text: "Downgrade", variant: "outline" as const, disabled: false };

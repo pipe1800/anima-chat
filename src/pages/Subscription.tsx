@@ -132,8 +132,8 @@ const Subscription = () => {
       if (userSubscription && userSubscription.plan.name === 'True Fan' && targetPlan.name === 'The Whale') {
         // True Fan upgrading to The Whale - use initiate-upgrade like in BillingSettings
         response = await supabase.functions.invoke('initiate-upgrade');
-      } else if (!userSubscription) {
-        // Guest user (no active subscription) - create new subscription
+      } else if (!userSubscription || userSubscription.plan.name === 'Guest Pass') {
+        // Guest user or Guest Pass user - create new subscription
         response = await supabase.functions.invoke('create-paypal-subscription', {
           body: { planId: targetPlan.id }
         });
@@ -311,13 +311,13 @@ const Subscription = () => {
 
         {/* Subscription Tier Cards */}
         {(() => {
-          // New simplified logic: null subscription = Guest Pass user
-          const isGuestUser = !userSubscription;
+          // Fixed logic: Guest Pass users are those with Guest Pass plan
+          const isGuestUser = userSubscription?.plan?.name === 'Guest Pass' || !userSubscription;
           const currentPlan = userSubscription?.plan?.name;
           let plansToShow = [];
 
           if (isGuestUser) {
-            // Guest users (no subscription) - show all paid plans
+            // Guest Pass users - show all paid plans
             plansToShow = plans.filter(plan => plan.price_monthly > 0);
           } else if (currentPlan === 'True Fan') {
             // True Fan - show current plan and The Whale upgrade option
@@ -457,8 +457,8 @@ const Subscription = () => {
           );
         })()}
         
-        {/* Credit Boosters Section - Only visible to subscribed users */}
-        {userSubscription && (
+        {/* Credit Boosters Section - Only visible to paid subscribers */}
+        {userSubscription && userSubscription.plan?.price_monthly > 0 && (
           <div className="mt-20">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
