@@ -73,7 +73,7 @@ export const ChatConfigurationTab = ({
   // Determine user's subscription tier
   const userPlan = subscription?.plan?.name || 'Guest Pass';
   const isGuestPass = userPlan === 'Guest Pass';
-  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
+  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'The Whale';
 
   // Count active stateful tracking addons for Guest Pass limits
   const activeStatefulAddons = [

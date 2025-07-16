@@ -125,7 +125,7 @@ export const UserAddonSettingsSection: React.FC<UserAddonSettingsSectionProps> =
   }, [user, characterId]);
 
   const isPremiumUser = () => {
-    return userPlan === 'True Fan' || userPlan === 'Whale';
+    return userPlan === 'True Fan' || userPlan === 'The Whale';
   };
 
   const getSelectedTrackingCount = () => {

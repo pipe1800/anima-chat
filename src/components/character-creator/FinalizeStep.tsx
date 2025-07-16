@@ -37,7 +37,7 @@ const FinalizeStep = ({ data, onUpdate, onFinalize, onPrevious, isCreating = fal
 
   // Check if user is premium (True Fan or Whale)
   const isPremiumUser = () => {
-    return userPlan === 'True Fan' || userPlan === 'Whale';
+    return userPlan === 'True Fan' || userPlan === 'The Whale';
   };
 
   // Load user's personas, subscription, and NSFW tag

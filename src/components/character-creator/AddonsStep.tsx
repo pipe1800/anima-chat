@@ -123,7 +123,7 @@ const AddonsStep: React.FC<AddonsStepProps> = ({ data, onUpdate, onNext, onPrevi
   };
 
   const isPremiumUser = () => {
-    return userPlan === 'True Fan' || userPlan === 'Whale';
+    return userPlan === 'True Fan' || userPlan === 'The Whale';
   };
 
   // Calculate if any add-ons are currently enabled
