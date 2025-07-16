@@ -49,23 +49,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const refreshSubscription = async () => {
+  const refreshSubscription = async (retryCount = 0) => {
     if (!user) {
       setSubscription(null);
       return;
     }
 
     try {
+      console.log(`🔄 Fetching subscription for user ${user.id} (attempt ${retryCount + 1})`);
       const { data, error } = await getUserActiveSubscription(user.id);
+      
       if (error) {
-        console.error('Subscription fetch failed:', error);
-        // Set null instead of keeping it in loading state
+        console.error('❌ Subscription fetch failed:', error);
+        
+        // Retry logic with exponential backoff for non-critical errors
+        if (retryCount < 3 && !error.message?.includes('JWT')) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          console.log(`⏳ Retrying subscription fetch in ${delay}ms...`);
+          setTimeout(() => refreshSubscription(retryCount + 1), delay);
+          return;
+        }
+        
+        // Only set to null after all retries failed
+        console.log('🚫 All subscription fetch retries failed, defaulting to Guest Pass');
         setSubscription(null);
         return;
       }
+      
+      console.log('✅ Subscription loaded successfully:', data);
       setSubscription(data || null);
     } catch (error) {
-      console.error('Subscription fetch failed:', error);
+      console.error('❌ Subscription fetch exception:', error);
+      
+      // Retry for network errors
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`⏳ Retrying subscription fetch in ${delay}ms...`);
+        setTimeout(() => refreshSubscription(retryCount + 1), delay);
+        return;
+      }
+      
       setSubscription(null);
     }
   };

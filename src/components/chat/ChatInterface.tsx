@@ -14,6 +14,7 @@ import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
 import PerformanceMonitor from './PerformanceMonitor';
 import { DatabaseBatchOperations } from './DatabaseBatchOperations';
+import { AddonDebugPanel } from '@/components/debug/AddonDebugPanel';
 
 interface Character {
   id: string;
@@ -263,6 +264,9 @@ const ChatInterface = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Debug Panel */}
+      <AddonDebugPanel characterId={character.id} userId={user?.id} />
+      
       {/* Insufficient Credits Modal */}
       <InsufficientCreditsModal
         isOpen={showInsufficientCreditsModal}

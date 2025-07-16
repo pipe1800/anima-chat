@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Bug, RefreshCw } from 'lucide-react';
+import { ChevronDown, Bug, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserCharacterAddonSettings, getAddonStats, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 
@@ -13,14 +13,19 @@ interface AddonDebugPanelProps {
 }
 
 export const AddonDebugPanel = ({ characterId, userId }: AddonDebugPanelProps) => {
-  const { user, subscription } = useAuth();
+  const { user, subscription, refreshSubscription } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [addonSettings, setAddonSettings] = useState<AddonSettings | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
 
   const userPlan = subscription?.plan?.name || 'Guest Pass';
   const effectiveUserId = userId || user?.id;
   const debugEnabled = process.env.NODE_ENV === 'development';
+
+  // Check for subscription issues
+  const hasSubscriptionIssue = user && !subscription;
+  const isPlanMismatch = subscription?.plan?.name && !['Guest Pass', 'True Fan', 'The Whale'].includes(subscription.plan.name);
 
   const loadAddonSettings = async () => {
     if (!effectiveUserId || !characterId) return;
@@ -33,6 +38,17 @@ export const AddonDebugPanel = ({ characterId, userId }: AddonDebugPanelProps) =
       console.error('Debug: Failed to load addon settings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshSubscription = async () => {
+    setRefreshingSubscription(true);
+    try {
+      await refreshSubscription();
+    } catch (error) {
+      console.error('Debug: Failed to refresh subscription:', error);
+    } finally {
+      setRefreshingSubscription(false);
     }
   };
 
@@ -61,6 +77,9 @@ export const AddonDebugPanel = ({ characterId, userId }: AddonDebugPanelProps) =
                 <Badge variant="outline" className="border-orange-400 text-orange-400 text-xs">
                   DEV
                 </Badge>
+                {hasSubscriptionIssue && (
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </CardTitle>
@@ -69,22 +88,74 @@ export const AddonDebugPanel = ({ characterId, userId }: AddonDebugPanelProps) =
         
         <CollapsibleContent>
           <CardContent className="space-y-4">
+            {/* Subscription Issue Warning */}
+            {hasSubscriptionIssue && (
+              <div className="bg-red-900/20 border border-red-700/40 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <span className="text-red-400 font-medium text-sm">Subscription Loading Issue</span>
+                </div>
+                <p className="text-red-300 text-xs mt-1">
+                  User is authenticated but subscription data failed to load. This causes addon restrictions.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshSubscription}
+                  disabled={refreshingSubscription}
+                  className="border-red-400 text-red-400 hover:bg-red-400 hover:text-black mt-2"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${refreshingSubscription ? 'animate-spin' : ''}`} />
+                  Retry Subscription
+                </Button>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="text-sm space-y-1">
                 <p className="text-gray-300">User ID: <code className="text-orange-400">{effectiveUserId}</code></p>
                 <p className="text-gray-300">Character ID: <code className="text-orange-400">{characterId || 'Not selected'}</code></p>
-                <p className="text-gray-300">Subscription: <Badge variant="outline" className="border-blue-400 text-blue-400">{userPlan}</Badge></p>
+                <p className="text-gray-300">
+                  Subscription: 
+                  <Badge 
+                    variant="outline" 
+                    className={hasSubscriptionIssue 
+                      ? "border-red-400 text-red-400 ml-2" 
+                      : "border-blue-400 text-blue-400 ml-2"
+                    }
+                  >
+                    {userPlan}
+                  </Badge>
+                </p>
+                {subscription && (
+                  <>
+                    <p className="text-gray-300">Status: <code className="text-green-400">{subscription.status}</code></p>
+                    <p className="text-gray-300">Plan ID: <code className="text-gray-400">{subscription.plan_id}</code></p>
+                  </>
+                )}
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={loadAddonSettings}
-                disabled={loading || !characterId}
-                className="border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-black"
-              >
-                <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="flex flex-col space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadAddonSettings}
+                  disabled={loading || !characterId}
+                  className="border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-black"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh Addons
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshSubscription}
+                  disabled={refreshingSubscription}
+                  className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${refreshingSubscription ? 'animate-spin' : ''}`} />
+                  Refresh Sub
+                </Button>
+              </div>
             </div>
 
             {addonSettings && stats && (

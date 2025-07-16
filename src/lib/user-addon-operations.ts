@@ -125,7 +125,17 @@ export const validateAddonSettings = (
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   const isGuestPass = userPlan === 'Guest Pass';
-  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
+  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'The Whale';
+
+  // Debug validation in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Validation Debug:', {
+      userPlan,
+      isGuestPass,
+      isTrueFanOrWhale,
+      settings
+    });
+  }
 
   // Enhanced Memory validation
   if (settings.enhancedMemory && !isTrueFanOrWhale) {

@@ -17,7 +17,7 @@ interface UserAddonDropdownProps {
 }
 
 export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProps) => {
-  const { subscription } = useAuth();
+  const { user, subscription } = useAuth();
   const { handleStepAction } = useTutorial();
   const [addonSettings, setAddonSettings] = useState<AddonSettings>({
     dynamicWorldInfo: false,
@@ -50,7 +50,24 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
   // Determine user's subscription tier
   const userPlan = subscription?.plan?.name || 'Guest Pass';
   const isGuestPass = userPlan === 'Guest Pass';
-  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'Whale';
+  const isTrueFanOrWhale = userPlan === 'True Fan' || userPlan === 'The Whale';
+
+  // Check for subscription issues
+  const hasSubscriptionIssue = user && !subscription;
+
+  // Debug subscription state in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Subscription Debug:', {
+      subscription,
+      userPlan,
+      isGuestPass,
+      isTrueFanOrWhale,
+      subscriptionExists: !!subscription,
+      planExists: !!subscription?.plan,
+      planName: subscription?.plan?.name,
+      hasSubscriptionIssue
+    });
+  }
 
   // Count active stateful tracking addons for Guest Pass limits (using temp settings for validation)
   const activeStatefulAddons = [
@@ -231,8 +248,15 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
     );
   }
 
-  // Remove the subscription loading check - just proceed with Guest Pass as default
-  // This prevents infinite loading when subscription query fails
+  // Show loading state if user exists but subscription is still loading (not failed)
+  if (user && subscription === null && !hasSubscriptionIssue) {
+    return (
+      <Button variant="ghost" className="text-gray-400 px-3" disabled>
+        <Settings className="w-4 h-4 mr-2 animate-spin" />
+        <span className="text-sm">Loading subscription...</span>
+      </Button>
+    );
+  }
 
   return (
     <TooltipProvider>
