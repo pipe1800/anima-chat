@@ -9,7 +9,8 @@ import {
   ArrowLeft,
   Loader2,
   Calendar,
-  User
+  User,
+  Star
 } from 'lucide-react';
 import { useCharacterProfile, useCharacterLikeStatus, useToggleCharacterLike } from '@/hooks/useCharacterProfile';
 import { CharacterFoundationSection } from '@/components/character-profile/CharacterFoundationSection';
@@ -18,6 +19,8 @@ import { CharacterDialogueSection } from '@/components/character-profile/Charact
 import { RelatedCharactersCarousel } from '@/components/character-profile/RelatedCharactersCarousel';
 import { CharacterStatsSection } from '@/components/character-profile/CharacterStatsSection';
 import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CharacterProfile() {
   const { characterId } = useParams<{ characterId: string }>();
@@ -25,6 +28,8 @@ export default function CharacterProfile() {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
   const descriptionRef = React.useRef<HTMLParagraphElement>(null);
   const [isTextTruncated, setIsTextTruncated] = React.useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Use React Query hooks for optimized data fetching
   const { 
@@ -38,6 +43,69 @@ export default function CharacterProfile() {
   } = useCharacterLikeStatus(characterId);
   
   const toggleLikeMutation = useToggleCharacterLike();
+
+  // Check if character is favorited
+  const { data: isFavorited = false } = useQuery({
+    queryKey: ['characterFavorited', characterId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data, error } = await supabase
+        .from('character_favorites')
+        .select('id')
+        .eq('character_id', characterId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) return false;
+      return !!data;
+    },
+    enabled: !!characterId,
+  });
+
+  // Favorite/Unfavorite mutation
+  const favoritesMutation = useMutation({
+    mutationFn: async ({ characterId, isFavorited }: { characterId: string; isFavorited: boolean }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      if (isFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('character_favorites')
+          .delete()
+          .eq('character_id', characterId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('character_favorites')
+          .insert({
+            character_id: characterId,
+            user_id: user.id
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { isFavorited }) => {
+      queryClient.invalidateQueries({ queryKey: ['characterFavorited', characterId] });
+      toast({
+        title: isFavorited ? 'Removed from favorites' : 'Added to favorites',
+        description: isFavorited 
+          ? 'Character removed from your favorites' 
+          : 'Character added to your favorites',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update favorites',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const error = characterError?.message || null;
 
@@ -64,12 +132,44 @@ export default function CharacterProfile() {
     });
   };
 
+  const handleFavorite = async () => {
+    if (!character) return;
+
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    favoritesMutation.mutate({
+      characterId: character.id,
+      isFavorited: isFavorited
+    });
+  };
+
   const description = character?.short_description || character?.character_definitions?.description || "No description available";
 
-  // Simple check for text truncation - if description is longer than ~150 chars, it likely needs truncation
+  // Better text truncation detection - check if the actual text would overflow 4 lines
   React.useEffect(() => {
-    setIsTextTruncated(description.length > 150);
-  }, [description]);
+    if (descriptionRef.current) {
+      const tempElement = document.createElement('div');
+      tempElement.style.position = 'absolute';
+      tempElement.style.visibility = 'hidden';
+      tempElement.style.width = descriptionRef.current.offsetWidth + 'px';
+      tempElement.style.fontSize = '14px';
+      tempElement.style.lineHeight = '1.125rem';
+      tempElement.style.fontFamily = window.getComputedStyle(descriptionRef.current).fontFamily;
+      tempElement.textContent = description;
+      document.body.appendChild(tempElement);
+      
+      const maxHeight = parseFloat('1.125rem') * 4 * 16; // 4 lines * 1.125rem * 16px
+      const actualHeight = tempElement.offsetHeight;
+      
+      setIsTextTruncated(actualHeight > maxHeight);
+      document.body.removeChild(tempElement);
+    }
+  }, [description, character]);
 
   const toggleDescription = () => {
     setIsDescriptionExpanded(!isDescriptionExpanded);
@@ -223,7 +323,7 @@ export default function CharacterProfile() {
           )}
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1 mb-4">
+          <div className="flex flex-wrap gap-1 mb-2">
             {character.tags?.map((tag) => (
               <Badge 
                 key={tag.id} 
@@ -244,18 +344,32 @@ export default function CharacterProfile() {
               <MessageCircle className="w-4 h-4 mr-2" />
               Start Conversation
             </Button>
-            <Button
-              onClick={handleLike}
-              variant="outline"
-              className={`w-full py-2 text-sm ${
-                isLiked 
-                  ? 'bg-red-500/20 text-red-400 border-red-500/50' 
-                  : 'text-foreground hover:bg-secondary border-border'
-              }`}
-            >
-              <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-              {isLiked ? 'Liked' : 'Like'}
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleLike}
+                variant="outline"
+                className={`flex-1 py-2 text-sm ${
+                  isLiked 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
+                    : 'text-foreground hover:bg-secondary border-border'
+                }`}
+              >
+                <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                {isLiked ? 'Liked' : 'Like'}
+              </Button>
+              <Button
+                onClick={handleFavorite}
+                variant="outline"
+                className={`flex-1 py-2 text-sm ${
+                  isFavorited 
+                    ? 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50' 
+                    : 'text-foreground hover:bg-secondary border-border'
+                }`}
+              >
+                <Star className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-current' : ''}`} />
+                {isFavorited ? 'Favorited' : 'Add to Favorites'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -402,7 +516,7 @@ export default function CharacterProfile() {
             )}
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-2">
               {character.tags?.map((tag) => (
                 <Badge 
                   key={tag.id} 
@@ -425,10 +539,16 @@ export default function CharacterProfile() {
                 Start New Chat ✨
               </Button>
               <Button
+                onClick={handleFavorite}
                 variant="outline"
-                className="flex-1 py-2 text-sm border-border hover:bg-secondary"
+                className={`flex-1 py-2 text-sm ${
+                  isFavorited 
+                    ? 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50' 
+                    : 'border-border hover:bg-secondary'
+                }`}
               >
-                Generate Pictures ✨
+                <Star className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-current' : ''}`} />
+                {isFavorited ? 'Favorited' : 'Add to Favorites'}
               </Button>
             </div>
           </div>
