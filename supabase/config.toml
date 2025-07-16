@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.paypal-webhook]
 verify_jwt = false
+
+[functions.test-openrouter]
+verify_jwt = false
