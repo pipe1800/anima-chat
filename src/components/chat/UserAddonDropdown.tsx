@@ -106,42 +106,42 @@ export const UserAddonDropdown = ({ characterId, userId }: UserAddonDropdownProp
         name: 'Mood Tracking', 
         cost: 5, 
         description: 'Track character emotions',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.moodTracking || (!tempAddonSettings.moodTracking && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.moodTracking || (!tempAddonSettings.moodTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       clothingInventory: { 
         name: 'Clothing Inventory', 
         cost: 5, 
         description: 'Track character outfits',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.clothingInventory || (!tempAddonSettings.clothingInventory && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.clothingInventory || (!tempAddonSettings.clothingInventory && activeStatefulAddons < 2),
         dynamicCost: null
       },
       locationTracking: { 
         name: 'Location Tracking', 
         cost: 5, 
         description: 'Track current location',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.locationTracking || (!tempAddonSettings.locationTracking && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.locationTracking || (!tempAddonSettings.locationTracking && activeStatefulAddons < 2),
         dynamicCost: null
       },
       timeAndWeather: { 
         name: 'Time & Weather', 
         cost: 5, 
         description: 'Real-time environment',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.timeAndWeather || (!tempAddonSettings.timeAndWeather && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.timeAndWeather || (!tempAddonSettings.timeAndWeather && activeStatefulAddons < 2),
         dynamicCost: null
       },
       relationshipStatus: { 
         name: 'Relationship Status', 
         cost: 5, 
         description: 'Track relationships',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.relationshipStatus || (!tempAddonSettings.relationshipStatus && activeStatefulAddons < 2),
         dynamicCost: null
       },
       characterPosition: { 
         name: 'Character Position', 
         cost: 5, 
         description: 'Track character\'s physical position and body language',
-        available: isWhale || isTrueFanOrWhale || tempAddonSettings.characterPosition || (!tempAddonSettings.characterPosition && activeStatefulAddons < 2),
+        available: !isGuestPass || tempAddonSettings.characterPosition || (!tempAddonSettings.characterPosition && activeStatefulAddons < 2),
         dynamicCost: null
       },
     },
