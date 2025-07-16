@@ -140,7 +140,7 @@ export function DashboardContent() {
   const isGuestPass = userTier === "Guest Pass";
   const username = profile?.username || user.email?.split('@')[0] || 'User';
 
-  const formattedRecentChats = recentChats.map(chat => ({
+  const formattedRecentChats = recentChats.map((chat: any) => ({
     id: chat.id,
     character: {
       id: chat.character?.id,
@@ -148,8 +148,8 @@ export function DashboardContent() {
       avatar: chat.character?.name?.charAt(0) || 'U',
       image: chat.character?.avatar_url || "/placeholder.svg"
     },
-    lastMessage: "No messages yet", // Will be enhanced later
-    lastMessageIsAI: false,
+    lastMessage: chat.lastMessage || "No messages yet",
+    lastMessageIsAI: chat.lastMessageIsAI || false,
     timestamp: new Date(chat.last_message_at || chat.created_at).toLocaleDateString(),
     originalChat: chat
   }));
@@ -315,7 +315,7 @@ export function DashboardContent() {
                         >
                           <CardContent className="p-3 sm:p-4">
                             <div className="flex items-start space-x-3 sm:space-x-4">
-                              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 ring-2 ring-[#FF7A00]/50 flex-shrink-0">
+                              <Avatar className="w-12 h-12 sm:w-14 sm:h-14 ring-2 ring-[#FF7A00]/50 flex-shrink-0">
                                 <AvatarImage 
                                   src={chat.character.image} 
                                   alt={chat.character.name}
