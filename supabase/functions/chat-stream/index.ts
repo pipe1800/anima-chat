@@ -177,23 +177,23 @@ Deno.serve(async (req) => {
     
     const baseCost = planCostInfo.cost;
 
-    // Calculate addon costs
-    let addonCost = 0;
+    // Calculate addon percentage increase
+    let addonPercentage = 0;
     if (addonSettings) {
-      // Calculate addon costs using same logic as frontend
-      if (addonSettings.dynamicWorldInfo) addonCost += 10;
-      if (addonSettings.moodTracking) addonCost += 5;
-      if (addonSettings.clothingInventory) addonCost += 5;
-      if (addonSettings.locationTracking) addonCost += 5;
-      if (addonSettings.timeAndWeather) addonCost += 5;
-      if (addonSettings.relationshipStatus) addonCost += 5;
-      if (addonSettings.characterPosition) addonCost += 5;
-      if (addonSettings.chainOfThought) addonCost += 30;
-      if (addonSettings.fewShotExamples) addonCost += 7;
+      // Calculate addon percentage costs (these are multipliers, not absolute costs)
+      if (addonSettings.dynamicWorldInfo) addonPercentage += 10;
+      if (addonSettings.moodTracking) addonPercentage += 5;
+      if (addonSettings.clothingInventory) addonPercentage += 5;
+      if (addonSettings.locationTracking) addonPercentage += 5;
+      if (addonSettings.timeAndWeather) addonPercentage += 5;
+      if (addonSettings.relationshipStatus) addonPercentage += 5;
+      if (addonSettings.characterPosition) addonPercentage += 5;
+      if (addonSettings.chainOfThought) addonPercentage += 30;
+      if (addonSettings.fewShotExamples) addonPercentage += 7;
     }
 
-    const totalCost = baseCost + addonCost;
-    console.log(`💰 Credit calculation: Base(${baseCost}) + Addons(${addonCost}) = Total(${totalCost})`);
+    const totalCost = Math.ceil(baseCost * (1 + addonPercentage / 100));
+    console.log(`💰 Credit calculation: Base(${baseCost}) + ${addonPercentage}% addon increase = Total(${totalCost})`);
 
     // Check and consume credits before proceeding
     const { data: creditCheckResult, error: creditError } = await supabaseAdmin
@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: 'Insufficient credits',
         required: totalCost,
-        details: `This conversation requires ${totalCost} credits (${baseCost} base + ${addonCost} addons)`
+        details: `This conversation requires ${totalCost} credits (${baseCost} base + ${addonPercentage}% addon increase)`
       }), {
         status: 402, // Payment Required
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
