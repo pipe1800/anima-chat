@@ -334,21 +334,23 @@ Stay in character and engage in natural dialogue with the user.`;
         console.error('❌ Could not read error response body:', e);
       }
       
-      return new Response(JSON.stringify({ 
-        error: 'OpenRouter API failed',
-        status: cleanMessageResponse.status,
-        statusText: cleanMessageResponse.statusText,
-        details: errorBody,
-        model: selectedModel,
-        debugInfo: {
-          userPlan: userPlan,
-          selectedModel: selectedModel,
-          messageCount: messages.length,
-          timestamp: new Date().toISOString()
+      // Return streaming error response to maintain protocol
+      const errorStream = new ReadableStream({
+        start(controller) {
+          const errorMessage = `OpenRouter API failed (Status: ${cleanMessageResponse.status}). Model: ${selectedModel}. Plan: ${userPlan}. Please try again.`;
+          controller.enqueue(new TextEncoder().encode(`data: {"choices":[{"delta":{"content":"${errorMessage}"}}]}\n\n`));
+          controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
+          controller.close();
         }
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+      return new Response(errorStream, {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
       });
     }
 
