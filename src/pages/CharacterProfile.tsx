@@ -66,16 +66,10 @@ export default function CharacterProfile() {
 
   const description = character?.short_description || character?.character_definitions?.description || "No description available";
 
-  // Check if text needs truncation based on actual DOM measurement
+  // Simple check for text truncation - if description is longer than ~150 chars, it likely needs truncation
   React.useEffect(() => {
-    if (descriptionRef.current && description) {
-      const element = descriptionRef.current;
-      const lineHeight = parseInt(window.getComputedStyle(element).lineHeight);
-      const maxHeight = lineHeight * 4; // 4 lines
-      const actualHeight = element.scrollHeight;
-      setIsTextTruncated(actualHeight > maxHeight);
-    }
-  }, [description, character]);
+    setIsTextTruncated(description.length > 150);
+  }, [description]);
 
   const toggleDescription = () => {
     setIsDescriptionExpanded(!isDescriptionExpanded);
@@ -203,10 +197,18 @@ export default function CharacterProfile() {
 
         {/* Description */}
         <div className="px-3 py-3">
-          <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[5.25rem] overflow-hidden' : ''}`}>
+          <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300`}>
             <p 
               ref={descriptionRef}
-              className="text-sm text-foreground leading-relaxed"
+              className={`text-sm text-foreground leading-[1.125rem] ${
+                !isDescriptionExpanded ? 'overflow-hidden' : ''
+              }`}
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: isDescriptionExpanded ? 'none' : 4,
+                WebkitBoxOrient: 'vertical',
+                overflow: isDescriptionExpanded ? 'visible' : 'hidden'
+              }}
             >
               {description}
             </p>
@@ -259,47 +261,48 @@ export default function CharacterProfile() {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex min-h-screen">
-        {/* Left Side - Character Image */}
-        <div className="relative w-1/3 h-[50vh] overflow-hidden p-4">
-          <div className="relative h-full overflow-hidden rounded-lg">
-            <img 
-              src={character.avatar_url || "/placeholder.svg"} 
-              alt={character.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/20" />
-            
-            {/* Like Button Overlay */}
-            <div className="absolute bottom-4 left-4">
-              <Button
-                onClick={handleLike}
-                variant="ghost"
-                size="icon"
-                className={`w-10 h-10 rounded-full ${
-                  isLiked 
-                    ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
-                    : 'bg-black/40 text-white hover:bg-black/60'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-              </Button>
-            </div>
-
-            {/* Back Button */}
-            <div className="absolute top-4 left-4">
-              <Button
-                onClick={() => navigate('/discover')}
-                variant="ghost"
-                size="sm"
-                className="bg-black/40 text-white hover:bg-black/60 text-xs"
-              >
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Back to Discover
-              </Button>
+      <div className="hidden md:block">
+        {/* Back Button - Above content */}
+        <div className="p-4 pb-2">
+          <Button
+            onClick={() => navigate('/discover')}
+            variant="ghost"
+            size="sm"
+            className="bg-secondary/50 text-foreground hover:bg-secondary text-xs"
+          >
+            <ArrowLeft className="w-3 h-3 mr-1" />
+            Back to Discover
+          </Button>
+        </div>
+        
+        <div className="flex min-h-[calc(100vh-4rem)]">
+          {/* Left Side - Character Image */}
+          <div className="relative w-1/3 h-[50vh] overflow-hidden px-4">
+            <div className="relative h-full overflow-hidden rounded-lg">
+              <img 
+                src={character.avatar_url || "/placeholder.svg"} 
+                alt={character.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/20" />
+              
+              {/* Like Button Overlay */}
+              <div className="absolute bottom-4 left-4">
+                <Button
+                  onClick={handleLike}
+                  variant="ghost"
+                  size="icon"
+                  className={`w-10 h-10 rounded-full ${
+                    isLiked 
+                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
+                      : 'bg-black/40 text-white hover:bg-black/60'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Right Side - Character Info */}
         <div className="w-2/3 flex flex-col">
@@ -374,8 +377,18 @@ export default function CharacterProfile() {
 
           {/* Description */}
           <div className="px-4 flex-1">
-            <div className={`mb-4 ${!isDescriptionExpanded ? 'h-[5.25rem] overflow-hidden' : ''}`}>
-              <p className="text-foreground leading-relaxed text-sm">
+            <div className={`mb-3 ${!isDescriptionExpanded ? 'h-[4.5rem]' : 'min-h-[4.5rem]'} transition-all duration-300`}>
+              <p 
+                className={`text-foreground leading-[1.125rem] text-sm ${
+                  !isDescriptionExpanded ? 'overflow-hidden' : ''
+                }`}
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: isDescriptionExpanded ? 'none' : 4,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: isDescriptionExpanded ? 'visible' : 'hidden'
+                }}
+              >
                 {description}
               </p>
             </div>
@@ -419,6 +432,7 @@ export default function CharacterProfile() {
               </Button>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
