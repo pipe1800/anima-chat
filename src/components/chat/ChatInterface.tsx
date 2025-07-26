@@ -13,7 +13,7 @@ import {
 import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
 import PerformanceMonitor from './PerformanceMonitor';
-import { DatabaseBatchOperations } from './DatabaseBatchOperations';
+// import { DatabaseBatchOperations } from './DatabaseBatchOperations';
 import { AddonDebugPanel } from '@/components/debug/AddonDebugPanel';
 
 interface Character {
@@ -367,14 +367,12 @@ const ChatInterface = ({
         </div>
       )}
       
-      {/* Database Batch Operations */}
+      {/* Database Batch Operations - Component not implemented yet */}
       {showDatabaseOps && (
         <div className="fixed bottom-4 right-96 z-50">
-          <DatabaseBatchOperations 
-            chatId={currentChatId} 
-            characterId={character.id}
-            isVisible={showDatabaseOps} 
-          />
+          <div className="bg-background border border-border p-4 rounded-lg">
+            Database Operations Panel (Coming Soon)
+          </div>
         </div>
       )}
     </div>

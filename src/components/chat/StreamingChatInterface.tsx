@@ -89,6 +89,39 @@ const StreamingChatInterface = ({
     fetchDefaultPersona();
   }, [user, character.id]);
 
+  // Create new chat if none exists
+  useEffect(() => {
+    if (!currentChatId && user && character.id) {
+      const createNewChat = async () => {
+        try {
+          const { data: newChat, error } = await supabase
+            .from('chats')
+            .insert({
+              character_id: character.id,
+              user_id: user.id,
+              title: `Chat with ${character.name}`,
+              created_at: new Date().toISOString(),
+              last_message_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Error creating new chat:', error);
+            return;
+          }
+
+          setCurrentChatId(newChat.id);
+          console.log('✅ Created new chat:', newChat.id);
+        } catch (error) {
+          console.error('Error creating new chat:', error);
+        }
+      };
+
+      createNewChat();
+    }
+  }, [currentChatId, user, character.id, character.name]);
+
   // Focus input when component mounts
   useEffect(() => {
     if (inputRef.current) {
