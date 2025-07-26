@@ -528,7 +528,9 @@ export type Database = {
           id: string
           is_active: boolean
           is_nsfw_compatible: boolean
+          max_context_tokens: number
           min_plan_id: string | null
+          model_identifier: string
           tier_name: string
         }
         Insert: {
@@ -538,7 +540,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_nsfw_compatible?: boolean
+          max_context_tokens?: number
           min_plan_id?: string | null
+          model_identifier?: string
           tier_name: string
         }
         Update: {
@@ -548,7 +552,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_nsfw_compatible?: boolean
+          max_context_tokens?: number
           min_plan_id?: string | null
+          model_identifier?: string
           tier_name?: string
         }
         Relationships: [
@@ -651,8 +657,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          banner_url: string | null
           banner_updated_at: string | null
+          banner_url: string | null
           bio: string | null
           created_at: string
           default_persona_id: string | null
@@ -665,8 +671,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          banner_url?: string | null
           banner_updated_at?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
           default_persona_id?: string | null
@@ -679,8 +685,8 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
-          banner_url?: string | null
           banner_updated_at?: string | null
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
           default_persona_id?: string | null
@@ -769,30 +775,24 @@ export type Database = {
         }
         Relationships: []
       }
-      user_character_addons_backup: {
+      user_age_verification: {
         Row: {
-          addon_settings: Json | null
-          character_id: string | null
-          created_at: string | null
-          id: string | null
-          updated_at: string | null
-          user_id: string | null
+          created_at: string
+          id: string
+          user_id: string
+          verified_at: string
         }
         Insert: {
-          addon_settings?: Json | null
-          character_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+          verified_at?: string
         }
         Update: {
-          addon_settings?: Json | null
-          character_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+          verified_at?: string
         }
         Relationships: []
       }
@@ -830,13 +830,6 @@ export type Database = {
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_character_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -883,33 +876,6 @@ export type Database = {
           },
         ]
       }
-      user_character_world_info_settings_backup: {
-        Row: {
-          character_id: string | null
-          created_at: string | null
-          id: string | null
-          updated_at: string | null
-          user_id: string | null
-          world_info_id: string | null
-        }
-        Insert: {
-          character_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          world_info_id?: string | null
-        }
-        Update: {
-          character_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          world_info_id?: string | null
-        }
-        Relationships: []
-      }
       user_global_chat_settings: {
         Row: {
           chain_of_thought: boolean | null
@@ -923,6 +889,7 @@ export type Database = {
           id: string
           location_tracking: boolean | null
           mood_tracking: boolean | null
+          nsfw_enabled: boolean | null
           relationship_status: boolean | null
           streaming_mode: string | null
           time_and_weather: boolean | null
@@ -941,6 +908,7 @@ export type Database = {
           id?: string
           location_tracking?: boolean | null
           mood_tracking?: boolean | null
+          nsfw_enabled?: boolean | null
           relationship_status?: boolean | null
           streaming_mode?: string | null
           time_and_weather?: boolean | null
@@ -959,6 +927,7 @@ export type Database = {
           id?: string
           location_tracking?: boolean | null
           mood_tracking?: boolean | null
+          nsfw_enabled?: boolean | null
           relationship_status?: boolean | null
           streaming_mode?: string | null
           time_and_weather?: boolean | null
@@ -1206,6 +1175,21 @@ export type Database = {
       create_new_chat_with_greeting: {
         Args: { p_character_id: string; p_user_id: string }
         Returns: string
+      }
+      delete_chat_complete: {
+        Args: { p_chat_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      get_character_stats: {
+        Args: { character_id: string }
+        Returns: {
+          total_chats: number
+          total_messages: number
+          unique_users: number
+          average_rating: number
+          total_favorites: number
+          total_likes: number
+        }[]
       }
       get_chat_context: {
         Args: { p_chat_id: string; p_user_id: string; p_character_id: string }

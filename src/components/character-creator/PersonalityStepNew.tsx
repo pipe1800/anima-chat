@@ -208,7 +208,10 @@ const PersonalityStep = ({ data, onUpdate, onNext, onPrevious, selectedTags, set
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => document.querySelector('[role="combobox"]')?.click()}
+                  onClick={() => {
+                    const combobox = document.querySelector('[role="combobox"]') as HTMLElement;
+                    combobox?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                  }}
                   variant="outline"
                   size="icon"
                   className="border-[#FF7A00]/50 text-[#FF7A00] hover:bg-[#FF7A00]/10 h-11 w-11"
