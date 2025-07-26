@@ -4,14 +4,11 @@ export interface Profile {
   id: string;
   username: string;
   avatar_url?: string;
-  banner_url?: string;
   bio?: string;
   onboarding_completed: boolean;
   onboarding_survey_data?: any;
-  timezone?: string | null;
   created_at: string;
   updated_at: string;
-  banner_updated_at?: string;
 }
 
 export interface Character {
@@ -24,10 +21,6 @@ export interface Character {
   interaction_count: number;
   created_at: string;
   updated_at: string;
-  // Extended properties for dashboard
-  tagline?: string;
-  actual_chat_count?: number;
-  likes_count?: number;
 }
 
 export interface CharacterDefinition {
@@ -75,9 +68,6 @@ export interface Chat {
   last_message_at?: string;
   created_at: string;
   updated_at: string;
-  selected_persona_id?: string;
-  context_ceiling_warned?: boolean;
-  chat_mode: 'storytelling' | 'companion';
   character?: Character;
 }
 
@@ -111,14 +101,4 @@ export interface UserOnboardingProgress {
 export interface Tag {
   id: number;
   name: string;
-}
-
-export interface UserCharacterSettings {
-  id: string;
-  user_id: string;
-  character_id: string;
-  chat_mode: 'storytelling' | 'companion';
-  time_awareness_enabled: boolean;
-  created_at: string;
-  updated_at: string;
 }

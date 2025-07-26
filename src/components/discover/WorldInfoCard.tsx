@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatNumberWithK } from '@/lib/utils/formatting';
 import { 
   Heart,
   Star,
@@ -96,19 +95,19 @@ export function WorldInfoCard({ worldInfo, index }: WorldInfoCardProps) {
           <div className="grid grid-cols-2 gap-2 text-lg mb-4 flex-shrink-0">
             <div className="flex items-center space-x-1 text-gray-300">
               <Heart className="w-5 h-5" />
-              <span>{formatNumberWithK(worldInfo.likes_count)}</span>
+              <span>{worldInfo.likes_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
               <Star className="w-5 h-5" />
-              <span>{formatNumberWithK(worldInfo.favorites_count)}</span>
+              <span>{worldInfo.favorites_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
               <Users className="w-5 h-5" />
-              <span>{formatNumberWithK(worldInfo.usage_count)}</span>
+              <span>{worldInfo.usage_count.toLocaleString()}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-300">
               <Eye className="w-5 h-5" />
-              <span>{formatNumberWithK(worldInfo.interaction_count)}</span>
+              <span>{worldInfo.interaction_count.toLocaleString()}</span>
             </div>
           </div>
 

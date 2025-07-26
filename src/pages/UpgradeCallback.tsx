@@ -29,12 +29,12 @@ export const UpgradeCallback = () => {
       }
 
       try {
-        console.log('Using paypal-management to verify subscription upgrade');
+        console.log('Calling complete-subscription-upgrade function');
 
-        const { data, error } = await supabase.functions.invoke('paypal-management', {
+        const { data, error } = await supabase.functions.invoke('complete-subscription-upgrade', {
           body: { 
-            operation: 'verify-subscription',
-            subscriptionId: subscriptionId
+            subscriptionId,
+            targetPlanId
           }
         });
 
@@ -45,7 +45,7 @@ export const UpgradeCallback = () => {
           throw new Error(`Edge Function Error: ${error.message}`);
         }
 
-        if (data?.success && data?.data?.verified) {
+        if (data?.success) {
           setStatus('success');
           const creditsText = data.creditsAdded ? ` and received ${data.creditsAdded.toLocaleString()} additional credits` : '';
           

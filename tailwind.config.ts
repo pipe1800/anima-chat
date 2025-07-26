@@ -22,15 +22,6 @@ export default {
       fontFamily: {
         'open-sans': ['Open Sans', 'sans-serif'],
       },
-      width: {
-        '67': '16.75rem', // 268px - 20% increase from 224px (w-56)
-        '84': '21rem',    // 336px - 75% increase from 192px (w-48)
-      },
-      height: {
-        '70': '17.5rem',   // 280px - original
-        '84': '21rem',     // 336px - 20% increase from 280px
-        '105': '26.25rem', // 420px - 75% increase from 240px (h-60)
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

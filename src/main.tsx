@@ -3,11 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
 
-// Import test utilities for debugging in development
-if (import.meta.env.DEV) {
-  import('./utils/testContextLoader');
-}
-
 // Create a client with refetchOnWindowFocus disabled
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,8 +13,8 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <App />
-  </QueryClientProvider>,
-)
+  </QueryClientProvider>
+);

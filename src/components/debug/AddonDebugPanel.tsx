@@ -3,111 +3,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Bug, RefreshCw, AlertTriangle, MessageCircle } from 'lucide-react';
+import { ChevronDown, Bug, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserGlobalChatSettings } from '@/queries/chatSettingsQueries';
-import { supabase } from '@/integrations/supabase/client';
+import { getUserCharacterAddonSettings, getAddonStats, validateAddonSettings, type AddonSettings } from '@/lib/user-addon-operations';
 
 interface AddonDebugPanelProps {
   characterId?: string;
   userId?: string;
-  chatId?: string;
 }
 
-export const AddonDebugPanel = ({ characterId, userId, chatId }: AddonDebugPanelProps) => {
+export const AddonDebugPanel = ({ characterId, userId }: AddonDebugPanelProps) => {
   const { user, subscription, refreshSubscription } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [addonSettings, setAddonSettings] = useState<AddonSettings | null>(null);
+  const [loading, setLoading] = useState(false);
   const [refreshingSubscription, setRefreshingSubscription] = useState(false);
-  const [messageStats, setMessageStats] = useState<{
-    totalMessages: number;
-    aiMessages: number;
-    lastSummaryAt: number | null;
-    nextSummaryAt: number;
-  } | null>(null);
-  const { data: globalSettings, isLoading, refetch } = useUserGlobalChatSettings();
 
   const userPlan = subscription?.plan?.name || 'Guest Pass';
   const effectiveUserId = userId || user?.id;
   const debugEnabled = process.env.NODE_ENV === 'development';
 
-  // Fetch message statistics for the current chat
-  useEffect(() => {
-    const fetchMessageStats = async () => {
-      if (!chatId || !debugEnabled) {
-        setMessageStats(null);
-        return;
-      }
-
-      try {
-        // Get total message count and AI message count (excluding placeholders)
-        const { data: messages, error: messagesError } = await supabase
-          .from('messages')
-          .select('is_ai_message, content, message_order')
-          .eq('chat_id', chatId)
-          .order('created_at', { ascending: true });
-
-        if (messagesError) {
-          console.error('Debug: Failed to fetch messages:', messagesError);
-          return;
-        }
-
-        const totalMessages = messages?.length || 0;
-        
-        // FIXED: Match system logic - exclude placeholders and count correctly
-        const realAiMessages = messages?.filter(m => 
-          m.is_ai_message === true && 
-          !m.content.includes('[PLACEHOLDER]')
-        ) || [];
-
-        // Get the most recent auto-summary
-        const { data: summaries, error: summariesError } = await supabase
-          .from('character_memories')
-          .select('message_count, is_auto_summary')
-          .eq('chat_id', chatId)
-          .eq('is_auto_summary', true)
-          .order('message_count', { ascending: false })
-          .limit(1);
-
-        if (summariesError) {
-          console.error('Debug: Failed to fetch summaries:', summariesError);
-        }
-
-        const lastSummaryAt = summaries?.[0]?.message_count || 0;
-        
-        // Count AI messages after last summary (matching system logic)
-        const aiMessagesAfterSummary = realAiMessages.filter(m => 
-          m.message_order > lastSummaryAt
-        );
-        
-        const currentAiCount = aiMessagesAfterSummary.length;
-        const nextSummaryAt = lastSummaryAt + 15; // Next 15 AI messages after last summary
-
-        console.log('🔧 Debug Panel - FIXED Counter:', {
-          totalMessages,
-          totalAiMessages: realAiMessages.length,
-          lastSummaryAt,
-          aiMessagesAfterSummary: currentAiCount,
-          nextSummaryAt,
-          messagesUntilSummary: 15 - currentAiCount
-        });
-
-        setMessageStats({
-          totalMessages,
-          aiMessages: currentAiCount, // Show unsummarized AI messages
-          lastSummaryAt,
-          nextSummaryAt
-        });
-      } catch (error) {
-        console.error('Debug: Error fetching message stats:', error);
-      }
-    };
-
-    fetchMessageStats();
-  }, [chatId, debugEnabled]);
-
   // Check for subscription issues
   const hasSubscriptionIssue = user && !subscription;
   const isPlanMismatch = subscription?.plan?.name && !['Guest Pass', 'True Fan', 'The Whale'].includes(subscription.plan.name);
+
+  const loadAddonSettings = async () => {
+    if (!effectiveUserId || !characterId) return;
+    
+    setLoading(true);
+    try {
+      const settings = await getUserCharacterAddonSettings(effectiveUserId, characterId);
+      setAddonSettings(settings);
+    } catch (error) {
+      console.error('Debug: Failed to load addon settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRefreshSubscription = async () => {
     setRefreshingSubscription(true);
@@ -120,26 +52,18 @@ export const AddonDebugPanel = ({ characterId, userId, chatId }: AddonDebugPanel
     }
   };
 
+  useEffect(() => {
+    if (isOpen && effectiveUserId && characterId) {
+      loadAddonSettings();
+    }
+  }, [isOpen, effectiveUserId, characterId]);
+
   if (!debugEnabled || !effectiveUserId) {
     return null;
   }
 
-  // Calculate global settings stats
-  const globalAddonStats = globalSettings ? {
-    totalEnabled: Object.values({
-      dynamicWorldInfo: globalSettings.dynamic_world_info,
-      enhancedMemory: globalSettings.enhanced_memory,
-      moodTracking: globalSettings.mood_tracking,
-      clothingInventory: globalSettings.clothing_inventory,
-      locationTracking: globalSettings.location_tracking,
-      timeAndWeather: globalSettings.time_and_weather,
-      relationshipStatus: globalSettings.relationship_status,
-      characterPosition: globalSettings.character_position,
-      chainOfThought: globalSettings.chain_of_thought,
-      fewShotExamples: globalSettings.few_shot_examples,
-    }).filter(Boolean).length,
-    hasPremiumFeatures: globalSettings.enhanced_memory || globalSettings.chain_of_thought,
-  } : null;
+  const stats = addonSettings ? getAddonStats(addonSettings) : null;
+  const validation = addonSettings ? validateAddonSettings(addonSettings, userPlan) : null;
 
   return (
     <Card className="mb-4 border-orange-500/20 bg-orange-950/10">
@@ -149,7 +73,7 @@ export const AddonDebugPanel = ({ characterId, userId, chatId }: AddonDebugPanel
             <CardTitle className="text-sm flex items-center justify-between text-orange-400">
               <div className="flex items-center space-x-2">
                 <Bug className="w-4 h-4" />
-                <span>Global Settings Debug Panel</span>
+                <span>Addon Debug Panel</span>
                 <Badge variant="outline" className="border-orange-400 text-orange-400 text-xs">
                   DEV
                 </Badge>
@@ -174,111 +98,131 @@ export const AddonDebugPanel = ({ characterId, userId, chatId }: AddonDebugPanel
                 <p className="text-red-300 text-xs mt-1">
                   User is authenticated but subscription data failed to load. This causes addon restrictions.
                 </p>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <Button 
+                  variant="outline" 
+                  size="sm" 
                   onClick={handleRefreshSubscription}
                   disabled={refreshingSubscription}
-                  className="mt-2 border-red-400 text-red-400 hover:bg-red-900/30"
+                  className="border-red-400 text-red-400 hover:bg-red-400 hover:text-black mt-2"
                 >
                   <RefreshCw className={`w-3 h-3 mr-1 ${refreshingSubscription ? 'animate-spin' : ''}`} />
-                  Refresh Subscription
+                  Retry Subscription
                 </Button>
               </div>
             )}
 
-            {/* Plan Mismatch Warning */}
-            {isPlanMismatch && (
-              <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
-                  <span className="text-amber-400 font-medium text-sm">Unknown Plan Detected</span>
-                </div>
-                <p className="text-amber-300 text-xs mt-1">
-                  Plan "{subscription?.plan?.name}" is not recognized. Expected: Guest Pass, True Fan, or The Whale.
+            <div className="flex items-center justify-between">
+              <div className="text-sm space-y-1">
+                <p className="text-gray-300">User ID: <code className="text-orange-400">{effectiveUserId}</code></p>
+                <p className="text-gray-300">Character ID: <code className="text-orange-400">{characterId || 'Not selected'}</code></p>
+                <p className="text-gray-300">
+                  Subscription: 
+                  <Badge 
+                    variant="outline" 
+                    className={hasSubscriptionIssue 
+                      ? "border-red-400 text-red-400 ml-2" 
+                      : "border-blue-400 text-blue-400 ml-2"
+                    }
+                  >
+                    {userPlan}
+                  </Badge>
                 </p>
-              </div>
-            )}
-
-            {/* User Info */}
-            <div className="bg-blue-900/20 border border-blue-700/40 rounded-lg p-3">
-              <h4 className="text-blue-400 font-medium text-sm mb-2">User Information</h4>
-              <div className="text-xs space-y-1">
-                <div className="text-blue-300">User ID: <span className="text-blue-100">{effectiveUserId}</span></div>
-                <div className="text-blue-300">Plan: <span className="text-blue-100">{userPlan}</span></div>
-                {characterId && (
-                  <div className="text-blue-300">Character ID: <span className="text-blue-100">{characterId}</span></div>
+                {subscription && (
+                  <>
+                    <p className="text-gray-300">Status: <code className="text-green-400">{subscription.status}</code></p>
+                    <p className="text-gray-300">Plan ID: <code className="text-gray-400">{subscription.plan_id}</code></p>
+                  </>
                 )}
               </div>
-            </div>
-
-            {/* Global Settings */}
-            <div className="bg-green-900/20 border border-green-700/40 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-green-400 font-medium text-sm">Global Settings</h4>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => refetch()}
-                  disabled={isLoading}
-                  className="border-green-400 text-green-400 hover:bg-green-900/30 h-6 px-2"
+              <div className="flex flex-col space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadAddonSettings}
+                  disabled={loading || !characterId}
+                  className="border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-black"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh Addons
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshSubscription}
+                  disabled={refreshingSubscription}
+                  className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${refreshingSubscription ? 'animate-spin' : ''}`} />
+                  Refresh Sub
                 </Button>
               </div>
-              
-              {isLoading ? (
-                <div className="text-green-300 text-xs">Loading global settings...</div>
-              ) : globalSettings ? (
-                <div className="text-xs space-y-1">
-                  <div className="text-green-300">Settings Loaded: <span className="text-green-100">✓</span></div>
-                  {globalAddonStats && (
-                    <>
-                      <div className="text-green-300">Active Addons: <span className="text-green-100">{globalAddonStats.totalEnabled}</span></div>
-                      <div className="text-green-300">Has Premium Features: <span className="text-green-100">{globalAddonStats.hasPremiumFeatures ? 'Yes' : 'No'}</span></div>
-                    </>
-                  )}
-                  <div className="mt-2 pt-2 border-t border-green-700/40">
-                    <div className="grid grid-cols-2 gap-1 text-xs">
-                      <div className="text-green-300">Dynamic World Info: <span className="text-green-100">{globalSettings.dynamic_world_info ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Enhanced Memory: <span className="text-green-100">{globalSettings.enhanced_memory ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Mood Tracking: <span className="text-green-100">{globalSettings.mood_tracking ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Clothing/Inventory: <span className="text-green-100">{globalSettings.clothing_inventory ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Location Tracking: <span className="text-green-100">{globalSettings.location_tracking ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Time & Weather: <span className="text-green-100">{globalSettings.time_and_weather ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Relationship Status: <span className="text-green-100">{globalSettings.relationship_status ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Character Position: <span className="text-green-100">{globalSettings.character_position ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Chain of Thought: <span className="text-green-100">{globalSettings.chain_of_thought ? '✓' : '✗'}</span></div>
-                      <div className="text-green-300">Few Shot Examples: <span className="text-green-100">{globalSettings.few_shot_examples ? '✓' : '✗'}</span></div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-green-300 text-xs">No global settings found (using defaults)</div>
-              )}
             </div>
 
-            {/* Message Count Statistics - Only show if we have a chatId */}
-            {chatId && messageStats && (
-              <div className="bg-purple-900/20 border border-purple-700/40 rounded-lg p-3">
-                <div className="flex items-center space-x-2 mb-2">
-                  <MessageCircle className="w-4 h-4 text-purple-400" />
-                  <h4 className="text-purple-400 font-medium text-sm">Message-Based Auto-Summary Status</h4>
-                </div>
-                
-                <div className="text-xs space-y-1">
-                  <div className="text-purple-300">Total Messages: <span className="text-purple-100">{messageStats.totalMessages}</span></div>
-                  <div className="text-purple-300">AI Messages After Last Summary: <span className="text-purple-100">{messageStats.aiMessages}</span></div>
-                  <div className="text-purple-300">Last Summary At Message: <span className="text-purple-100">{messageStats.lastSummaryAt || 'None'}</span></div>
-                  <div className="text-purple-300">Next Summary At Message: <span className="text-purple-100">{messageStats.nextSummaryAt}</span></div>
-                  <div className="text-purple-300">AI Messages Until Summary: <span className="text-purple-100">{Math.max(0, 15 - messageStats.aiMessages)}</span></div>
-                  
-                  <div className="mt-2 pt-2 border-t border-purple-700/40">
-                    <div className="text-xs text-purple-300">
-                      Auto-summaries trigger every 15 AI responses. Counter shows unsummarized AI messages only.
-                    </div>
+            {addonSettings && stats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-orange-400">Addon Statistics</h4>
+                  <div className="bg-gray-900/50 p-3 rounded-lg text-xs space-y-1">
+                    <p>Active Addons: <span className="text-green-400">{stats.activeCount}</span></p>
+                    <p>Total Cost: <span className="text-yellow-400">+{stats.totalCost}%</span></p>
+                    <p>Stateful Tracking: <span className="text-blue-400">{stats.statefulCount}/5</span></p>
+                    <p>Premium Features: <span className={stats.hasPremiumFeatures ? 'text-purple-400' : 'text-gray-500'}>{stats.hasPremiumFeatures ? 'Yes' : 'No'}</span></p>
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-orange-400">Active Addons</h4>
+                  <div className="bg-gray-900/50 p-3 rounded-lg text-xs">
+                    {stats.activeAddons.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {stats.activeAddons.map(addon => (
+                          <Badge key={addon} variant="outline" className="border-green-400 text-green-400 text-xs">
+                            {addon}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No active addons</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {validation && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-orange-400">Validation</h4>
+                <div className="bg-gray-900/50 p-3 rounded-lg text-xs">
+                  <p className="flex items-center space-x-2">
+                    <span>Status:</span>
+                    <Badge 
+                      variant="outline" 
+                      className={validation.valid 
+                        ? 'border-green-400 text-green-400' 
+                        : 'border-red-400 text-red-400'
+                      }
+                    >
+                      {validation.valid ? 'Valid' : 'Invalid'}
+                    </Badge>
+                  </p>
+                  {validation.errors.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-red-400">Errors:</p>
+                      {validation.errors.map((error, index) => (
+                        <p key={index} className="text-red-300 text-xs">• {error}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {characterId && (
+              <div className="border-t border-gray-700/50 pt-4">
+                <p className="text-xs text-gray-500">
+                  This debug panel shows addon state for testing subscription restrictions and cost calculations.
+                  Only visible in development mode.
+                </p>
               </div>
             )}
           </CardContent>

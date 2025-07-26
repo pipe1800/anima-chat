@@ -16,20 +16,6 @@ export const PayPalVerification = () => {
   const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
-    // Wait for user authentication to be determined
-    if (user === undefined) {
-      // Still loading authentication, keep showing loading state
-      setStatus('loading');
-      setMessage('Authenticating...');
-      return;
-    }
-    
-    if (!user) {
-      setStatus('error');
-      setMessage('You must be logged in to verify your subscription.');
-      return;
-    }
-
     const verifySubscription = async () => {
       // Prevent duplicate calls
       if (isVerifying) {
@@ -62,11 +48,10 @@ export const PayPalVerification = () => {
       }
 
       try {
-        console.log('Calling paypal-management verify-subscription with:', { subscriptionId, token });
+        console.log('Calling verify-paypal-subscription with:', { subscriptionId, token });
         
-        const { data, error } = await supabase.functions.invoke('paypal-management', {
+        const { data, error } = await supabase.functions.invoke('verify-paypal-subscription', {
           body: { 
-            operation: 'verify-subscription',
             subscriptionId: subscriptionId || token, // Use token as fallback
             token: token
           }
@@ -118,8 +103,13 @@ export const PayPalVerification = () => {
       }
     };
 
-    verifySubscription();
-  }, [searchParams, user, toast, navigate, isVerifying]);
+    if (user) {
+      verifySubscription();
+    } else {
+      setStatus('error');
+      setMessage('You must be logged in to verify your subscription.');
+    }
+  }, [searchParams, user, toast, navigate]);
 
   const getIcon = () => {
     switch (status) {

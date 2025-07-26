@@ -1,29 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import { Send } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, Wand2, Zap, Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { InsufficientCreditsModal } from './InsufficientCreditsModal';
 import ChatMessages from './ChatMessages';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChatUnified } from '@/hooks/useChatUnified';
-import { useChatPerformance } from '@/hooks/useChatPerformance';
-import type { TrackedContext } from '@/types/chat';
-import { useUserGlobalChatSettings } from '@/queries/chatSettingsQueries';
+import { 
+  useOptimizedChat,
+  useChatPerformance,
+  type TrackedContext
+} from '@/hooks/useOptimizedChat';
+import { useAddonSettings } from './useAddonSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { getBestPersonaForNewChat } from '@/lib/user-preferences';
-import { handleChatError } from '@/utils/chatErrorHandling';
-import { useQueryClient } from '@tanstack/react-query';
-
-// Debug components - Only load when needed
-const AddonDebugPanel = lazy(() => import('@/components/debug/AddonDebugPanel').then(module => ({
-  default: module.AddonDebugPanel
-})));
-
-// Loading fallback for debug components
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center p-4">
-    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-  </div>
-);
+import PerformanceMonitor from './PerformanceMonitor';
+import { DatabaseBatchOperations } from './DatabaseBatchOperations';
+import { AddonDebugPanel } from '@/components/debug/AddonDebugPanel';
 
 interface Character {
   id: string;
@@ -39,11 +30,6 @@ interface ChatInterfaceProps {
   existingChatId?: string;
   trackedContext?: TrackedContext;
   onContextUpdate?: (context: TrackedContext) => void;
-  selectedPersonaId?: string | null;
-  selectedWorldInfoId?: string | null;
-  onChatCreated?: (chatId: string) => void; // New callback for when chat is created
-  onCreditsUpdate?: (balance: number) => void; // New callback for credits balance updates
-  onMessageSent?: () => Promise<void>; // New callback for when message is sent
 }
 
 const ChatInterface = ({
@@ -51,150 +37,44 @@ const ChatInterface = ({
   onFirstMessage,
   existingChatId,
   trackedContext: parentTrackedContext,
-  onContextUpdate,
-  selectedPersonaId: propSelectedPersonaId,
-  selectedWorldInfoId,
-  onChatCreated,
-  onCreditsUpdate,
-  onMessageSent
+  onContextUpdate
 }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string | null>(existingChatId || null);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(propSelectedPersonaId || null);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
-  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+  const [showDatabaseOps, setShowDatabaseOps] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
-  // Listen for auto-summary success events and show notification
-  useEffect(() => {
-    const handleAutoSummary = (event: CustomEvent) => {
-      console.log('✅ Auto-summary notification received:', event.detail);
-      toast({
-        title: "🧠 New Memory Added",
-        description: "Conversation automatically summarized to maintain performance.",
-        duration: 5000,
-      });
-    };
-
-    window.addEventListener('autoSummarySuccess', handleAutoSummary as EventListener);
-    
-    return () => {
-      window.removeEventListener('autoSummarySuccess', handleAutoSummary as EventListener);
-    };
-  }, [toast]);
-
-  // Create chat if needed
-  useEffect(() => {
-    if (!currentChatId && user && character && !isCreatingChat) {
-      setIsCreatingChat(true);
-      
-      const initializeChat = async () => {
-        try {
-          console.log('🎯 ChatInterface: Creating new chat for character:', character.id);
-          
-          const { data, error } = await supabase.functions.invoke('chat-management', {
-            body: {
-              operation: 'create-basic',
-              charactersData: [{
-                id: character.id,
-                name: character.name
-              }],
-              selectedPersonaId: propSelectedPersonaId
-            }
-          });
-          
-          if (error) throw error;
-          
-          if (data?.success && data?.chat_id) {
-            console.log('✅ ChatInterface: Chat created successfully:', data.chat_id);
-            setCurrentChatId(data.chat_id);
-            // Notify parent component about the new chat ID
-            onChatCreated?.(data.chat_id);
-            // Update URL
-            window.history.replaceState(
-              null, 
-              '', 
-              `/chat/${character.id}/${data.chat_id}`
-            );
-          }
-        } catch (error) {
-          console.error('Error creating chat:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create chat session",
-            variant: "destructive"
-          });
-        } finally {
-          setIsCreatingChat(false);
-        }
-      };
-      
-      initializeChat();
-    }
-  }, [currentChatId, user, character, propSelectedPersonaId, onChatCreated, isCreatingChat]);
-
-  // Use new orchestrator hook
+  // Use optimized chat hook
   const {
     messages,
     isTyping,
-    trackedContext: unifiedTrackedContext,
-    sendMessage,
+    trackedContext,
     creditsBalance,
-    isLoadingMessages,
-    hasMore,
-    isFetchingNextPage,
-    fetchNextPage,
-    isRealtimeConnected,
-    debugInfo,
-    isStreaming,
-    streamingMessage
-  } = useChatUnified(currentChatId, character.id); // ✅ PHASE 2: Single unified hook
-
-  // Use the prop context (from useContextManagement) as the primary source
-  // Fall back to unified hook context if prop context is not available
-  const effectiveTrackedContext = parentTrackedContext || unifiedTrackedContext;
-  
-  // Debug log to show which context is being used
-  useEffect(() => {
-    // Context selection debug information is available here if needed
-  }, [parentTrackedContext, unifiedTrackedContext, effectiveTrackedContext]);
-
-  // ✅ FIX: Safety cleanup for stuck streaming states
-  useEffect(() => {
-    if (isStreaming) {
-      const timeoutId = setTimeout(() => {
-        console.warn('⚠️ Streaming timeout detected, clearing stuck state');
-        // Force clear streaming state if it's been too long
-      }, 30000); // 30 second timeout
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isStreaming]);
+    characterDetails,
+    isLoading,
+    error,
+    sendMessage,
+    dispatch
+  } = useOptimizedChat(currentChatId, character.id);
 
   // Use performance monitoring
   const { metrics, updateMetrics } = useChatPerformance(currentChatId);
 
   // Use addon settings hook for real-time updates
-  const { data: globalSettings } = useUserGlobalChatSettings();
+  const { data: addonSettings } = useAddonSettings(character.id);
   
   // Fallback to default settings if loading
-  const currentAddonSettings = globalSettings ? {
-    dynamicWorldInfo: globalSettings.dynamic_world_info,
-    enhancedMemory: globalSettings.enhanced_memory,
-    moodTracking: globalSettings.mood_tracking,
-    clothingInventory: globalSettings.clothing_inventory,
-    locationTracking: globalSettings.location_tracking,
-    timeAndWeather: globalSettings.time_and_weather,
-    relationshipStatus: globalSettings.relationship_status,
-    characterPosition: globalSettings.character_position,
-    chainOfThought: globalSettings.chain_of_thought,
-    fewShotExamples: globalSettings.few_shot_examples,
-  } : {
+  const currentAddonSettings = addonSettings || {
     dynamicWorldInfo: false,
     enhancedMemory: false,
     moodTracking: false,
@@ -207,63 +87,13 @@ const ChatInterface = ({
     fewShotExamples: false,
   };
 
-  // Sync tracked context with parent - only sync when there are meaningful differences
-  useEffect(() => {
-    if (effectiveTrackedContext && onContextUpdate) {
-      // Check if contexts have meaningful differences (ignore "No context" values)
-      const hasValidParentContext = Object.values(parentTrackedContext).some(value => value !== 'No context');
-      const hasValidEffectiveContext = Object.values(effectiveTrackedContext).some(value => value !== 'No context');
-      
-      // Only sync if the effective context has valid content and parent doesn't, 
-      // or if there are actual differences in valid content
-      if (!hasValidParentContext && hasValidEffectiveContext) {
-        console.log('🔄 Syncing context from orchestrator to parent (parent has no valid context):', {
-          from: parentTrackedContext,
-          to: effectiveTrackedContext
-        });
-        onContextUpdate(effectiveTrackedContext);
-      } else if (hasValidParentContext && hasValidEffectiveContext) {
-        const isContextDifferent = (
-          parentTrackedContext.moodTracking !== effectiveTrackedContext.moodTracking ||
-          parentTrackedContext.clothingInventory !== effectiveTrackedContext.clothingInventory ||
-          parentTrackedContext.locationTracking !== effectiveTrackedContext.locationTracking ||
-          parentTrackedContext.timeAndWeather !== effectiveTrackedContext.timeAndWeather ||
-          parentTrackedContext.relationshipStatus !== effectiveTrackedContext.relationshipStatus ||
-          parentTrackedContext.characterPosition !== effectiveTrackedContext.characterPosition
-        );
-
-        if (isContextDifferent) {
-          console.log('🔄 Syncing context from orchestrator to parent (contexts differ):', {
-            from: parentTrackedContext,
-            to: effectiveTrackedContext
-          });
-          onContextUpdate(effectiveTrackedContext);
-        }
-      }
-    }
-  }, [effectiveTrackedContext, parentTrackedContext, onContextUpdate]);
-
-  // Update parent with credits balance whenever it changes
-  useEffect(() => {
-    if (onCreditsUpdate && typeof creditsBalance === 'number') {
-      onCreditsUpdate(creditsBalance);
-    }
-  }, [creditsBalance, onCreditsUpdate]);
-
   // Initialize chat for existing chat
   useEffect(() => {
     if (existingChatId) {
       setCurrentChatId(existingChatId);
       setIsFirstMessage(false);
-      
-      // Single invalidation for greeting messages with longer delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['chat', 'messages', existingChatId] 
-        });
-      }, 1000); // Single invalidation with 1s delay
     }
-  }, [existingChatId, queryClient]);
+  }, [existingChatId]);
 
   // Focus input when component mounts
   useEffect(() => {
@@ -272,34 +102,32 @@ const ChatInterface = ({
     }
   }, []);
 
-  // Sync selected persona when prop changes
+  // Fetch user's default persona for template replacement
   useEffect(() => {
-    if (propSelectedPersonaId !== undefined) {
-      console.log('🔄 ChatInterface: Persona prop changed to:', propSelectedPersonaId);
-      setSelectedPersonaId(propSelectedPersonaId);
-    }
-  }, [propSelectedPersonaId]);
-
-  // Fetch user's best persona for template replacement (only if no persona prop provided)
-  useEffect(() => {
-    if (!user || propSelectedPersonaId !== undefined) return;
+    if (!user) return;
     
-    const fetchBestPersona = async () => {
-      const bestPersonaId = await getBestPersonaForNewChat(user.id);
-      if (bestPersonaId) {
-        setSelectedPersonaId(bestPersonaId);
+    const fetchUserPersona = async () => {
+      const { data: personas } = await supabase
+        .from('personas')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (personas && personas.length > 0) {
+        setSelectedPersonaId(personas[0].id);
       }
     };
     
-    fetchBestPersona();
+    fetchUserPersona();
   }, [user]);
 
-  // Memoize send handler
-  const handleSendMessage = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || !user || !currentChatId) return;
+  // Addon settings are now loaded via useAddonSettings hook
 
-    // Check if user has enough credits
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || !user || !currentChatId || isStreaming) return;
+
+    // Check if user has enough credits (need at least 1 credit per message)
     if (creditsBalance < 1) {
       setShowInsufficientCreditsModal(true);
       return;
@@ -308,20 +136,90 @@ const ChatInterface = ({
     const messageContent = inputValue;
     setInputValue('');
     const startTime = Date.now();
+    setIsStreaming(true);
+    setStreamingMessage('');
+
+    // Cancel any existing streaming request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     try {
-      await sendMessage(
-        messageContent,
-        currentAddonSettings,
-        selectedPersonaId,
-        selectedWorldInfoId,
-        effectiveTrackedContext // Pass the database context
-      );
+      // First save the user message
+      const { error: userMessageError } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: currentChatId,
+          content: messageContent,
+          author_id: user.id,
+          is_ai_message: false,
+          created_at: new Date().toISOString()
+        });
 
-      // Call the parent's callback to reload context
-      if (onMessageSent) {
-        await onMessageSent();
+      if (userMessageError) throw userMessageError;
+
+      // Start streaming AI response using supabase.functions.invoke for better reliability
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('https://rclpyipeytqbamiwcuih.supabase.co/functions/v1/chat-stream', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: currentChatId,
+          message: messageContent,
+          characterId: character.id,
+          addonSettings: currentAddonSettings,
+          selectedPersonaId: selectedPersonaId
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) throw new Error('Streaming failed');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedMessage = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') {
+                    console.log('🏁 Stream completed, final message length:', accumulatedMessage.length);
+                    break;
+                  }
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    
+                    // Handle streaming chunks
+                    if (parsed.choices?.[0]?.delta?.content) {
+                      const deltaContent = parsed.choices[0].delta.content;
+                      accumulatedMessage += deltaContent;
+                      setStreamingMessage(accumulatedMessage);
+                      console.log('📝 Streaming chunk received, total length:', accumulatedMessage.length, 'chunk:', deltaContent);
+                    }
+                  } catch (e) {
+                    console.log('⚠️ Failed to parse streaming data:', data, e);
+                  }
+                }
+              }
+        }
       }
+
+      // Message is already saved by the edge function, no need to save again
 
       // Update metrics
       const endTime = Date.now();
@@ -338,46 +236,21 @@ const ChatInterface = ({
         });
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending message:', error);
       updateMetrics(Date.now() - startTime, true);
       
-      // Handle specific error types with better messaging
-      if (error.message?.includes('Authentication failed') || error.message?.includes('401')) {
-        toast({
-          title: "Authentication Error",
-          description: "Your session has expired. Please refresh the page and sign in again.",
-          variant: "destructive",
-        });
-        
-        // Auto-refresh after a delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-      } else if (error.message?.includes('Insufficient credits')) {
-        setShowInsufficientCreditsModal(true);
-      } else if (error.message?.includes('Server error')) {
-        toast({
-          title: "Service Temporarily Unavailable", 
-          description: "Our servers are experiencing high load. Please try again in a moment.",
-          variant: "destructive"
-        });
-      } else if (error.message?.includes('Chat service not found')) {
-        toast({
-          title: "Service Unavailable",
-          description: "The chat service is temporarily unavailable. Please try again later.",
-          variant: "destructive"
-        });
-      } else {
-        const chatError = handleChatError(error, 'sending message', false);
-        toast({
-          title: "Error",
-          description: chatError.message,
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsStreaming(false);
+      setStreamingMessage('');
     }
-  }, [inputValue, user, currentChatId, creditsBalance, sendMessage, currentAddonSettings, selectedPersonaId, isFirstMessage, onFirstMessage, toast, updateMetrics, onMessageSent]);
+  };
+
 
   const handleUpgrade = () => {
     // Navigate to upgrade page or show upgrade modal
@@ -388,24 +261,11 @@ const ChatInterface = ({
     setShowInsufficientCreditsModal(false);
   };
 
-  // Show loading state while chat is being initialized
-  if (!currentChatId && !isLoadingMessages) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-white flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-[#FF7A00] border-t-transparent rounded-full animate-spin"></div>
-          Initializing chat...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Debug Panel - Lazy loaded for performance */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <AddonDebugPanel characterId={character.id} userId={user?.id} chatId={currentChatId} />
-      </Suspense>
+      {/* Debug Panel */}
+      <AddonDebugPanel characterId={character.id} userId={user?.id} />
       
       {/* Insufficient Credits Modal */}
       <InsufficientCreditsModal
@@ -414,64 +274,111 @@ const ChatInterface = ({
         currentBalance={creditsBalance}
         onUpgrade={handleUpgrade}
       />
-      
-      {/* Messages Area - Simplified without frontend streaming */}
+
+
+      {/* Messages Area */}
       <ChatMessages 
-        chatId={currentChatId}
+        chatId={currentChatId} 
         character={character}
-        trackedContext={effectiveTrackedContext}
-        streamingMessage="" 
+        trackedContext={trackedContext}
+        streamingMessage={streamingMessage}
         isStreaming={isStreaming}
-        messages={messages}
-        hasMore={hasMore}
-        isFetchingNextPage={isFetchingNextPage}
-        isLoadingMessages={isLoadingMessages}
-        fetchNextPage={fetchNextPage}
-        isRealtimeConnected={isRealtimeConnected}
-        debugInfo={debugInfo}
       />
 
-      {/* Typing Indicator with Reserved Space */}
-      <div className="px-6 pb-2 min-h-[2.5rem] flex items-center">
-        <div 
-          className={`flex items-center space-x-2 text-gray-400 transition-all duration-300 ${
-            (isTyping || isStreaming) ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-          }`}
-        >
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-          </div>
-          <span className="text-sm">
-            {isStreaming ? `${character.name} is responding...` : `${character.name} is typing...`}
-          </span>
-        </div>
-      </div>
 
-      {/* Input Form */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t bg-background">
-        <div className="flex gap-2">
+      {/* Typing Indicator */}
+      {isTyping && !isStreaming && (
+        <div className="px-6 pb-2">
+          <div className="flex items-center space-x-2 text-gray-400">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+            <span className="text-sm">{character.name} is typing...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div className="bg-[#1a1a2e] border-t border-gray-700/50 p-4 flex-shrink-0">
+        <form onSubmit={handleSendMessage} className="flex space-x-3">
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={e => setInputValue(e.target.value)}
             placeholder={`Message ${character.name}...`}
-            className="flex-1 px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            disabled={isTyping || !currentChatId}
+            className="flex-1 bg-[#121212] border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent transition-all font-['Open_Sans',_sans-serif]"
+            disabled={creditsBalance < 1}
           />
-          <button
-            type="submit"
-            disabled={!inputValue.trim() || isTyping || !currentChatId}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            {/* Enhanced Memory indicator */}
+            {currentAddonSettings.enhancedMemory && (
+              <div className="flex items-center justify-center w-10 h-10 text-[#FF7A00]">
+                <Wand2 className="w-5 h-5" />
+              </div>
+            )}
+            <Button
+              type="submit"
+              className="bg-[#FF7A00] hover:bg-[#FF7A00]/80 text-white px-6 py-3 rounded-xl transition-all hover:scale-105"
+              disabled={!inputValue.trim() || creditsBalance < 1 || isStreaming}
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+            
+            {/* Performance Monitor Toggle */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
+              className="hidden md:flex"
+            >
+              <Zap className="w-4 h-4" />
+            </Button>
+            
+            {/* Database Operations Toggle */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDatabaseOps(!showDatabaseOps)}
+              className="hidden md:flex"
+            >
+              <Database className="w-4 h-4" />
+            </Button>
+          </div>
+        </form>
+        
+        {/* Credit balance indicator */}
+        <div className="mt-2 text-center" data-tutorial="credits-display">
+          <p className="text-gray-400 text-xs">
+            {creditsBalance.toLocaleString()} credits remaining
+          </p>
         </div>
-      </form>
+        
+      </div>
+      
+      {/* Performance Monitor */}
+      {showPerformanceMonitor && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <PerformanceMonitor chatId={currentChatId} isVisible={showPerformanceMonitor} />
+        </div>
+      )}
+      
+      {/* Database Batch Operations */}
+      {showDatabaseOps && (
+        <div className="fixed bottom-4 right-96 z-50">
+          <DatabaseBatchOperations 
+            chatId={currentChatId} 
+            characterId={character.id}
+            isVisible={showDatabaseOps} 
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-export default React.memo(ChatInterface);
+export default ChatInterface;

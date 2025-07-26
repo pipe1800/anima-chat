@@ -21,7 +21,7 @@ const Index = () => {
         const isOnboardingCompleted = session.user.user_metadata?.onboarding_completed;
         
         if (isOnboardingCompleted) {
-          navigate('/discover');
+          navigate('/dashboard');
         } else {
           navigate('/onboarding');
         }

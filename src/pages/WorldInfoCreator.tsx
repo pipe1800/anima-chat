@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Upload, Edit2, Trash2, Save, X, Search, Tag, User, BookOpen, Image, Loader2, ArrowLeft, Heart, FileText } from 'lucide-react';
-import { TopBar } from '@/components/ui/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tables } from '@/integrations/supabase/types';
@@ -635,20 +634,10 @@ const WorldInfoCreator = () => {
       <main className="flex-1 overflow-hidden">
           {showWorldInfoList ? (
             <div className="h-full flex flex-col">
-              {/* Standardized TopBar */}
-              <TopBar
-                title="World Infos"
-                leftContent={
-                  <Button
-                    onClick={() => navigate('/dashboard')}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                }
-                rightContent={
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700/50">
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="text-2xl font-bold text-white">World Infos</h1>
                   <div className="flex space-x-2">
                     <Button
                       onClick={handleStartCreate}
@@ -666,8 +655,8 @@ const WorldInfoCreator = () => {
                       Import
                     </Button>
                   </div>
-                }
-              />
+                </div>
+              </div>
 
               {/* World Info List */}
               <div className="flex-1 overflow-auto p-6">
@@ -922,20 +911,17 @@ const WorldInfoCreator = () => {
             </div>
           ) : (
             <div className="h-full flex flex-col bg-[#121212]">
-              {/* Standardized TopBar for Creation Mode */}
-              <TopBar
-                title={isCreating ? 'Create New World Info' : 'World Info Creator'}
-                leftContent={
-                  <Button
-                    onClick={handleBackToList}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                }
-              />
+              {/* Back Button Header */}
+              <div className="p-6 border-b border-gray-700/50">
+                <Button
+                  onClick={handleBackToList}
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to World Infos
+                </Button>
+              </div>
               
               <div className="flex-1 overflow-auto">
                 {isCreating ? (

@@ -1,13 +1,46 @@
 project_id = "rclpyipeytqbamiwcuih"
 
-[functions.paypal-management]
+[functions.cancel-paypal-subscription]
 verify_jwt = true
 
-[functions.chat-management]
+[functions.create-chat-with-greeting]
 verify_jwt = true
 
-[functions.extract-addon-context]
+[functions.chat]
 verify_jwt = true
 
-[functions.admin-utilities]
+[functions.chat-stream]
+verify_jwt = true
+
+[functions.create-credit-purchase]
+verify_jwt = true
+
+[functions.create-paypal-subscription]
+verify_jwt = true
+
+[functions.finalize-credit-purchase]
+verify_jwt = true
+
+[functions.verify-paypal-subscription]
+verify_jwt = true
+
+[functions.upgrade-subscription]
+verify_jwt = true
+
+[functions.verify-upgrade-payment]
+verify_jwt = true
+
+[functions.complete-subscription-upgrade]
+verify_jwt = true
+
+[functions.handle-upgrade]
+verify_jwt = true
+
+[functions.initiate-upgrade]
+verify_jwt = true
+
+[functions.paypal-webhook]
+verify_jwt = false
+
+[functions.test-openrouter]
 verify_jwt = false
