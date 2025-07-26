@@ -17,7 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Discover from "./pages/Discover";
-const Chat = lazy(() => import("./pages/Dashboard"));
+import Chat from "./pages/Dashboard";
 import CharacterCreator from "./pages/CharacterCreator";
 import TestTags from "./pages/TestTags";
 import WorldInfo from "./pages/WorldInfo";
