@@ -1,12 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useChatMessages, useRealtimeMessages, useMessagePolling } from '@/hooks/useChat';
-import type { Message, TrackedContext } from '@/hooks/useChat';
+import type { Message, TrackedContext } from '@/types/chat';
 import { MessageGroup } from './MessageGroup';
 import { groupMessages } from '@/utils/messageGrouping';
 import { ContextDisplay } from './ContextDisplay';
-import { useAddonSettings } from './useAddonSettings';
+import { useUserGlobalChatSettings } from '@/queries/chatSettingsQueries';
 import OptimizedMessageFormatter from './OptimizedMessageFormatter';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormattedMessage } from "@/components/ui/FormattedMessage";
@@ -25,28 +24,38 @@ interface ChatMessagesProps {
   trackedContext?: TrackedContext;
   streamingMessage?: string;
   isStreaming?: boolean;
+  // Props that should come from parent ChatInterface (using the hook)
+  messages?: Message[];
+  hasMore?: boolean;
+  isFetchingNextPage?: boolean;
+  isLoadingMessages?: boolean;
+  fetchNextPage?: () => void;
+  isRealtimeConnected?: boolean;
+  debugInfo?: string[];
 }
 
-const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isStreaming }: ChatMessagesProps) => {
+const ChatMessages = ({ 
+  chatId, 
+  character, 
+  trackedContext, 
+  streamingMessage, 
+  isStreaming,
+  messages = [],
+  hasMore = false,
+  isFetchingNextPage = false,
+  isLoadingMessages = false,
+  fetchNextPage,
+  isRealtimeConnected = false,
+  debugInfo = []
+}: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [backgroundImage, setBackgroundImage] = React.useState<string | null>(null);
   
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error
-  } = useChatMessages(chatId);
-
-  // Enable real-time updates with fallback polling
-  const { isSubscribed, debugInfo } = useRealtimeMessages(chatId);
-  useMessagePolling(chatId, isSubscribed);
+  // Messages should be passed from parent ChatInterface to avoid duplicate hook usage
   
   // Load addon settings for context filtering
-  const { data: addonSettings } = useAddonSettings(character.id);
+  const { data: globalSettings } = useUserGlobalChatSettings();
 
   // Load background image for current chat
   useEffect(() => {
@@ -74,76 +83,88 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
     };
   }, [chatId]);
 
-  // Use only fetched messages from database (single source of truth)
-  const allMessages = React.useMemo(() => {
-    return data?.pages?.flatMap(page => page.messages) || [];
-  }, [data?.pages]);
-
-  // Extract most recent context from AI messages
-  const mostRecentContext = React.useMemo(() => {
-    if (!allMessages.length) return trackedContext;
-    
-    // Find the most recent AI message with context
-    for (let i = allMessages.length - 1; i >= 0; i--) {
-      const message = allMessages[i];
-      if (!message.isUser && message.current_context) {
-        return message.current_context;
+  // Use tracked context as the primary source (real-time from database), fall back to message context
+  const contextToUse = React.useMemo(() => {
+    // PRIORITY 1: Check tracked context from database (real-time updated)
+    if (trackedContext) {
+      const hasValidTrackedContext = Object.values(trackedContext).some(
+        value => value && value !== 'No context'
+      );
+      if (hasValidTrackedContext) {
+        console.log('💾 Using tracked context from database (PRIORITY 1):', trackedContext);
+        return trackedContext;
       }
     }
     
-    return trackedContext;
-  }, [allMessages, trackedContext]);
-
-  // Group messages for better visual organization
-  const messageGroups = React.useMemo(() => {
-    return groupMessages(allMessages);
-  }, [allMessages]);
-
-  // Auto scroll to bottom for new messages
-  useEffect(() => {
-    if (allMessages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // PRIORITY 2: Fall back to context from messages if database context is empty
+    if (messages.length > 0) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i];
+        if (!message.isUser && message.current_context) {
+          const messageContext = message.current_context;
+          // Check if message context has valid values (not just "No context")
+          const hasValidMessageContext = Object.values(messageContext).some(
+            value => value && value !== 'No context'
+          );
+          if (hasValidMessageContext) {
+            console.log('📨 Using context from message (PRIORITY 2):', messageContext);
+            return messageContext;
+          }
+        }
+      }
     }
-  }, [allMessages.length]);
+    
+    // PRIORITY 3: Default to tracked context structure even if all values are "No context"
+    return trackedContext || {
+      moodTracking: 'No context',
+      clothingInventory: 'No context',
+      locationTracking: 'No context',
+      timeAndWeather: 'No context',
+      relationshipStatus: 'No context',
+      characterPosition: 'No context'
+    };
+  }, [trackedContext, messages]);
 
-  // Auto scroll to bottom during streaming
-  useEffect(() => {
-    if (isStreaming && streamingMessage) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [isStreaming, streamingMessage]);
+  // ✅ SIMPLIFIED: Basic message grouping without complex streaming logic
+  const messageGroups = useMemo(() => {
+    // ✅ SIMPLIFIED: No frontend streaming message display
+    // Backend handles all message persistence, frontend just shows database messages
+    return groupMessages(messages as any);
+  }, [messages]);
 
-  // Scroll to bottom on initial load
-  useEffect(() => {
-    if (!isLoading && allMessages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-    }
-  }, [isLoading, allMessages.length]);
-
-  const handleLoadEarlier = () => {
-    if (hasNextPage && !isFetchingNextPage) {
+  // ✅ PHASE 3: Memoized scroll handler to prevent recreation
+  const handleLoadEarlier = useCallback(() => {
+    if (hasMore && !isFetchingNextPage && fetchNextPage) {
       const currentScrollHeight = messagesContainerRef.current?.scrollHeight || 0;
       
-      fetchNextPage().then(() => {
-        // Maintain scroll position after loading earlier messages
-        setTimeout(() => {
-          if (messagesContainerRef.current) {
-            const newScrollHeight = messagesContainerRef.current.scrollHeight;
-            const scrollDiff = newScrollHeight - currentScrollHeight;
-            messagesContainerRef.current.scrollTop = scrollDiff;
-          }
-        }, 100);
+      fetchNextPage();
+      
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          const newScrollHeight = messagesContainerRef.current.scrollHeight;
+          const scrollDiff = newScrollHeight - currentScrollHeight;
+          messagesContainerRef.current.scrollTop = scrollDiff;
+        }
+      }, 100);
+    }
+  }, [hasMore, isFetchingNextPage, fetchNextPage]);
+
+  // ✅ PHASE 3: Optimized auto-scroll with better performance
+  useEffect(() => {
+    const shouldAutoScroll = () => {
+      if (isLoadingMessages && messages.length === 0) return false;
+      return messages.length > 0 || (isStreaming && streamingMessage);
+    };
+
+    if (shouldAutoScroll()) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ 
+          behavior: isLoadingMessages ? 'auto' : 'smooth', 
+          block: 'end' 
+        });
       });
     }
-  };
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-400">Failed to load messages</div>
-      </div>
-    );
-  }
+  }, [messages.length, isStreaming, streamingMessage, isLoadingMessages]);
 
   // Show empty state when no chat is selected
   if (!chatId) {
@@ -157,7 +178,7 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
     );
   }
 
-  if (isLoading) {
+  if (isLoadingMessages) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-white flex items-center gap-2">
@@ -171,7 +192,7 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
   return (
     <div 
       ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif] relative"
+      className="flex-1 overflow-y-auto p-6 space-y-6 font-['Open_Sans',_sans-serif] relative chat-messages-container"
       style={{
         backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
         backgroundSize: 'cover',
@@ -185,7 +206,7 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
       )}
       <div className="relative z-10">
       {/* Load Earlier Messages Button */}
-      {hasNextPage && (
+      {hasMore && (
         <div className="flex justify-center mb-4">
           <Button
             onClick={handleLoadEarlier}
@@ -212,8 +233,27 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
             key={group.id} 
             group={group} 
             character={character}
-            trackedContext={mostRecentContext}
-            addonSettings={addonSettings}
+            trackedContext={contextToUse}
+            addonSettings={(() => {
+              const settings = globalSettings ? {
+                moodTracking: globalSettings.mood_tracking,
+                clothingInventory: globalSettings.clothing_inventory,
+                locationTracking: globalSettings.location_tracking,
+                timeAndWeather: globalSettings.time_and_weather,
+                relationshipStatus: globalSettings.relationship_status,
+                characterPosition: globalSettings.character_position,
+              } : {
+                // Default to all enabled while loading to ensure context displays
+                moodTracking: true,
+                clothingInventory: true,
+                locationTracking: true,
+                timeAndWeather: true,
+                relationshipStatus: true,
+                characterPosition: true,
+              };
+              
+              return settings;
+            })()}
           />
         ))
       ) : (
@@ -226,28 +266,7 @@ const ChatMessages = ({ chatId, character, trackedContext, streamingMessage, isS
         </div>
       )}
 
-      {/* Streaming Message Display - Appears in correct position */}
-      {isStreaming && streamingMessage && (
-        <div className="animate-fade-in mb-6">
-          <div className="flex gap-3">
-            <Avatar className="w-8 h-8 flex-shrink-0">
-              <AvatarImage src={character.avatar} alt={character.name} />
-              <AvatarFallback>{character.fallback}</AvatarFallback>
-            </Avatar>
-            
-            <div className="flex flex-col gap-1 max-w-[80%] items-start">
-              <div className="px-4 py-2 text-sm bg-muted text-muted-foreground rounded-lg">
-                <FormattedMessage 
-                  content={streamingMessage}
-                  className="whitespace-pre-wrap"
-                />
-                <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Messages are already integrated with streaming via the hook */}
       <div ref={messagesEndRef} />
       </div>
     </div>

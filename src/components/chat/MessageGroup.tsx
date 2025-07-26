@@ -1,9 +1,10 @@
+import React, { memo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatMessageTime } from "@/utils/messageGrouping";
 import { ContextDisplay } from "./ContextDisplay";
 import { FormattedMessage } from "@/components/ui/FormattedMessage";
 import OptimizedMessageFormatter from "./OptimizedMessageFormatter";
-import type { TrackedContext, Message } from "@/hooks/useChat";
+import type { TrackedContext, Message, Character } from '@/types/chat';
 
 interface MessageGroupData {
   id: string;
@@ -11,13 +12,6 @@ interface MessageGroupData {
   isUser: boolean;
   timestamp: Date;
   showTimestamp: boolean;
-}
-
-interface Character {
-  id: string;
-  name: string;
-  avatar: string;
-  fallback: string;
 }
 
 interface MessageGroupProps {
@@ -34,7 +28,8 @@ interface MessageGroupProps {
   };
 }
 
-export function MessageGroup({ group, character, trackedContext, addonSettings }: MessageGroupProps) {
+// ✅ PHASE 3: Memoized component to prevent unnecessary re-renders
+export const MessageGroup = memo(function MessageGroup({ group, character, trackedContext, addonSettings }: MessageGroupProps) {
   const { messages, isUser, showTimestamp } = group;
 
   return (
@@ -56,7 +51,7 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
         <div className={`flex flex-col gap-1 max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
           {messages.map((message, index) => (
             <div
-              key={message.id}
+              key={message.id === 'streaming-temp' ? `${message.id}-${message.content.length}` : message.id}
               className={`px-4 py-2 text-sm ${
                 isUser
                   ? 'bg-primary text-primary-foreground'
@@ -82,6 +77,7 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
                 content={message.content}
                 className="whitespace-pre-wrap"
               />
+              {/* Removed streaming indicator - no longer needed with simplified approach */}
             </div>
           ))}
         </div>
@@ -97,6 +93,7 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
           {(() => {
             // Get the most recent message in the group for context
             const latestMessage = messages[messages.length - 1];
+            
             const hasContextUpdates = latestMessage.contextUpdates && Object.keys(latestMessage.contextUpdates).length > 0;
             const hasCurrentContext = latestMessage.current_context && Object.keys(latestMessage.current_context).length > 0;
             const hasEnabledAddons = addonSettings && (
@@ -108,11 +105,21 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
               addonSettings.characterPosition
             );
             
+            console.log('🏷️ MessageGroup context check:', {
+              hasContextUpdates,
+              hasCurrentContext,
+              hasEnabledAddons,
+              latestMessageId: latestMessage.id,
+              addonSettings,
+              willShowContext: hasContextUpdates || hasCurrentContext || hasEnabledAddons
+            });
+            
             if (hasContextUpdates || hasCurrentContext || hasEnabledAddons) {
               return (
                 <ContextDisplay 
+                  context={trackedContext}
                   contextUpdates={latestMessage.contextUpdates} 
-                  currentContext={latestMessage.current_context || trackedContext}
+                  currentContext={trackedContext || latestMessage.current_context}
                   addonSettings={addonSettings}
                   className="mt-2"
                 />
@@ -124,4 +131,4 @@ export function MessageGroup({ group, character, trackedContext, addonSettings }
       )}
     </div>
   );
-}
+}); // ✅ PHASE 3: Close memo function properly

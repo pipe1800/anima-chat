@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getPrivateProfile, getUserActiveSubscription } from '@/lib/supabase-queries';
+import { getBrowserTimezone, updateUserTimezone } from '@/utils/timezone';
 import type { Profile, Subscription, Plan } from '@/types/database';
 import { TutorialProvider } from './TutorialContext';
 
@@ -49,6 +49,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateTimezoneIfNeeded = async () => {
+    if (!user?.id || !profile) return;
+    
+    const browserTimezone = getBrowserTimezone();
+    console.log('🌍 Detected browser timezone:', browserTimezone);
+    
+    // Check if timezone needs updating
+    if (profile.timezone !== browserTimezone) {
+      console.log('🔄 Updating user timezone from', profile.timezone, 'to', browserTimezone);
+      const success = await updateUserTimezone(user.id, browserTimezone);
+      if (success) {
+        // Update the profile state to reflect the change
+        setProfile(prev => prev ? { ...prev, timezone: browserTimezone } : null);
+        console.log('✅ User timezone updated successfully');
+      }
+    }
+  };
+
   const refreshSubscription = async (retryCount = 0) => {
     if (!user) {
       setSubscription(null);
@@ -57,7 +75,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       console.log(`🔄 Fetching subscription for user ${user.id} (attempt ${retryCount + 1})`);
-      const { data, error } = await getUserActiveSubscription(user.id);
+      
+      // Use the more general getUserSubscription instead of getUserActiveSubscription
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          plan:plans(*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
       if (error) {
         console.error('❌ Subscription fetch failed:', error);
@@ -76,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      console.log('✅ Subscription loaded successfully:', data);
+      console.log('✅ Subscription fetched successfully:', data);
       setSubscription(data || null);
     } catch (error) {
       console.error('❌ Subscription fetch exception:', error);
@@ -133,13 +162,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Handle session refresh
+      if (event === 'TOKEN_REFRESHED') {
+      }
+      
+      // Handle auth errors
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+        // Clear any cached data if needed
+      }
     });
 
-    return () => subscription.unsubscribe();
+    // Set up automatic token refresh monitoring
+    const refreshInterval = setInterval(async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession) {
+        const expiresAt = currentSession.expires_at;
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = expiresAt ? expiresAt - currentTime : 0;
+        
+        // Refresh if token expires in less than 10 minutes
+        if (timeUntilExpiry > 0 && timeUntilExpiry < 600) {
+          console.log('Proactively refreshing token...');
+          await supabase.auth.refreshSession();
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Fetch profile and subscription when user changes
@@ -152,6 +215,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSubscription(null);
     }
   }, [user]);
+
+  // Update timezone when profile is loaded
+  useEffect(() => {
+    if (user && profile) {
+      updateTimezoneIfNeeded();
+    }
+  }, [user, profile]);
 
   const value = {
     user,
