@@ -105,27 +105,7 @@ const HeroSection = () => {
                   loop 
                   playsInline 
                   preload="auto"
-                  onError={(e) => {
-                    console.error('Video failed to load:', e);
-                    // Hide video element on error and show gradient background
-                    e.currentTarget.style.display = 'none';
-                  }}
                 />
-                
-                {/* Fallback content when video fails */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/10 via-purple-500/20 to-blue-500/10 flex items-center justify-center">
-                  <div className="text-center text-white/70">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FF7A00]/20 flex items-center justify-center">
-                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                    <p className="text-sm">Interactive Demo</p>
-                  </div>
-                </div>
-                
-                {/* Subtle overlay for theme integration */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#121212]/10 via-transparent to-[#FF7A00]/5 pointer-events-none"></div>
               </div>
 
               {/* Floating elements */}
