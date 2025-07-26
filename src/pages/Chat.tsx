@@ -4,11 +4,10 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import ChatInterface from '@/components/chat/ChatInterface';
-import { ChatLayout } from '@/components/chat/ChatLayout';
+import { StreamingChatInterface } from '@/components/chat/StreamingChatInterface';
 import OnboardingChecklist from '@/components/OnboardingChecklist';
 import { TutorialManager } from '@/components/tutorial/TutorialManager';
-import type { TrackedContext } from '@/hooks/useChat';
+import type { TrackedContext } from '@/types/chat';
 
 const Chat = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -219,21 +218,14 @@ const Chat = () => {
           />
         )}
 
-        {/* Main Chat Layout */}
-        <ChatLayout 
-          character={character} 
-          currentChatId={existingChatId}
+        {/* Main Chat Interface */}
+        <StreamingChatInterface
+          character={character}
+          onFirstMessage={handleFirstMessage}
+          existingChatId={existingChatId}
           trackedContext={trackedContext}
           onContextUpdate={setTrackedContext}
-        >
-          <ChatInterface
-            character={character}
-            onFirstMessage={handleFirstMessage}
-            existingChatId={existingChatId}
-            trackedContext={trackedContext}
-            onContextUpdate={setTrackedContext}
-          />
-        </ChatLayout>
+        />
 
         {/* Tutorial Manager */}
         <TutorialManager shouldStart={fromOnboarding && onboardingCompleted} />
